@@ -80,4 +80,54 @@ void externalClass::stretching(const cv::gpu::GpuMat& src, const cv::gpu::GpuMat
   stretchingKernel<<<cblocks, cthreads>>>(src.ptr<ushort>(), lut.ptr<float>(), dst.ptr(), src.cols, src.rows);
 }
 
+void externalClass::histogram(const cv::gpu::GpuMat& src, cv::gpu::GpuMat& hist)
+{
+  int threadPerBlock = 1024;
+  int size = src.cols * src.rows;
+  
+#if 1
+  int blockPerGrid = 1;//20;
+#else
+  /*int blockPerGrid = static_cast<int>(std::ceil(
+    static_cast<double>(size)/static_cast<double>(threadPerBlock)));*/
+#endif
+  
+  histKernel<<<blockPerGrid, threadPerBlock>>>(src.ptr<ushort>(), size, hist.ptr<int>());
+}
+
+void externalClass::lowerLimKernel(const cv::gpu::GpuMat& hist, const int peakPos, const double thresh, int& minValue)
+{
+  int threadPerBlock = 1;
+  int blockPerGrid = 1;
+
+  int h_val = 0;
+  int* d_val;
+
+  cudaMalloc(&d_val, sizeof(int));
+
+  lowerLimit<<<blockPerGrid, threadPerBlock>>>(hist.ptr<int>(), peakPos, thresh, d_val);
+
+  cudaMemcpy(&h_val, d_val, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaFree(d_val);
+
+  minValue = h_val;
+}
+
+void externalClass::upperLimKernel(const cv::gpu::GpuMat& hist, const int peakPos, const double thresh, int& maxValue)
+{
+  int threadPerBlock = 1;
+  int blockPerGrid = 1;
+
+  int h_val = 0;
+  int* d_val;
+
+  cudaMalloc(&d_val, sizeof(int));
+
+  upperLimit<<<blockPerGrid, threadPerBlock>>>(hist.ptr<int>(), peakPos, hist.cols, thresh, d_val);
+
+  cudaMemcpy(&h_val, d_val, sizeof(int), cudaMemcpyDeviceToHost);
+  cudaFree(d_val);
+
+  maxValue = h_val;
+}
 

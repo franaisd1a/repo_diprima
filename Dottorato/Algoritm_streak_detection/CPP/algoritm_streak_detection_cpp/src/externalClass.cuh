@@ -168,6 +168,98 @@ __global__ void stretchingKernel
   }
 }
 
+__global__ void histKernel(const ushort* img, int size, int* hist)
+{
+  //printf("GPU");
+  const int nBin = 10240;
+  __shared__ unsigned int temp[nBin];
+
+  temp[threadIdx.x + 1024*0] = 0;
+  temp[threadIdx.x + 1024*1] = 0;
+  temp[threadIdx.x + 1024*2] = 0;
+  temp[threadIdx.x + 1024*3] = 0;
+  temp[threadIdx.x + 1024*4] = 0;
+  temp[threadIdx.x + 1024*5] = 0;
+  temp[threadIdx.x + 1024*6] = 0;
+  temp[threadIdx.x + 1024*7] = 0;
+  temp[threadIdx.x + 1024*8] = 0;
+  temp[threadIdx.x + 1024*9] = 0;
+
+  __syncthreads();
+
+  int i = threadIdx.x + blockDim.x * blockIdx.x;
+  int stride = blockDim.x * gridDim.x;
+
+  if (i<size) 
+  {
+    float f_maxStep = ((float)size)/((float)stride);
+    int maxStep = (int)(f_maxStep) + 1;
+
+    for (int x=0; x<maxStep; ++x)
+    {
+      ushort value = img[i];
+      if(value<nBin)
+      {
+        atomicAdd( &temp[img[i]], 1);      
+      }
+      i += stride;
+    }
+        
+    __syncthreads();
+
+    if (0 != temp[threadIdx.x + 1024*0]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*0]), temp[threadIdx.x + 1024*0]);}
+    if (0 != temp[threadIdx.x + 1024*1]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*1]), temp[threadIdx.x + 1024*1]);}
+    if (0 != temp[threadIdx.x + 1024*2]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*2]), temp[threadIdx.x + 1024*2]);}
+    if (0 != temp[threadIdx.x + 1024*3]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*3]), temp[threadIdx.x + 1024*3]);}
+    if (0 != temp[threadIdx.x + 1024*4]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*4]), temp[threadIdx.x + 1024*4]);}
+    if (0 != temp[threadIdx.x + 1024*5]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*5]), temp[threadIdx.x + 1024*5]);}
+    if (0 != temp[threadIdx.x + 1024*6]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*6]), temp[threadIdx.x + 1024*6]);}
+    if (0 != temp[threadIdx.x + 1024*7]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*7]), temp[threadIdx.x + 1024*7]);}
+    if (0 != temp[threadIdx.x + 1024*8]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*8]), temp[threadIdx.x + 1024*8]);}
+    if (0 != temp[threadIdx.x + 1024*9]) {
+      atomicAdd( &(hist[threadIdx.x + 1024*9]), temp[threadIdx.x + 1024*9]);}
+  }
+}
+
+__global__ void lowerLimit(const int* hist, const int peakPos, const double thresh, int* outVal)
+{
+  outVal[0] = 0;
+  int i = 0;
+  int k = 0;
+
+  for (i = 0; i < peakPos; ++i)
+  {
+    k = peakPos - i;
+    double val = (double)(hist[k]);
+    if (val < thresh) {
+      outVal[0] = k;
+      return;
+    }
+  }
+}
+
+__global__ void upperLimit(const int* hist, const int peakPos, const int maxPos, const double thresh, int* outVal)
+{
+  outVal[0] = 0;
+  int i = 0;
+  for (i = peakPos; i < maxPos; ++i)
+  {
+    double val = (double)(hist[i]);
+    if (val < thresh) {
+      outVal[0] = i;
+      return;
+    }
+  }
+}
 
 /******************************************************************************/
 /*                            externalClass                                   */
@@ -184,6 +276,9 @@ public:
   void fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuMat &dst, int tlX, int tlY, int brX, int brY);
   void LUT(cv::gpu::GpuMat& lut, const double outByteDepth, const int minValue, const int maxValue);
   void stretching(const cv::gpu::GpuMat& src, const cv::gpu::GpuMat& lut, cv::gpu::GpuMat& dst);
+  void histogram(const cv::gpu::GpuMat& src, cv::gpu::GpuMat& hist);
+  void lowerLimKernel(const cv::gpu::GpuMat& hist, const int peakPos, const double thresh, int& minValue);
+  void upperLimKernel(const cv::gpu::GpuMat& hist, const int peakPos, const double thresh, int& maxValue);
 };
 
 #endif /* EXTERNALCLASS_CUH_ */

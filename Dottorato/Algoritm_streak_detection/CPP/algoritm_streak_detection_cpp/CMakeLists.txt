@@ -46,7 +46,7 @@ CONFIGURE_FILE(
 #CUDA Settings
 if (${CUDA_FOUND})
 message("Building for GPU.")
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20 -std c++11)#20
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_30 -std c++11)#20
 
 #set(CUDA_SRC src/medianKernel.cu)
 

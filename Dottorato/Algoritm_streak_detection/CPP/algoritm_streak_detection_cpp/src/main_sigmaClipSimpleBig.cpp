@@ -32,7 +32,6 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include "main_sigmaClipBig_GPU.cuh"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS

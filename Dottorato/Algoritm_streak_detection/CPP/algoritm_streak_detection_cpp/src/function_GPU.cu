@@ -37,6 +37,7 @@
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
 /* ==========================================================================
 * MODULE PRIVATE TYPE DECLARATIONS
@@ -53,9 +54,207 @@
 /* ==========================================================================
 * NAME SPACE
 * ========================================================================== */
- 
+
 /* ==========================================================================
 *        FUNCTION NAME: histogramStreching
+* FUNCTION DESCRIPTION: Histogram streching on GPU
+*        CREATION DATE: 20170422
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::gpu::GpuMat histogramStreching
+(
+  const cv::Mat& imgIn
+)
+{
+  //int depth = imgIn.depth();
+  int type = imgIn.type();
+  double outByteDepth = 255.0;
+
+  int color = 0;
+
+  if (0 == type) {
+    color = static_cast<int>(::pow(2, 8));
+  } else if (2 == type) {
+    color = static_cast<int>(::pow(2, 16));
+  } else {
+    printf("Error. Unsupported pixel type.\n");
+  }
+
+  externalClass kernelCUDA;
+  int imgRows = imgIn.rows;
+  int imgCols = imgIn.cols;
+
+  /*************************** Histogram computation **************************/
+  
+  cv::gpu::GpuMat imgInGPU = cv::gpu::createContinuous(imgRows, imgCols, imgIn.type());
+  
+  imgInGPU.upload(imgIn);
+
+  cv::gpu::GpuMat hist = cv::gpu::createContinuous(1, color, CV_32S);
+
+  size_t maxColdim = 2048;
+  size_t maxRowdim = 2048;
+
+  size_t regionNumR = static_cast<size_t>(::round(static_cast<float>(imgRows / maxRowdim)));
+  size_t regionNumC = static_cast<size_t>(::round(static_cast<float>(imgCols / maxColdim)));
+
+  /* Odd dimensions * /
+  if (0 == regionNumR % 2) {
+    regionNumR = regionNumR + 1;
+  }
+  if (0 == regionNumC % 2) {
+    regionNumC = regionNumC + 1;
+  }*/
+
+  size_t regionDimR = static_cast<size_t>(::round(static_cast<float>(imgRows / regionNumR)));
+  size_t regionDimC = static_cast<size_t>(::round(static_cast<float>(imgCols / regionNumC)));
+
+  std::vector<int> vRegRow;
+  std::vector<int> vRegCol;
+
+  for (size_t o = 0; o < regionNumR; ++o)
+  {
+    vRegRow.push_back(regionDimR*o);
+  }
+  vRegRow.push_back(imgRows);
+
+  for (size_t o = 0; o < regionNumC; ++o)
+  {
+    vRegCol.push_back(regionDimC*o);
+  }
+  vRegCol.push_back(imgCols);
+
+  for (size_t i = 0; i < regionNumR; ++i)
+  {
+    for (size_t j = 0; j < regionNumC; ++j)
+    {
+      const cv::Point ptTL ( vRegCol.at(j), vRegRow.at(i) );
+      const cv::Point ptBR ( vRegCol.at(j + 1)-1, vRegRow.at(i + 1)-1);
+
+      cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);      
+      cv::gpu::GpuMat imgInGPUPart = imgInGPU(region_of_interest);
+
+      kernelCUDA.histogram(imgInGPUPart, hist);
+    }
+  }
+  
+#if SPD_DEBUG
+  cv::Mat histHost;
+  hist.download(histHost);
+  //Print hist value
+  const int* pLine = histHost.ptr<int>(0);
+  for (int row = 0; row < 10240; ++row)
+  {
+    printf("BIN=%d value=%d\n", row, pLine[row]);
+  }
+#endif
+
+  /*********************** Compute limits *************************************/
+
+  double maxHistValue = 0, minHistValue = 0;
+  cv::Point minLocHistValue (0, 0);
+  cv::Point maxLocHistValue (0, 0);
+  
+  {
+    cv::gpu::GpuMat buf;
+    cv::gpu::minMaxLoc(imgInGPU, &minHistValue, &maxHistValue, &minLocHistValue, &maxLocHistValue, buf);
+    buf.release();
+  }
+
+  double peakMax = 0, peakMin = 0;
+  cv::Point peakMinLoc (0, 0);
+  cv::Point peakMaxLoc (0, 0);
+
+  {
+    cv::gpu::GpuMat buf;
+    cv::gpu::minMaxLoc(hist, &peakMin, &peakMax, &peakMinLoc, &peakMaxLoc, buf);
+    buf.release();
+  }
+  
+  const double percentile[2] = { 0.432506, (1 - 0.97725) };
+  double  lowThresh = peakMax * percentile[0];
+  double highThresh = peakMax * percentile[1];
+
+  int minValue = 0;
+  int maxValue = 0;
+
+  kernelCUDA.lowerLimKernel(hist, peakMaxLoc.x, lowThresh, minValue);
+
+  kernelCUDA.upperLimKernel(hist, peakMaxLoc.x, highThresh, maxValue);
+
+  hist.release();
+  
+  //printf("Lower limit=%d Upper limit=%d\n", minValue, maxValue);
+
+  /*************************** Stretching *************************************/
+
+  cv::gpu::GpuMat LUT = cv::gpu::createContinuous(1, color, CV_32F);
+
+  kernelCUDA.LUT(LUT, outByteDepth, minValue, maxValue);
+
+  cv::gpu::GpuMat imgOut = cv::gpu::createContinuous(imgIn.rows, imgIn.cols, CV_8U);
+
+  kernelCUDA.stretching(imgInGPU, LUT, imgOut);
+
+  imgInGPU.release();
+  LUT.release();
+  
+#if SPD_FIGURE_1
+  cv::Mat imgOut_host;
+  imgOut.download(imgOut_host);
+  // Create a window for display.
+  namedWindow("Histogram streching GPU", cv::WINDOW_NORMAL);
+  imshow("Histogram streching GPU", imgOut_host);
+  cv::waitKey(0);
+#endif
+
+  return imgOut;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: histogram
+* FUNCTION DESCRIPTION: Histogram on GPU
+*        CREATION DATE: 20170422
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat histogram
+(
+  const cv::Mat& imgIn
+)
+{
+  cv::gpu::GpuMat imgInGPU = cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
+  
+  imgInGPU.upload(imgIn);
+
+  int histSz = static_cast<int>(::pow(2,16));
+  cv::gpu::GpuMat hist = cv::gpu::createContinuous(1, histSz, CV_32S);
+
+  externalClass kernelCUDA;
+  kernelCUDA.histogram(imgInGPU, hist);
+  
+  cv::Mat histHost;
+  hist.download(histHost);
+
+#if 0
+  //Print matrix value
+  const int* pLine = histHost.ptr<int>(0);
+  for (int row = 0; row < 10240; ++row)
+  {
+    printf("BIN=%d value=%d\n", row, pLine[row]);
+  }
+#endif
+
+  imgInGPU.release();
+
+  return histHost;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: streching
 * FUNCTION DESCRIPTION: Histogram streching on GPU
 *        CREATION DATE: 20170422
 *              AUTHORS: Francesco Diprima
@@ -139,7 +338,6 @@ cv::gpu::GpuMat medianFIlterK(const cv::gpu::GpuMat& imgIn, int kerlen)
 cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgIn, const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
 {
   //cv::gpu::GpuMat imgIn = imgInOr.clone();
-
   size_t backSzR = static_cast<size_t>(::round(static_cast<float>(imgIn.rows / backCnt.y)));
   size_t backSzC = static_cast<size_t>(::round(static_cast<float>(imgIn.cols / backCnt.x)));
   
@@ -159,7 +357,6 @@ cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgIn, const cv::Poi
   vBackScol.push_back(imgIn.cols);
     
   cv::gpu::GpuMat outImg = cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
-  //in cpu braso a zero
 
   for (size_t i = 0; i < backCnt.y; ++i)
   {
@@ -172,7 +369,7 @@ cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgIn, const cv::Poi
       cv::gpu::GpuMat imgPart = imgIn(region_of_interest);
 
       cv::gpu::GpuMat imgPartTh = cv::gpu::createContinuous(imgPart.rows, imgPart.cols, imgPart.type());
-      cv::gpu::GpuMat imgPart2 = cv::gpu::createContinuous(imgPart.rows, imgPart.cols, imgPart.type());
+      //cv::gpu::GpuMat imgPart2 = cv::gpu::createContinuous(imgPart.rows, imgPart.cols, imgPart.type());
       
       float oldStd=0;
       float diffPercStd = 1;
@@ -195,17 +392,17 @@ cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgIn, const cv::Poi
         double threshH = meanBg.at<double>(i,j)+2.5*stdBg.at<double>(i,j);//3
 
         double maxval = 1.0;
-        double asdf = cv::gpu::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_BINARY_INV);
+        double asdf = cv::gpu::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_TOZERO_INV);
 
-        int dType = -1;
-        cv::gpu::multiply(imgPart, imgPartTh, imgPart2, maxval, dType, cv::gpu::Stream::Null());
+/*        int dType = -1;
+        cv::gpu::multiply(imgPart, imgPartTh, imgPart2, maxval, dType, cv::gpu::Stream::Null());*/
 
         diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
         oldStd=stdBg.at<double>(i,j);        
       }
       
       externalClass kernelCUDA;
-      kernelCUDA.fillImgCUDAKernel(imgPart2, outImg, ptTL.x, ptTL.y, ptBR.x, ptBR.y);
+      kernelCUDA.fillImgCUDAKernel(imgPartTh, outImg, ptTL.x, ptTL.y, ptBR.x, ptBR.y);//imgPart2
     }
   }
 
@@ -654,7 +851,7 @@ int iDivUp(int a, int b)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+//#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true)
 {
     if (code != cudaSuccess) 

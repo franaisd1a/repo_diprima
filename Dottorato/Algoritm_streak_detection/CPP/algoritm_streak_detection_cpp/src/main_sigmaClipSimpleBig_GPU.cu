@@ -76,8 +76,12 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
 
   // --- CUDA warm up
   cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
-      
-  
+
+#if 0  
+  tryAtomics();  
+#endif
+
+
 /* ----------------------------------------------------------------------- *
  * Initialization                                                          *
  * ----------------------------------------------------------------------- */
@@ -184,13 +188,21 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
   }
   else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) )
   {
+#if 0
     double outByteDepth=0;
     int minValue=0;
     int maxValue=0;
     cv::Mat hist = histogram(Img_input, outByteDepth, minValue, maxValue);
+    
+    cv::Mat histGPU = histogram(Img_input);
+    
 
     histStretchGPU = streching(Img_input, hist, outByteDepth, minValue, maxValue);
+
     hist.release();
+#endif
+
+    histStretchGPU = histogramStreching(Img_input);
   }
   
   timeElapsed(infoFile, start, "Histogram Stretching");

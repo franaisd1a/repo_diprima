@@ -59,6 +59,10 @@
 * FUNCTION DECLARATION
 * ========================================================================== */
 
+cv::gpu::GpuMat histogramStreching(const cv::Mat& imgIn);
+
+cv::Mat histogram(const cv::Mat& imgIn);
+
 cv::gpu::GpuMat streching(const cv::Mat& imgIn, const cv::Mat& hist, const double outByteDepth
   , const int minValue, const int maxValue);
 

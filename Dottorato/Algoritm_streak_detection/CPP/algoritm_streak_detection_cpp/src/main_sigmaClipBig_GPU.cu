@@ -94,11 +94,21 @@ void main_sigmaClipBig_GPU
   cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
   cv::Mat  stdBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
 
+#if 0
   cv::gpu::GpuMat backgroungImg = 
     backgroundEstimation(medianImgGPU, backCnt, meanBg, stdBg);
+#else
+  cv::Mat medianImgCPU;
+  medianImgGPU.download(medianImgCPU);
+
+  cv::Mat bgImg = backgroundEstimation(medianImgCPU, backCnt, meanBg, stdBg);
+
+  cv::gpu::GpuMat backgroungImg;
+  backgroungImg.upload(bgImg);
+#endif
 
   timeElapsed(infoFile, start, "Background estimation");
-
+  
 
 /* ----------------------------------------------------------------------- *
  * Background subtraction                                                  *
