@@ -24,7 +24,8 @@
 * INCLUDE: Basic include file.
 * ========================================================================== */
 #include <vector>
-#include <cstdint>
+//#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <math.h>
 #include <string.h>
@@ -165,7 +166,7 @@ cv::Mat hough(cv::Mat& imgIn);
 * @param strName String to plot
 * @return Elapsed time
 */
-double timeElapsed(clock_t start, char* strName);
+void timeElapsed(clock_t start, const char* strName);
 
 #endif /* FUNCTION_H */
 

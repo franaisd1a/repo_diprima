@@ -360,31 +360,36 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
     float radius;
     minEnclosingCircle(contours[i], center, radius);
 
-    cv::Point centerP = { static_cast<int>(round(center.x)) 
-                        , static_cast<int>(round(center.y)) };
+    cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
+                            , static_cast<int>(round(center.y)) );
 
     if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
        && (centerP.y>borders[1] && centerP.y<borders[3]))
     {
       centroid.at(i) = centerP;
-
-      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
       
-      /* Identify circular connect components */
-      if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+      if(contours[i].size()>5)
       {
-        points.at(i) = 1;
-        if (majorAxis.at(i) > max_points_diameter)
+        
+        cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+        majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
+        minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
+        
+        if (0 == minorAxis.at(i)){continue;}
+        /* Identify circular connect components */
+        if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
         {
-          max_points_diameter = majorAxis.at(i);
-        }
-        if (minorAxis.at(i) < min_points_diameter)
-        {
-          min_points_diameter = minorAxis.at(i);
-        }
-      } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+          points.at(i) = 1;
+          if (majorAxis.at(i) > max_points_diameter)
+          {
+            max_points_diameter = majorAxis.at(i);
+          }
+          if (minorAxis.at(i) < min_points_diameter)
+          {
+            min_points_diameter = minorAxis.at(i);
+          }
+        } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+      } //if(contours[i].size()>5)
     }
   } //for (size_t i = 0; i < contours.size(); ++i)
 
@@ -452,31 +457,35 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
     float radius;
     minEnclosingCircle(contours[i], center, radius);
 
-    cv::Point centerP = { static_cast<int>(round(center.x)) 
-                        , static_cast<int>(round(center.y)) };
+    cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
+                            , static_cast<int>(round(center.y)) );
 
     if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
        && (centerP.y>borders[1] && centerP.y<borders[3]))
     {
       centroid.at(i) = centerP;
-
-      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
-      
-      /* Identify linear connect components */
-      if (majorAxis.at(i) / minorAxis.at(i) > 6)
-      {
-        streaks.at(i) = 1;
-        if (majorAxis.at(i) > max_streaks_majoraxis)
+      if(contours[i].size()>5)
+      {      
+        cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+        majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
+        minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
+        
+        if (0 == minorAxis.at(i)){continue;}
+        
+        /* Identify linear connect components */
+        if (majorAxis.at(i) / minorAxis.at(i) > 6)
         {
-          max_streaks_majoraxis = majorAxis.at(i);
-        }
-        if (minorAxis.at(i) < min_streaks_minoraxis)
-        {
-          min_streaks_minoraxis = minorAxis.at(i);
-        }
-      } //if (majorAxis.at(i) / minorAxis.at(i) > 6)
+          streaks.at(i) = 1;
+          if (majorAxis.at(i) > max_streaks_majoraxis)
+          {
+            max_streaks_majoraxis = majorAxis.at(i);
+          }
+          if (minorAxis.at(i) < min_streaks_minoraxis)
+          {
+            min_streaks_minoraxis = minorAxis.at(i);
+          }
+        } //if (majorAxis.at(i) / minorAxis.at(i) > 6)
+      } //if(contours[i].size()>5)
     }
   } //for (size_t i = 0; i < contours.size(); ++i)
 
@@ -591,14 +600,13 @@ cv::Mat hough(cv::Mat& imgIn)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-double timeElapsed(clock_t start, char* strName)
+void timeElapsed(clock_t start, const char* strName)
 {
   clock_t stop = clock();
 	double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
   std::cout << strName << " time: " << totalTime << std::endl;
 
-  return totalTime;
 }
 
 

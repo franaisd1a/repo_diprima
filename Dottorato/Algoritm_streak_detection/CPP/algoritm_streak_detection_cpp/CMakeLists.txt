@@ -1,32 +1,29 @@
 cmake_minimum_required(VERSION 2.8)
-project( algo_streak_detection CXX)
-
-# Declare name of main target (don't use '-' in names)
-set(    MAINTGT algo_streak_detection)
-# Configure basic behaviors on include directories
-set(CMAKE_MODULE_PATH "${${MAINTGT}_SOURCE_DIR}/cmake/modules")
+project( algo_streak_detection)
 
 find_package( OpenCV REQUIRED )
-#find_package(CFITSIO REQUIRED)
-find_package( CCFits REQUIRED )
+find_package( CUDA REQUIRED )
 
 # Setup variables: source and include paths
-set(SRC_PATH "src")
-set(INC_PATH "inc")
+set( SRC_PATH "src")
 
-if(UNIX)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
-endif()
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
 
-add_executable( algo_streak_detection 
-				      ${SRC_PATH}//main.cpp 
-                                      ${SRC_PATH}//main_simple.cpp
-                                      ${SRC_PATH}//main_2.cpp
-                                      ${SRC_PATH}//main_fits.cpp                                                                           
-                                      #${SRC_PATH}//cookbook.cxx
-				                              ${SRC_PATH}//function.cpp
-                                      ${SRC_PATH}//main_GPU.cpp
-                                      ${SRC_PATH}//function_GPU.cpp)
+#set(CUDA_SRC src/medianKernel.cu)
+
+set(CUDA_SRC  ${SRC_PATH}/main.cpp 
+              ${SRC_PATH}/main_simple.cpp
+              ${SRC_PATH}/main_2.cpp
+              ${SRC_PATH}/main_fits.cpp
+              ${SRC_PATH}/main_median.cu
+              ${SRC_PATH}/function.cpp
+              ${SRC_PATH}/function_GPU.cpp)
+              #${SRC_PATH}/externalClass.cu)
+
+#add_executable
+CUDA_ADD_EXECUTABLE( algo_streak_detection ${CUDA_SRC})
 
 target_link_libraries( algo_streak_detection ${OpenCV_LIBS} )
 
+set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
+#set(CMAKE_CXX_FLAG "-g -Wall -std=gnu++11")-std=c++11

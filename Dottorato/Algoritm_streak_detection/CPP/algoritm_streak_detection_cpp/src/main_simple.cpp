@@ -70,7 +70,7 @@ int main_simple(char* name_file)
    
   // Read file
   Mat Img_input = imread(name_file, CV_LOAD_IMAGE_GRAYSCALE );
-    
+  
   // Check for invalid file
   if (!Img_input.data)  {
     cout << "Error: could not open or find the image." << std::endl;
@@ -103,7 +103,7 @@ int main_simple(char* name_file)
 
   Mat gaussImg = gaussianFilter(Img_input, hsize, sigma);
 
-  double gaussTime = timeElapsed(start, "Gaussian filter");
+  timeElapsed(start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -115,7 +115,7 @@ int main_simple(char* name_file)
 
   Mat backgroundSub = Img_input - gaussImg;
 
-  double backgroundSubTime = timeElapsed(start, "Background subtraction");
+  timeElapsed(start, "Background subtraction");
 
   fprintf(pFile, "End Background subtraction\n");
 
@@ -123,9 +123,13 @@ int main_simple(char* name_file)
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+  
   int kerlen = 11;
   Mat medianImg = medianFilter(backgroundSub, kerlen);
 
+  timeElapsed(start, "Median filter");
+  
   fprintf(pFile, "End Median filter\n");
 
 /* ----------------------------------------------------------------------- *
@@ -136,7 +140,7 @@ int main_simple(char* name_file)
 
   Mat binaryImg = binarization(medianImg);
 
-  double binarizationTime = timeElapsed(start, "Binarization");
+  timeElapsed(start, "Binarization");
 
   fprintf(pFile, "End Binarization\n");
 
@@ -152,7 +156,7 @@ int main_simple(char* name_file)
 
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   
-  double convolutionTime = timeElapsed(start, "Convolution");
+  timeElapsed(start, "Convolution");
 
   fprintf(pFile, "End Convolution kernel\n");
 

@@ -35,7 +35,7 @@
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
-
+#define MEDIAN_FILTER_CPU 0U
 /* ==========================================================================
 * MODULE PRIVATE TYPE DECLARATIONS
 * ========================================================================== */
@@ -80,7 +80,9 @@ int main_GPU(char* name_file)
   
   int channels = Img_input.channels();
   int depth = Img_input.depth();
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
+  //cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
+  cv::Point_<int> I_input_size(Img_input.cols, Img_input.rows);
+  
   cv::Point_<double> borders = { 0.015, 0.985 };
   Vec<int, 4> imgBorders = {static_cast<int>(ceil( borders.x * I_input_size.x))
                           , static_cast<int>(ceil( borders.x * I_input_size.y))
@@ -99,9 +101,14 @@ int main_GPU(char* name_file)
   fprintf(pFile, "Device number %d\n", deviceCount);
 
   //Move data on GPU 
-  gpu::GpuMat dstImgGPU, srcImgGPU;
+  gpu::GpuMat srcImgGPU = 
+    gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());
+    
   srcImgGPU.upload(Img_input);
     
+  gpu::GpuMat dstImgGPU = 
+    gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());
+  
     
 /* ======================================================================= *
  * Big Points detection                                                    *
@@ -117,7 +124,7 @@ int main_GPU(char* name_file)
 
   gpu::GpuMat gaussImg = gaussianFilter(srcImgGPU, hsize, sigma);
 
-  double gaussTime = timeElapsed(start, "Gaussian filter");
+  timeElapsed(start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -129,7 +136,7 @@ int main_GPU(char* name_file)
 
   gpu::GpuMat backgroundSub = subtractImage(srcImgGPU, gaussImg);
   
-  double backgroundSubTime = timeElapsed(start, "Background subtraction");
+  timeElapsed(start, "Background subtraction");
 
   gaussImg.release();
 
@@ -139,29 +146,43 @@ int main_GPU(char* name_file)
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
 
+  int kerlen = 11;
+
+#if MEDIAN_FILTER_CPU
+  /* CPU version of median filter */
   //Download data from GPU 
   cv::Mat bgSub;
   backgroundSub.download(bgSub);
   backgroundSub.release();
-
-  int kerlen = 11;
+  
   Mat medianImg = medianFilter(bgSub, kerlen);
+#else
+  /* GPU version of median filter */
+  //gpu::GpuMat medianImgGPU;
+  cv::gpu::GpuMat medianImgGPU = 
+    cv::gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());  
+
+  callKernel(backgroundSub, medianImgGPU);
+  
+#endif
 
   fprintf(pFile, "End Median filter\n");
-
 
 /* ----------------------------------------------------------------------- *
  * Binarization                                                            *
  * ----------------------------------------------------------------------- */
 
+#if MEDIAN_FILTER_CPU 
   //Move data on GPU 
   gpu::GpuMat medianImgGPU;
   medianImgGPU.upload(medianImg);
+  
+#endif
 
   start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
 
-  double binarizationTime = timeElapsed(start, "Binarization");
+  timeElapsed(start, "Binarization");
 
   medianImgGPU.release();
 
@@ -179,7 +200,7 @@ int main_GPU(char* name_file)
   start = clock();
   gpu::GpuMat convImgGPU = convolution(binaryImgGPU, kernel, threshConv);
   
-  double convolutionTime = timeElapsed(start, "Convolution");
+  timeElapsed(start, "Convolution");
 
   fprintf(pFile, "End Convolution kernel\n");
 

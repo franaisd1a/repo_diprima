@@ -24,7 +24,10 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+#include <time.h>
+
 #include "main_2.h"
+#include "main_median.cuh"
 #include "main_simple.h"
 #include "main_GPU.h"
 #include "main_fits.h"
@@ -104,6 +107,21 @@ int main(int argc, char** argv)
 
   std::cout << "algo2 time: " << totalTime << std::endl;
 
+/* ------------------------------- AlgoMedian ------------------------------- */
+
+  start = clock();
+
+  // Algo 2
+  int algoMedian = 0;
+#if 1  
+  algoMedian = main_median(name_file);
+#endif
+
+  stop = clock();
+	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+  std::cout << "algoMedian time: " << totalTime << std::endl;
+
 /* -------------------------------- AlgoGPU --------------------------------- */
   
   start = clock();
@@ -111,7 +129,7 @@ int main(int argc, char** argv)
   // Algo GPU
 
   int algoGPU = 0;
-#if 1
+#if 0
   algoGPU = main_GPU(name_file);
 #endif
 
@@ -125,7 +143,7 @@ int main(int argc, char** argv)
   int testFits = main_fits(name_file);
 #endif
 
-  //waitKey(0);
+  cv::waitKey(0);
 
   return algoSimple+algo2+algoGPU;
 

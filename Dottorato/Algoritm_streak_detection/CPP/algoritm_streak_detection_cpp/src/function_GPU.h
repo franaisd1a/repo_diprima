@@ -24,7 +24,8 @@
 * INCLUDE: Basic include file.
 * ========================================================================== */
 #include <vector>
-#include <cstdint>
+//#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <math.h>
 #include <string.h>
@@ -34,6 +35,11 @@
 //#include <opencv\highgui.h>
 #include <opencv/highgui.h>
 #include "opencv2/gpu/gpu.hpp"
+
+#include </usr/local/cuda-6.5/include/cuda.h>
+//#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
+#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
+
 
 /* ==========================================================================
 * MACROS
@@ -93,58 +99,23 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag);
 * @param threshold Threshold
 * @return outImage Convolution images
 */
-cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double threshold);
-
-#if 0
-/**
-* connectedComponents Found connected components
-* @param imgIn Input image
-* @param borders Image borders
-* @return 
-*/
-std::vector< cv::Vec<int, 3> > connectedComponents
-(
-  cv::Mat& imgIn
-  , cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
-);
+cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, double threshold);
 
 /**
-* connectedComponents Found centroid of circular connected components
-* @param imgIn Input image
-* @param contours Contours found by findContours function
-* @param borders Image borders
-* @return Vector with circular connect componets coordinates
+* callKernel Function for call CUDA kernel
+* @param imgA Input image A
+* @param imgB Output image B
 */
-std::vector< cv::Vec<int, 3> > connectedComponentsPoints
-(
-  cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point> >& contours
-  , cv::Vec<int, 4>& borders
-);
+//void callKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst);
 
 /**
-* connectedComponentsStreaks Found centroid of Streaks
-* @param imgIn Input image
-* @param contours Contours found by findContours function
-* @param borders Image borders
-* @return Vector with streaks coordinates
+* iDivUp Rounded division
+* @param a Input a
+* @param b Output b
+* @return Rounded division
 */
-std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
-(
-  cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point> >& contours
-  , cv::Vec<int, 4>& borders
-);
+int iDivUp(int a, int b);
 
-/**
-* hough Hough transform
-* @param imgIn Input image
-* @return outImage 
-*/
-cv::Mat hough(cv::Mat& imgIn);
-#endif
+//void cudaKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst);
 
 #endif /* FUNCTION_GPU_H */
-
