@@ -111,7 +111,7 @@ int main(int argc, char** argv)
   // Algo GPU
 
   int algoGPU = 0;
-#if 0
+#if 1
   algoGPU = main_GPU(name_file);
 #endif
 
@@ -121,7 +121,7 @@ int main(int argc, char** argv)
   std::cout << "algoGPU time: " << totalTime << std::endl;
 
   // Test fits
-#if 1
+#if 0
   int testFits = main_fits(name_file);
 #endif
 

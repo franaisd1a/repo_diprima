@@ -23,10 +23,10 @@ add_executable( algo_streak_detection
                                       ${SRC_PATH}//main_simple.cpp
                                       ${SRC_PATH}//main_2.cpp
                                       ${SRC_PATH}//main_fits.cpp                                                                           
-                                      ${SRC_PATH}//cookbook.cxx
-				                              ${SRC_PATH}//function.cpp)
-#./src/main_GPU.cpp
-#                                      ./src/function_GPU.cpp)
+                                      #${SRC_PATH}//cookbook.cxx
+				                              ${SRC_PATH}//function.cpp
+                                      ${SRC_PATH}//main_GPU.cpp
+                                      ${SRC_PATH}//function_GPU.cpp)
 
 target_link_libraries( algo_streak_detection ${OpenCV_LIBS} )
 

@@ -159,5 +159,14 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 */
 cv::Mat hough(cv::Mat& imgIn);
 
+/**
+* timeElapsed Compute elapsed time
+* @param start Start reference time
+* @param strName String to plot
+* @return Elapsed time
+*/
+double timeElapsed(clock_t start, char* strName);
 
 #endif /* FUNCTION_H */
+
+

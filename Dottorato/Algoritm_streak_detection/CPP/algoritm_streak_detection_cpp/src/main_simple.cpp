@@ -62,6 +62,8 @@ using namespace std;
 * ========================================================================== */
 int main_simple(char* name_file)
 {
+  cout << "CPU algorithms ." << std::endl;
+
   /* Open file */
   FILE * pFile;
   pFile = fopen ("consoleSimple.txt","w");
@@ -95,9 +97,13 @@ int main_simple(char* name_file)
  * Gaussian filter                                                         *
  * ----------------------------------------------------------------------- */
 
-  int hsize[2] = {101, 101};
+  int hsize[2] = {31, 31};//{101, 101};
   double sigma = 30;
+  clock_t start = clock();
+
   Mat gaussImg = gaussianFilter(Img_input, hsize, sigma);
+
+  double gaussTime = timeElapsed(start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -105,7 +111,11 @@ int main_simple(char* name_file)
  * Background subtraction                                                  *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+
   Mat backgroundSub = Img_input - gaussImg;
+
+  double backgroundSubTime = timeElapsed(start, "Background subtraction");
 
   fprintf(pFile, "End Background subtraction\n");
 
@@ -122,7 +132,11 @@ int main_simple(char* name_file)
  * Binarization                                                            *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+
   Mat binaryImg = binarization(medianImg);
+
+  double binarizationTime = timeElapsed(start, "Binarization");
 
   fprintf(pFile, "End Binarization\n");
 
@@ -133,8 +147,13 @@ int main_simple(char* name_file)
   int szKernel = 3;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
   double threshConv = szKernel*szKernel;
+
+  start = clock();
+
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   
+  double convolutionTime = timeElapsed(start, "Convolution");
+
   fprintf(pFile, "End Convolution kernel\n");
 
 /* ----------------------------------------------------------------------- *

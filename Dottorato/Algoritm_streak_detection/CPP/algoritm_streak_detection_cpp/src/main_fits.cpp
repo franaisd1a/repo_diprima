@@ -30,6 +30,7 @@
 #include <memory>
 
 #include "function.h"
+#include "macros.h"
 
 //#include <CCfits>
 #include <CCfits/CCfits>

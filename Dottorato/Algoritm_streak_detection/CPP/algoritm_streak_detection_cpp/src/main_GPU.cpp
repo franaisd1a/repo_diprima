@@ -64,6 +64,7 @@ using namespace std;
 * ========================================================================== */
 int main_GPU(char* name_file)
 {
+  cout << "GPU algorithms ." << std::endl;
   /* Open file */
   FILE * pFile;
   pFile = fopen ("consoleGPU.txt","w");
@@ -112,7 +113,11 @@ int main_GPU(char* name_file)
 
   int hsize[2] = {31, 31};//{101, 101};
   double sigma = 30;
+  clock_t start = clock();
+
   gpu::GpuMat gaussImg = gaussianFilter(srcImgGPU, hsize, sigma);
+
+  double gaussTime = timeElapsed(start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -120,8 +125,12 @@ int main_GPU(char* name_file)
  * Background subtraction                                                  *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+
   gpu::GpuMat backgroundSub = subtractImage(srcImgGPU, gaussImg);
   
+  double backgroundSubTime = timeElapsed(start, "Background subtraction");
+
   gaussImg.release();
 
   fprintf(pFile, "End Background subtraction\n");
@@ -148,7 +157,11 @@ int main_GPU(char* name_file)
   //Move data on GPU 
   gpu::GpuMat medianImgGPU;
   medianImgGPU.upload(medianImg);
+
+  start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
+
+  double binarizationTime = timeElapsed(start, "Binarization");
 
   medianImgGPU.release();
 
@@ -163,8 +176,11 @@ int main_GPU(char* name_file)
   double threshConv = szKernel*szKernel;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
   
+  start = clock();
   gpu::GpuMat convImgGPU = convolution(binaryImgGPU, kernel, threshConv);
   
+  double convolutionTime = timeElapsed(start, "Convolution");
+
   fprintf(pFile, "End Convolution kernel\n");
 
   //Download data from GPU 

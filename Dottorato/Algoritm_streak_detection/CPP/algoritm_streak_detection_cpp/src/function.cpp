@@ -532,7 +532,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
   return outSTREAKS;
 }
 
-  /* ==========================================================================
+/* ==========================================================================
 *        FUNCTION NAME: hough
 * FUNCTION DESCRIPTION: Hough transform
 *        CREATION DATE: 20160911
@@ -582,3 +582,24 @@ cv::Mat hough(cv::Mat& imgIn)
 
   return imgOut;
 }
+
+/* ==========================================================================
+*        FUNCTION NAME: hough
+* FUNCTION DESCRIPTION: Hough transform
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+double timeElapsed(clock_t start, char* strName)
+{
+  clock_t stop = clock();
+	double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  
+  std::cout << strName << " time: " << totalTime << std::endl;
+
+  return totalTime;
+}
+
+
+
