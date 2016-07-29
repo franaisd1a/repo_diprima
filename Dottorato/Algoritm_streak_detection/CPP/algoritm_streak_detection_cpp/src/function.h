@@ -1,0 +1,104 @@
+/* ==========================================================================
+* PK SPACEKIT LIBRARY
+* (C) 2016 PLANETEK Italia SRL
+* ========================================================================== */
+
+/* ==========================================================================
+*   INCLUDE FILE NAME: function.h
+* INCLUDE DESCRIPTION: Function for image elaboration.
+*       CREATION DATE: 20160727
+*             AUTHORS: Francesco Diprima
+*        DESIGN ISSUE: None.
+*
+*             HISTORY: See table below.
+*
+* 27-Jul-2016 | Francesco Diprima | 0.0 |
+* Initial creation of this file.
+*
+* ========================================================================== */
+
+#ifndef FUNCTION_H
+#define FUNCTION_H
+
+/* ==========================================================================
+* INCLUDE: Basic include file.
+* ========================================================================== */
+
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <opencv\highgui.h>
+
+/* ==========================================================================
+* MACROS
+* ========================================================================== */
+
+/* ==========================================================================
+* CLASS DECLARATION
+* ========================================================================== */
+
+/* ==========================================================================
+* FUNCTION DECLARATION
+* ========================================================================== */
+
+/**
+* gaussianFilter Filter an image using Gaussian lowpass filter
+* @param imgIn Input image
+* @param hsize Filter size
+* @param sigma Filter standard deviation
+* @return outImage Filtered image
+*/
+cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma);
+
+/**
+* gaussianFilter Filter an image using median filter
+* @param imgIn Input image
+* @param kerlen Little Kernel
+* @return outImage Filtered image
+*/
+cv::Mat medianFilter(cv::Mat& imgIn, int kerlen);
+
+/**
+* gaussianFilter Filter an image using the difference between two median filter
+* @param imgIn Input image
+* @param littleKerlen Little Kernel
+* @param bigKerlen Big Kernel
+* @return outImage Filtered image
+*/
+cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
+
+/**
+* morphologyOpen Morphology opening on image with a rectangular kernel rotate of
+* an angle. Delete noise and points object in the image and preserve the streaks
+* @param imgIn Input image
+* @param dimLine Line dimension
+* @param teta_streak Line inclination angle
+* @return outImage Morphology opening image
+*/
+cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
+
+/**
+* binarization Image binarization
+* @param imgIn Input image
+* @param dimLine Line dimension
+* @param teta_streak Line inclination angle
+* @return outImage Morphology opening image
+*/
+cv::Mat binarization(cv::Mat& imgIn, int flag);
+
+/**
+* convolution Convolution images
+* @param imgIn Input image
+* @param kernel Convolution kernel
+* @param threshold Threshold
+* @return outImage Convolution images
+*/
+cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, int threshold);
+
+
+
+
+
+
+
+
+#endif /* FUNCTION_H */
