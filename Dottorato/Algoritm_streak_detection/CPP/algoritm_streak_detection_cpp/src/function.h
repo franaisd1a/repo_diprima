@@ -23,14 +23,25 @@
 /* ==========================================================================
 * INCLUDE: Basic include file.
 * ========================================================================== */
-
+#include <vector>
+#include <cstdint>
 #include <iostream>
+#include <math.h>
+#include <string.h>
 #include <opencv2/opencv.hpp>
 #include <opencv\highgui.h>
 
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
+#define FIGURE 1U
+#define FIGURE_1 1U
+#define FILE 1U
+#define CLEAR 0U
+#define BACKGROUND_SUBTRACTION 1U
+#define DIFFERENT_THRESHOLD 1U
+#define FIT 1U
+#define DILATE 1U
 
 /* ==========================================================================
 * CLASS DECLARATION
@@ -83,7 +94,8 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::Mat binarization(cv::Mat& imgIn, int flag);
+cv::Mat binarization(cv::Mat& imgIn);
+cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
 
 /**
 * convolution Convolution images
@@ -92,12 +104,31 @@ cv::Mat binarization(cv::Mat& imgIn, int flag);
 * @param threshold Threshold
 * @return outImage Convolution images
 */
-cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, int threshold);
+cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double threshold);
+
+/**
+* connectedComponents Found connected component
+* @param imgIn Input image
+* @param borders Image borders
+* @return 
+*/
+void connectedComponents(cv::Mat& imgIn, int borders[2]);
 
 
+std::vector<std::vector<cv::Point> > connectedComponentsPoints
+(
+  cv::Mat& imgIn
+  , const std::vector<std::vector<cv::Point> >& contours
+  , int borders[2]
+);
 
-
-
+/*vector<vector<cv::Point> > connectedComponentsPoints
+(
+  cv::Mat& imgIn
+  , vector<vector<cv::Point> >& contours
+  , int borders[2]
+);
+*/
 
 
 
