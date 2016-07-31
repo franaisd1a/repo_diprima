@@ -182,7 +182,7 @@ for file_number=1:length(files)
         remSalPep = removeSaltPepper( convPoint.convImg, P);
     end
 
-%% Connected components: points
+%% Connected components: streaks
     
     if ~remSalPep.error
         point = connectedComponentsPoints( remSalPep.remSaltPepperImg, ...

@@ -39,7 +39,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('hamr_209',extension);%hamr_186 150 209 204 170
+    name_picture=strcat('hamr_158',extension);%hamr_186 150 209 204 170
 end
 
 for file_number=1:length(files)
