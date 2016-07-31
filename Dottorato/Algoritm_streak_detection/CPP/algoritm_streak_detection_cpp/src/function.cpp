@@ -338,7 +338,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
   , cv::Vec<int, 4>& borders
 )
 {
-  int max_points_diameter = 0;
+  int max_points_diameter = 0; 
   int min_points_diameter = std::max(imgIn.cols, imgIn.rows);
 
   /* Initialize vector */  
