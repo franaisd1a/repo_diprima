@@ -28,6 +28,8 @@
 #include <iostream>
 #include <math.h>
 #include <string.h>
+#include <numeric>
+
 #include <opencv2/opencv.hpp>
 #include <opencv\highgui.h>
 
@@ -107,28 +109,32 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
 cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double threshold);
 
 /**
-* connectedComponents Found connected component
+* connectedComponents Found connected components
 * @param imgIn Input image
 * @param borders Image borders
 * @return 
 */
-void connectedComponents(cv::Mat& imgIn, int borders[2]);
-
-
-std::vector<std::vector<cv::Point> > connectedComponentsPoints
+std::vector< cv::Vec<int, 3> > connectedComponents
 (
   cv::Mat& imgIn
-  , const std::vector<std::vector<cv::Point> >& contours
-  , int borders[2]
+  , cv::Vec<int, 4>& borders
 );
 
-/*vector<vector<cv::Point> > connectedComponentsPoints
-(
-  cv::Mat& imgIn
-  , vector<vector<cv::Point> >& contours
-  , int borders[2]
-);
+/**
+* connectedComponents Found centroid of circular connected components
+* @param imgIn Input image
+* @param contours Contours found by findContours function
+* @param borders Image borders
+* @return Vector with circular connect componets coordinates
 */
+std::vector< cv::Vec<int, 3> > connectedComponentsPoints
+(
+  cv::Mat& imgIn
+  , std::vector<std::vector<cv::Point> >& contours
+  , cv::Vec<int, 4>& borders
+);
+
+
 
 
 

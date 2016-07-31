@@ -282,7 +282,11 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-void connectedComponents(cv::Mat& imgIn, int borders[2])
+std::vector< cv::Vec<int, 3> > connectedComponents
+(
+  cv::Mat& imgIn
+  , cv::Vec<int, 4>& borders
+)
 {
   std::vector<std::vector<cv::Point> > contours;
   std::vector<cv::Vec4i> hierarchy;
@@ -291,16 +295,16 @@ void connectedComponents(cv::Mat& imgIn, int borders[2])
   findContours( imgIn, contours, hierarchy, CV_RETR_EXTERNAL
                 , CV_CHAIN_APPROX_NONE , offset);
 
+  std::vector< cv::Vec<int, 3> > POINTS;
   if (contours.size() > 0)
   {
-    /*vector<vector<Point> > connectedComponentsPoints
-(
-  cv::Mat& imgIn
-  , vector<vector<Point> >& contours
-  , int borders[2]
-)*/
+    POINTS = connectedComponentsPoints
+    (imgIn, contours, borders);
   }
-
+  else
+  {
+    POINTS = { 0,0,0 };
+  }
 
   if (FIGURE_1)
   {
@@ -316,47 +320,97 @@ void connectedComponents(cv::Mat& imgIn, int borders[2])
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
   }
-  return;
+  return POINTS;
 }
 
 /* ==========================================================================
 *        FUNCTION NAME: connectedComponentsPoints
-* FUNCTION DESCRIPTION: Found connected component
+* FUNCTION DESCRIPTION: Found centroid of circular connected components
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-std::vector<std::vector<cv::Point> > connectedComponentsPoints
+std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 (
   cv::Mat& imgIn
-  , const std::vector<std::vector<cv::Point > >& contours
-  , int borders[2]
+  , std::vector<std::vector<cv::Point > >& contours
+  , cv::Vec<int, 4>& borders
 )
 {
   int max_points_diameter = 0;
   int min_points_diameter = std::max(imgIn.cols, imgIn.rows);
 
-  cv::Point2f center;
-  float radius;
-  std::vector<cv::Point> centerP;
-//  vector<vector<Point> > contours (10);
+  /* Initialize vector */  
+  std::vector< int >        points(contours.size());
+  std::vector< cv::Point >  centroid(contours.size());
+  std::vector< int >        majorAxis(contours.size());
+  std::vector< int >        minorAxis(contours.size());
   
-  std::vector<std::vector<cv::Point> > POINTS(contours.size());
-    
-
   for (size_t i = 0; i < contours.size(); ++i)
   {
+    cv::Point2f center;
+    float radius;
     minEnclosingCircle(contours[i], center, radius);
 
-    centerP.at(i) = { static_cast<int>(center.x) ,static_cast<int>(center.y) };
+    cv::Point centerP = { static_cast<int>(round(center.x)) 
+                        , static_cast<int>(round(center.y)) };
 
-    //= static_cast<int>(center.x) ;//static_cast<int>(center.y)
+    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
+       && (centerP.y>borders[1] && centerP.y<borders[3]))
+    {
+      centroid.at(i) = centerP;
 
-    POINTS.push_back(centerP);
-  }
+      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+      majorAxis.at(i) = rotatedRect.size.width;
+      minorAxis.at(i) = rotatedRect.size.height;
+      
+      /* Identify circular connect components */
+      if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+      {
+        points.at(i) = 1;
+        if (majorAxis.at(i) > max_points_diameter)
+        {
+          max_points_diameter = majorAxis.at(i);
+        }
+        if (minorAxis.at(i) < min_points_diameter)
+        {
+          min_points_diameter = minorAxis.at(i);
+        }
+      } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+    }
+  } //for (size_t i = 0; i < contours.size(); ++i)
 
-  return POINTS;
+  int init = 0;
+  int n_points = std::accumulate(points.begin(), points.end(), init);
   
+  if (n_points)
+  {
+    for (size_t j = 0; j < contours.size(); ++j)
+    {
+      /* Delete little circular connect components */
+      if (majorAxis.at(j)<ceil(max_points_diameter/2))
+      {
+        points.at(j) = 0;
+      }
+    }
+  } //if (n_points)
 
+  n_points = std::accumulate(points.begin(), points.end(), init);
+  std::vector< cv::Vec<int, 3> >  outPOINTS(n_points);
+
+  if (n_points)
+  {
+    int indx = 0;
+    for (size_t k = 0; k < contours.size(); ++k)
+    {
+      if (1 == points.at(k))
+      {
+        outPOINTS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
+        indx++;
+      }
+    }
+  } //if (n_points)
+
+  return outPOINTS;
 }
