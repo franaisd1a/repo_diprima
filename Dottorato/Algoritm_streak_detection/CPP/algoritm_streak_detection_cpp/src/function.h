@@ -118,6 +118,8 @@ std::vector< cv::Vec<int, 3> > connectedComponents
 (
   cv::Mat& imgIn
   , cv::Vec<int, 4>& borders
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector< cv::Vec<int, 3> >& STREAKS
 );
 
 /**
@@ -134,8 +136,18 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
   , cv::Vec<int, 4>& borders
 );
 
-
-
-
+/**
+* connectedComponentsStreaks Found centroid of Streaks
+* @param imgIn Input image
+* @param contours Contours found by findContours function
+* @param borders Image borders
+* @return Vector with streaks coordinates
+*/
+std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
+(
+  cv::Mat& imgIn
+  , std::vector<std::vector<cv::Point> >& contours
+  , cv::Vec<int, 4>& borders
+);
 
 #endif /* FUNCTION_H */

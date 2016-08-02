@@ -286,6 +286,8 @@ std::vector< cv::Vec<int, 3> > connectedComponents
 (
   cv::Mat& imgIn
   , cv::Vec<int, 4>& borders
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector< cv::Vec<int, 3> >& STREAKS
 )
 {
   std::vector<std::vector<cv::Point> > contours;
@@ -295,10 +297,13 @@ std::vector< cv::Vec<int, 3> > connectedComponents
   findContours( imgIn, contours, hierarchy, CV_RETR_EXTERNAL
                 , CV_CHAIN_APPROX_NONE , offset);
 
-  std::vector< cv::Vec<int, 3> > POINTS;
+  
   if (contours.size() > 0)
   {
     POINTS = connectedComponentsPoints
+    (imgIn, contours, borders);
+
+    STREAKS = connectedComponentsStreaks
     (imgIn, contours, borders);
   }
   else
@@ -362,8 +367,8 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
       centroid.at(i) = centerP;
 
       cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = rotatedRect.size.width;
-      minorAxis.at(i) = rotatedRect.size.height;
+      majorAxis.at(i) = rotatedRect.size.height;
+      minorAxis.at(i) = rotatedRect.size.width;
       
       /* Identify circular connect components */
       if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
@@ -413,4 +418,114 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
   } //if (n_points)
 
   return outPOINTS;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: connectedComponentsStreaks
+* FUNCTION DESCRIPTION: Found centroid of linear connected components
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
+(
+  cv::Mat& imgIn
+  , std::vector<std::vector<cv::Point > >& contours
+  , cv::Vec<int, 4>& borders
+)
+{
+  int max_streaks_majoraxis = 0; 
+  int min_streaks_minoraxis = std::max(imgIn.cols, imgIn.rows);
+
+  /* Initialize vector */  
+  std::vector< int >        streaks(contours.size());
+  std::vector< cv::Point >  centroid(contours.size());
+  std::vector< int >        majorAxis(contours.size());
+  std::vector< int >        minorAxis(contours.size());
+  
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    cv::Point2f center;
+    float radius;
+    minEnclosingCircle(contours[i], center, radius);
+
+    cv::Point centerP = { static_cast<int>(round(center.x)) 
+                        , static_cast<int>(round(center.y)) };
+
+    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
+       && (centerP.y>borders[1] && centerP.y<borders[3]))
+    {
+      centroid.at(i) = centerP;
+
+      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+      majorAxis.at(i) = rotatedRect.size.height;
+      minorAxis.at(i) = rotatedRect.size.width;
+      
+      /* Identify linear connect components */
+      if (majorAxis.at(i) / minorAxis.at(i) > 6)
+      {
+        streaks.at(i) = 1;
+        if (majorAxis.at(i) > max_streaks_majoraxis)
+        {
+          max_streaks_majoraxis = majorAxis.at(i);
+        }
+        if (minorAxis.at(i) < min_streaks_minoraxis)
+        {
+          min_streaks_minoraxis = minorAxis.at(i);
+        }
+      } //if (majorAxis.at(i) / minorAxis.at(i) > 6)
+    }
+  } //for (size_t i = 0; i < contours.size(); ++i)
+
+  int init = 0;
+  int n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
+  
+  if (n_streaks)
+  {
+    if (n_streaks < 2)
+    {
+      min_streaks_minoraxis=2;
+    }
+    for (size_t j = 0; j < contours.size(); ++j)
+    {
+      /* Delete short linear connect components */
+      if (minorAxis.at(j) < ceil(min_streaks_minoraxis))
+      {
+        streaks.at(j) = 0;
+      }
+    }
+  } //if (n_streaks)
+  
+  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
+  
+  if (n_streaks)
+  {
+    for (size_t j = 0; j < contours.size(); ++j)
+    {
+      /* Delete short linear connect components */
+      if (majorAxis.at(j)<ceil(max_streaks_majoraxis/2))
+      {
+        streaks.at(j) = 0;
+      }
+    }
+  } //if (n_streaks)
+
+  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
+  std::vector< cv::Vec<int, 3> >  outSTREAKS(n_streaks);
+
+  if (n_streaks)
+  {
+    int indx = 0;
+    for (size_t k = 0; k < contours.size(); ++k)
+    {
+      if (1 == streaks.at(k))
+      {
+        outSTREAKS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
+        indx++;
+      }
+    }
+  } //if (n_streaks)
+
+  return outSTREAKS;
 }

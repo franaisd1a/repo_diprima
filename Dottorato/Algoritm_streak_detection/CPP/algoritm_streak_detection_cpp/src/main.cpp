@@ -144,7 +144,11 @@ int main(int argc, char** argv)
    * Connected components                                                    *
    * ----------------------------------------------------------------------- */
 
-  std::vector< cv::Vec<int, 3> > POINTS = connectedComponents(convImg, imgBorders);
+  std::vector< cv::Vec<int, 3> > POINTS;
+
+  std::vector< cv::Vec<int, 3> > STREAKS;
+  
+  connectedComponents(convImg, imgBorders, POINTS, STREAKS);
 
   int radius = 10;
   Scalar color = {0,255,0};
@@ -155,6 +159,15 @@ int main(int argc, char** argv)
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
     Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
+    circle(Img_input, center, radius, color, thickness, lineType, shift);
+
+    center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
+    circle(Img_input, center, radius, color, thickness, lineType, shift);
+  }
+
+  for (size_t i = 0; i < STREAKS.size(); ++i)
+  {
+    Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
     circle(Img_input, center, radius, color, thickness, lineType, shift);
   }
 
