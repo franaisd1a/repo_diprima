@@ -78,7 +78,7 @@ int main_2(char* name_file)
   
   
   /* ======================================================================= *
-   * Big Points detection                                                    *
+   * Points detection                                                    *
    * ======================================================================= */
 
   /* ----------------------------------------------------------------------- *
@@ -91,18 +91,27 @@ int main_2(char* name_file)
 
 
   /* ----------------------------------------------------------------------- *
+   * Median filter                                                           *
+   * ----------------------------------------------------------------------- */
+
+  int kerlen = 3;
+  Mat medianImg = medianFilter(gaussImg, kerlen);
+
+
+  /* ----------------------------------------------------------------------- *
+   * Hough transform                                                         *
+   * ----------------------------------------------------------------------- */
+
+  Mat houghImg = hough(medianImg);
+
+
+#if 0
+  /* ----------------------------------------------------------------------- *
    * Background subtraction                                                  *
    * ----------------------------------------------------------------------- */
 
   Mat backgroundSub = Img_input - gaussImg;
 
-
-  /* ----------------------------------------------------------------------- *
-   * Median filter                                                           *
-   * ----------------------------------------------------------------------- */
-
-  int kerlen = 11;
-  Mat medianImg = medianFilter(backgroundSub, kerlen);
 
 
   /* ----------------------------------------------------------------------- *
@@ -131,9 +140,13 @@ int main_2(char* name_file)
   std::vector< cv::Vec<int, 3> > STREAKS;
   
   connectedComponents(convImg, imgBorders, POINTS, STREAKS);
+  
+  Mat color_Img_input;
+  cvtColor( Img_input, color_Img_input, CV_GRAY2BGR );
 
-  int radius = 10;
-  Scalar color = {0,255,0};
+  int radius = 5;
+  Scalar colorP = {0,255,0};
+  Scalar colorS = {0,0,255};
   int thickness = -1;
   int lineType = 8;
   int shift = 0;
@@ -141,22 +154,23 @@ int main_2(char* name_file)
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
     Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
 
-    center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    /*center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
+    circle(color_Img_input, center, radius, color, thickness, lineType, shift);*/
   }
 
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
     Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
   }
 
 
   /* ----------------------------------------------------------------------- *
    * Morphology opening                                                      *
    * ----------------------------------------------------------------------- */
+#endif
 
   if (FIGURE)
   {

@@ -132,8 +132,12 @@ int main_simple(char* name_file)
   
   connectedComponents(convImg, imgBorders, POINTS, STREAKS);
 
-  int radius = 10;
-  Scalar color = {0,255,0};
+  Mat color_Img_input;
+  cvtColor( Img_input, color_Img_input, CV_GRAY2BGR );
+
+  int radius = 5;
+  Scalar colorP = {0,255,0};
+  Scalar colorS = {0,0,255};
   int thickness = -1;
   int lineType = 8;
   int shift = 0;
@@ -141,16 +145,16 @@ int main_simple(char* name_file)
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
     Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
 
-    center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    /*center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
+    circle(color_Img_input, center, radius, color, thickness, lineType, shift);*/
   }
 
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
     Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
-    circle(Img_input, center, radius, color, thickness, lineType, shift);
+    circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
   }
 
 
@@ -162,7 +166,7 @@ int main_simple(char* name_file)
   {
     // Create a window for display.
     namedWindow("Display window", WINDOW_NORMAL);
-    imshow("Display window", Img_input);
+    imshow("Display window", color_Img_input);
   }
 
   waitKey(0);

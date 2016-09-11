@@ -150,4 +150,12 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
   , cv::Vec<int, 4>& borders
 );
 
+/**
+* hough Hough transform
+* @param imgIn Input image
+* @return outImage 
+*/
+cv::Mat hough(cv::Mat& imgIn);
+
+
 #endif /* FUNCTION_H */

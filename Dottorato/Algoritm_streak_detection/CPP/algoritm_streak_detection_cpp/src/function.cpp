@@ -529,3 +529,54 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 
   return outSTREAKS;
 }
+
+  /* ==========================================================================
+*        FUNCTION NAME: hough
+* FUNCTION DESCRIPTION: Hough transform
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat hough(cv::Mat& imgIn)
+{
+  cv::Mat imgOut, binImg, color_dst;
+    
+  double maxval = 255.0;
+  double level = 0.0;
+  
+  level = threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
+
+  level = level * 1.5;
+  
+  threshold(imgIn, binImg, level, maxval, cv::THRESH_BINARY);
+  
+  namedWindow("Hough binary transform", cv::WINDOW_NORMAL);
+  imshow("Hough binary transform", binImg);
+
+  cvtColor( binImg, color_dst, CV_GRAY2BGR );
+
+  double rho = 0.5;
+  double theta = 0.5;
+  int threshold = 100;
+  double minLineLength= 50;
+  double maxLineGap = 1;
+  std::vector<cv::Vec4i> lines;
+
+  HoughLinesP(binImg, lines, rho, theta, threshold, minLineLength, maxLineGap);
+
+  for( size_t i = 0; i < lines.size(); i++ )
+  {
+      line( color_dst, cv::Point(lines[i][0], lines[i][1]),
+          cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+  }
+
+  if (FIGURE_1)
+  {
+    // Create a window for display.
+    namedWindow("Hough transform", cv::WINDOW_NORMAL);
+    imshow("Hough transform", color_dst);
+  }
+
+  return imgOut;
+}
