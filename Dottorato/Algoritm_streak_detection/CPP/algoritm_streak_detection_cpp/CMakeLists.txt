@@ -4,6 +4,9 @@ find_package( OpenCV REQUIRED )
 if(UNIX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
 endif()
-add_executable( algo_streak_detection ./src/main.cpp ./src/function.cpp)
+add_executable( algo_streak_detection ./src/main.cpp 
+                                      ./src/main_simple.cpp
+                                      ./src/main_2.cpp
+                                      ./src/function.cpp)
 target_link_libraries( algo_streak_detection ${OpenCV_LIBS} )
 

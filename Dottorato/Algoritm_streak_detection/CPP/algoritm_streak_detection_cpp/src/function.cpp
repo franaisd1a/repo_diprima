@@ -98,7 +98,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int kerlen)
 
 /* ==========================================================================
 *        FUNCTION NAME: medianFilter
-* FUNCTION DESCRIPTION: Median filter
+* FUNCTION DESCRIPTION: Subtraction of median filter
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -170,7 +170,7 @@ cv::Mat binarization(cv::Mat& imgIn)
   
   if (FIGURE_1)
   {
-    /*/ Create a window for display.
+    /* Create a window for display.
     namedWindow("Binary image", WINDOW_NORMAL);
     imshow("Binary image", binImg);*/
 
@@ -367,8 +367,8 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
       centroid.at(i) = centerP;
 
       cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = rotatedRect.size.height;
-      minorAxis.at(i) = rotatedRect.size.width;
+      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
+      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
       
       /* Identify circular connect components */
       if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
@@ -459,8 +459,8 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
       centroid.at(i) = centerP;
 
       cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = rotatedRect.size.height;
-      minorAxis.at(i) = rotatedRect.size.width;
+      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
+      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
       
       /* Identify linear connect components */
       if (majorAxis.at(i) / minorAxis.at(i) > 6)
