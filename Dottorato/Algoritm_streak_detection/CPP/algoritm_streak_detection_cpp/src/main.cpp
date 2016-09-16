@@ -70,10 +70,10 @@ int main(int argc, char** argv)
   char* name_file = argv[1];
 
   // Algo simple
-  //int algoSimple = main_simple(name_file);
+  int algoSimple = main_simple(name_file);
 
   // Algo 2
-  int algo2 = main_2(name_file);
+  //int algo2 = main_2(name_file);
 
   return 0;
 }
