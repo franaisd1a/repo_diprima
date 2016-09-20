@@ -31,8 +31,7 @@
 #include <numeric>
 
 #include <opencv2/opencv.hpp>
-//#include <opencv\highgui.h>
-#include <opencv/highgui.h>
+#include <opencv\highgui.h>
 
 /* ==========================================================================
 * MACROS

@@ -33,12 +33,13 @@
 #include <opencv2/opencv.hpp>
 //#include <opencv\highgui.h>
 #include <opencv/highgui.h>
+#include "opencv2/gpu/gpu.hpp"
 
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
 #define FIGURE 1U
-#define FIGURE_1 1U
+#define FIGURE_1 0U
 #define FILE 1U
 #define CLEAR 0U
 #define BACKGROUND_SUBTRACTION 1U
@@ -61,7 +62,7 @@
 * @param sigma Filter standard deviation
 * @return outImage Filtered image
 */
-cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma);
+cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigma);
 
 /**
 * gaussianFilter Filter an image using median filter
@@ -69,7 +70,7 @@ cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma);
 * @param kerlen Little Kernel
 * @return outImage Filtered image
 */
-cv::Mat medianFilter(cv::Mat& imgIn, int kerlen);
+cv::gpu::GpuMat medianFilter(cv::gpu::GpuMat& imgIn, int kerlen);
 
 /**
 * gaussianFilter Filter an image using the difference between two median filter
@@ -88,7 +89,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
+cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_streak);
 
 /**
 * binarization Image binarization
@@ -97,8 +98,10 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::Mat binarization(cv::Mat& imgIn);
-cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
+cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn);
+#if 0
+cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag);
+#endif
 
 /**
 * convolution Convolution images
@@ -107,7 +110,7 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
 * @param threshold Threshold
 * @return outImage Convolution images
 */
-cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double threshold);
+cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double threshold);
 
 /**
 * connectedComponents Found connected components

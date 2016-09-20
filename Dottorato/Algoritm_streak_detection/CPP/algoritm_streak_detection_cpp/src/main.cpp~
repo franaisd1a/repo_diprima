@@ -81,9 +81,8 @@ int main(int argc, char** argv)
 #endif
 
   // Algo GPU
-#if 1
+
   int algo3 = main_GPU(name_file);
-#endif
 
   return 0;
 }
