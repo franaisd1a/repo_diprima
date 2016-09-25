@@ -39,7 +39,7 @@
 * ========================================================================== */
 #define FIGURE 1U
 #define FIGURE_1 1U
-#define FILE 1U
+#define FILE_READ 1U
 #define CLEAR 0U
 #define BACKGROUND_SUBTRACTION 1U
 #define DIFFERENT_THRESHOLD 1U
