@@ -25,7 +25,11 @@
 * INCLUDES
 * ========================================================================== */
 #include "function.h"
+#include "macros.h"
 
+#include <stdio.h>
+#include <iostream>
+#include <fstream>
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
@@ -58,6 +62,10 @@ using namespace std;
 * ========================================================================== */
 int main_simple(char* name_file)
 {
+  /* Open file */
+  FILE * pFile;
+  pFile = fopen ("consoleSimple.txt","w");
+   
   // Read file
   Mat Img_input = imread(name_file, CV_LOAD_IMAGE_GRAYSCALE );
     
@@ -71,67 +79,74 @@ int main_simple(char* name_file)
   int depth = Img_input.depth();
   cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
   cv::Point_<double> borders = { 0.015, 0.985 };
-  Vec<int, 4> imgBorders = {  static_cast<int>(ceil(borders.x * I_input_size.x))
-                            , static_cast<int>(ceil(borders.x * I_input_size.y))
-                            , static_cast<int>(floor(borders.y * I_input_size.x))
-                            , static_cast<int>(floor(borders.y * I_input_size.y))};
+  Vec<int, 4> imgBorders = {static_cast<int>(ceil( borders.x * I_input_size.x))
+                          , static_cast<int>(ceil( borders.x * I_input_size.y))
+                          , static_cast<int>(floor(borders.y * I_input_size.x))
+                          , static_cast<int>(floor(borders.y * I_input_size.y))};
   
+  fprintf(pFile, "Image channels: %d\n", channels);
+  fprintf(pFile, "Image depth bit: %d\n", depth);
   
-  /* ======================================================================= *
-   * Big Points detection                                                    *
-   * ======================================================================= */
+/* ======================================================================= *
+ * Big Points detection                                                    *
+ * ======================================================================= */
 
-  /* ----------------------------------------------------------------------- *
-   * Gaussian filter                                                         *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Gaussian filter                                                         *
+ * ----------------------------------------------------------------------- */
 
   int hsize[2] = {101, 101};
   double sigma = 30;
   Mat gaussImg = gaussianFilter(Img_input, hsize, sigma);
 
+  fprintf(pFile, "End Gaussian filter\n");
 
-  /* ----------------------------------------------------------------------- *
-   * Background subtraction                                                  *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Background subtraction                                                  *
+ * ----------------------------------------------------------------------- */
 
   Mat backgroundSub = Img_input - gaussImg;
 
+  fprintf(pFile, "End Background subtraction\n");
 
-  /* ----------------------------------------------------------------------- *
-   * Median filter                                                           *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Median filter                                                           *
+ * ----------------------------------------------------------------------- */
 
   int kerlen = 11;
   Mat medianImg = medianFilter(backgroundSub, kerlen);
 
+  fprintf(pFile, "End Median filter\n");
 
-  /* ----------------------------------------------------------------------- *
-   * Binarization                                                            *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Binarization                                                            *
+ * ----------------------------------------------------------------------- */
 
   Mat binaryImg = binarization(medianImg);
 
+  fprintf(pFile, "End Binarization\n");
 
-  /* ----------------------------------------------------------------------- *
-   * Convolution kernel                                                      *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Convolution kernel                                                      *
+ * ----------------------------------------------------------------------- */
 
   int szKernel = 3;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
   double threshConv = szKernel*szKernel;
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   
+  fprintf(pFile, "End Convolution kernel\n");
 
-  /* ----------------------------------------------------------------------- *
-   * Hough transform                                                         *
-   * ----------------------------------------------------------------------- */
-
+/* ----------------------------------------------------------------------- *
+ * Hough transform                                                         *
+ * ----------------------------------------------------------------------- */
+#if 0
   Mat houghImg = hough(medianImg);
+#endif
 
-
-  /* ----------------------------------------------------------------------- *
-   * Connected components                                                    *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Connected components                                                    *
+ * ----------------------------------------------------------------------- */
 
   std::vector< cv::Vec<int, 3> > POINTS;
 
@@ -165,9 +180,9 @@ int main_simple(char* name_file)
   }
 
 
-  /* ----------------------------------------------------------------------- *
-   * Morphology opening                                                      *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Morphology opening                                                      *
+ * ----------------------------------------------------------------------- */
 
   if (FIGURE)
   {
@@ -176,6 +191,7 @@ int main_simple(char* name_file)
     imshow("Display window", color_Img_input);
   }
 
-  waitKey(0);
+  fclose(pFile);
+  
   return 0;
 }
