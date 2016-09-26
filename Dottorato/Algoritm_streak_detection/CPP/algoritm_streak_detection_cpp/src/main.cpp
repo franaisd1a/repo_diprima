@@ -31,7 +31,7 @@
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
-
+ 
 /* ==========================================================================
 * MODULE PRIVATE TYPE DECLARATIONS
 * ========================================================================== */
@@ -47,8 +47,6 @@
 /* ==========================================================================
 * NAME SPACE
 * ========================================================================== */
-using namespace cv;
-using namespace std;
 
 /* ==========================================================================
 *        FUNCTION NAME: main
@@ -62,7 +60,7 @@ int main(int argc, char** argv)
 {
   // Check for invalid input
   if (argc != 2)  {
-    cout << "Error: insert input argument." << endl;
+    std::cout << "Error: insert input argument." << std::endl;
     return -1;
   }
 
@@ -70,20 +68,58 @@ int main(int argc, char** argv)
   //char* name_file = "C:\\Users\\diprima\\Desktop\\scontoMOTO.PNG";
   char* name_file = argv[1];
 
+  clock_t start, stop;
+	double totalTime;
+
+  std::cout << "Start streaks points detection algorithms." << std::endl;
+
+/* ------------------------------- AlgoSimple ------------------------------- */
+
+  start = clock();
+	
   // Algo simple
-#if 0
-  int algoSimple = main_simple(name_file);
+  int algoSimple = 0;
+#if 1
+  algoSimple = main_simple(name_file);
 #endif
+
+  stop = clock();
+	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  
+  std::cout << "algoSimple time: " << totalTime << std::endl;
+
+/* --------------------------------- Algo2 ---------------------------------- */
+
+  start = clock();
 
   // Algo 2
+  int algo2 = 0;
 #if 0  
-  int algo2 = main_2(name_file);
+  algo2 = main_2(name_file);
 #endif
 
+  stop = clock();
+	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+  std::cout << "algo2 time: " << totalTime << std::endl;
+
+/* -------------------------------- AlgoGPU --------------------------------- */
+  
+  start = clock();
+  
   // Algo GPU
+  int algoGPU = 0;
 #if 1
-  int algo3 = main_GPU(name_file);
+  algoGPU = main_GPU(name_file);
 #endif
 
-  return 0;
+  stop = clock();
+	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+  std::cout << "algoGPU time: " << totalTime << std::endl;
+
+  //waitKey(0);
+  
+
+  return algoSimple+algo2+algoGPU;
 }

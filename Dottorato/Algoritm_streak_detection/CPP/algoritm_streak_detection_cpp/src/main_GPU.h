@@ -36,7 +36,7 @@
 /* ==========================================================================
 * FUNCTION DECLARATION
 * ========================================================================== */
-
+ 
 /**
 * main_GPU Algo simple for streaks and points detection on GPU
 * @param imgIn Input image

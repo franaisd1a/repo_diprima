@@ -25,6 +25,7 @@
 * INCLUDES
 * ========================================================================== */
 #include "function.h"
+#include "macros.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -58,6 +59,10 @@ using namespace std;
 * ========================================================================== */
 int main_2(char* name_file)
 {
+  /* Open file */
+  FILE * pFile;
+  pFile = fopen ("console2.txt","w");
+   
   // Read file
   Mat Img_input = imread(name_file, CV_LOAD_IMAGE_GRAYSCALE );
     
@@ -76,14 +81,16 @@ int main_2(char* name_file)
                             , static_cast<int>(floor(borders.y * I_input_size.x))
                             , static_cast<int>(floor(borders.y * I_input_size.y))};
   
+  fprintf(pFile, "Image channels: %d", channels);
+  fprintf(pFile, "Image depth bit: %d", depth);
   
-  /* ======================================================================= *
-   * Points detection                                                    *
-   * ======================================================================= */
+/* ======================================================================= *
+ * Points detection                                                    *
+ * ======================================================================= */
 
-  /* ----------------------------------------------------------------------- *
-   * Gaussian filter                                                         *
-   * ----------------------------------------------------------------------- */
+/* ----------------------------------------------------------------------- *
+ * Gaussian filter                                                         *
+ * ----------------------------------------------------------------------- */
 
   int hsize[2] = {101, 101};
   double sigma = 30;
@@ -179,6 +186,8 @@ int main_2(char* name_file)
     imshow("Display window", Img_input);
   }
 
-  waitKey(0);
+   
+  fclose(pFile);
+  
   return 0;
 }

@@ -37,14 +37,14 @@
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
-#define FIGURE 1U
+/*#define FIGURE 1U
 #define FIGURE_1 1U
-#define FILE 1U
+#define READ_FILE 1U
 #define CLEAR 0U
 #define BACKGROUND_SUBTRACTION 1U
 #define DIFFERENT_THRESHOLD 1U
 #define FIT 1U
-#define DILATE 1U
+#define DILATE 1U*/
 
 /* ==========================================================================
 * CLASS DECLARATION

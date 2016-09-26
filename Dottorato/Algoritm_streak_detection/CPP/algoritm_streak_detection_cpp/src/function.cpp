@@ -25,6 +25,7 @@
 * INCLUDES
 * ========================================================================== */
 #include "function.h"
+#include "macros.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -195,7 +196,7 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag)
   cv::Mat imgOut, binImg;
   cv::Mat subBImgTL, subBImgTR, subBImgBL, subBImgBR;
 
-  cv::Point imgSz = { imgIn.rows, imgIn.cols };
+  //cv::Point imgSz = { imgIn.rows, imgIn.cols };
 
   /*int dims[] = { 5, 1 };
   cv::Mat level(2, dims, CV_64F);*/
@@ -259,10 +260,11 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
 
   filter2D(imgIn, convImg, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
 
-  double level = 0.0;
+  //double level = 0.0;
   double maxval = 255.0;
 
-  level = cv::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
+  //level = cv::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
+  cv::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
 
   if (FIGURE_1)
   {
@@ -315,7 +317,7 @@ std::vector< cv::Vec<int, 3> > connectedComponents
   {
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgIn.size(), CV_8UC3);
-    for (int i = 0; i < contours.size(); i++)
+    for (uint i = 0; i < contours.size(); i++)
     {
       cv::Scalar color = cv::Scalar(0, 255, 0);
       drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point());

@@ -25,6 +25,7 @@
 * INCLUDES
 * ========================================================================== */
 #include "function_GPU.h"
+#include "macros.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -46,8 +47,7 @@
 * NAME SPACE
 * ========================================================================== */
 
-
-
+ 
 /* ==========================================================================
 *        FUNCTION NAME: gaussianFilter
 * FUNCTION DESCRIPTION: Gaussian lowpass filter
@@ -63,11 +63,8 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
   cv::Size h = { hsize[0], hsize[1] };
 
   int columnBorderType=-1;
-  gpu::GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT, columnBorderType);
+  cv::gpu::GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT, columnBorderType);
   
-  /*gpu::GaussianBlur(const GpuMat& src, GpuMat& dst, Size ksize, double sigma1, 
-  double sigma2=0, int rowBorderType=BORDER_DEFAULT, int columnBorderType=-1 )*/
-
   if (FIGURE_1)
   {
     cv::Mat result_host;
@@ -81,46 +78,27 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: medianFilter
-* FUNCTION DESCRIPTION: Median filter
+*        FUNCTION NAME: subtractImage
+* FUNCTION DESCRIPTION: Subtraction of image, matrix-matrix difference.
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat medianFilter(cv::Mat& imgIn, int kerlen)
+cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
 {
-  cv::Mat imgOut;
-
-  medianBlur(imgIn, imgOut, kerlen);
-
+  cv::gpu::GpuMat imgOut;
+  cv::gpu::subtract(imgA, imgB, imgOut);
+  
   if (FIGURE_1)
   {
+    cv::Mat result_host;
+    imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Median filter", cv::WINDOW_NORMAL);
-    imshow("Median filter", imgOut);
+    namedWindow("Subtracted image", cv::WINDOW_NORMAL);
+    imshow("Subtracted image", result_host);
   }
-
-  return imgOut;
-}
-
-/* ==========================================================================
-*        FUNCTION NAME: medianFilter
-* FUNCTION DESCRIPTION: Subtraction of median filter
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen)
-{
-  cv::Mat imgOut, imgBigKer;
-
-  medianBlur(imgIn, imgOut, littleKerlen);
-  medianBlur(imgIn, imgBigKer, bigKerlen);
-
-  imgOut = imgOut - imgBigKer;
-
+  
   return imgOut;
 }
 
@@ -142,7 +120,7 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
   //InputArray kernel;
   cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1));
 
-  cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter)
+  cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter);
     
   if (FIGURE_1)
   {
@@ -268,14 +246,12 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double thre
 
   int ddepth = -1;
   cv::Point anchor = cv::Point(-1, -1);
-  double delta = 0;
+  
+  cv::gpu::filter2D(imgIn, convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT);
 
-  gpu::filter2D(imgIn, convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT);
-
-  double level = 0.0;
   double maxval = 255.0;
 
-  level = cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
+  cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
   
   if (FIGURE_1)
   {
@@ -297,6 +273,7 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double thre
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
+#if 0
 std::vector< cv::Vec<int, 3> > connectedComponents
 (
   cv::Mat& imgIn
@@ -595,5 +572,6 @@ cv::Mat hough(cv::Mat& imgIn)
 
   return imgOut;
 }
+#endif
 
 

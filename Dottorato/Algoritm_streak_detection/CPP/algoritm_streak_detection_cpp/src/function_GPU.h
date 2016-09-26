@@ -17,8 +17,8 @@
 *
 * ========================================================================== */
 
-#ifndef FUNCTION_H
-#define FUNCTION_H
+#ifndef FUNCTION_GPU_H
+#define FUNCTION_GPU_H
 
 /* ==========================================================================
 * INCLUDE: Basic include file.
@@ -38,14 +38,6 @@
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
-#define FIGURE 1U
-#define FIGURE_1 0U
-#define FILE 1U
-#define CLEAR 0U
-#define BACKGROUND_SUBTRACTION 1U
-#define DIFFERENT_THRESHOLD 1U
-#define FIT 1U
-#define DILATE 1U
 
 /* ==========================================================================
 * CLASS DECLARATION
@@ -65,21 +57,12 @@
 cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigma);
 
 /**
-* gaussianFilter Filter an image using median filter
-* @param imgIn Input image
-* @param kerlen Little Kernel
-* @return outImage Filtered image
+* subtractImage Subtraction of image, matrix-matrix difference
+* @param imgA Input image A
+* @param imgB Input image B
+* @return outImage Subtracted image
 */
-cv::gpu::GpuMat medianFilter(cv::gpu::GpuMat& imgIn, int kerlen);
-
-/**
-* gaussianFilter Filter an image using the difference between two median filter
-* @param imgIn Input image
-* @param littleKerlen Little Kernel
-* @param bigKerlen Big Kernel
-* @return outImage Filtered image
-*/
-cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
+cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB);
 
 /**
 * morphologyOpen Morphology opening on image with a rectangular kernel rotate of
@@ -112,6 +95,7 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag);
 */
 cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double threshold);
 
+#if 0
 /**
 * connectedComponents Found connected components
 * @param imgIn Input image
@@ -160,6 +144,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 * @return outImage 
 */
 cv::Mat hough(cv::Mat& imgIn);
+#endif
 
+#endif /* FUNCTION_GPU_H */
 
-#endif /* FUNCTION_H */
