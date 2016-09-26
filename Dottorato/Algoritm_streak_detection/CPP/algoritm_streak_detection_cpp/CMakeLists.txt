@@ -7,8 +7,8 @@ endif()
 add_executable( algo_streak_detection ./src/main.cpp 
                                       ./src/main_simple.cpp
                                       ./src/main_2.cpp
-                                      ./src/main_GPU.cpp
                                       ./src/function.cpp
+				                              ./src/main_GPU.cpp
                                       ./src/function_GPU.cpp)
 target_link_libraries( algo_streak_detection ${OpenCV_LIBS} )
 
