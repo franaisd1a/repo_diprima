@@ -24,6 +24,8 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+#include <time.h>
+
 #include "main_2.h"
 #include "main_simple.h"
 #include "main_GPU.h"
@@ -121,11 +123,11 @@ int main(int argc, char** argv)
   std::cout << "algoGPU time: " << totalTime << std::endl;
 
   // Test fits
-#if 1
+#if 0
   int testFits = main_fits(name_file);
 #endif
 
-  //waitKey(0);
+  cv::waitKey(0);
 
   return algoSimple+algo2+algoGPU;
 
