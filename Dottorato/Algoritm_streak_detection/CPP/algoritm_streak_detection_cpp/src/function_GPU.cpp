@@ -72,8 +72,8 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Gaussain filter", cv::WINDOW_NORMAL);
-    imshow("Gaussain filter", result_host);
+    namedWindow("Gaussain filter GPU", cv::WINDOW_NORMAL);
+    imshow("Gaussain filter GPU", result_host);
   }
 
   return imgOut;
@@ -100,8 +100,8 @@ cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Subtracted image", cv::WINDOW_NORMAL);
-    imshow("Subtracted image", result_host);
+    namedWindow("Subtracted image GPU", cv::WINDOW_NORMAL);
+    imshow("Subtracted image GPU", result_host);
   }
   
   return imgOut;
@@ -134,8 +134,8 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
-    imshow("Morphology opening with rectangular kernel", result_host);
+    namedWindow("Morphology opening with rectangular kernel GPU", cv::WINDOW_NORMAL);
+    imshow("Morphology opening with rectangular kernel GPU", result_host);
   }
 
   return imgOut;
@@ -164,7 +164,7 @@ cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn)
   
   level = cv::gpu::threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
   
-  level = level * 1.5;
+  level = level * 2.5;//1.5
   
   cv::gpu::threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
@@ -177,8 +177,8 @@ cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn)
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
-    imshow("Binary image Otsu threshold", result_host);
+    namedWindow("Binary image Otsu threshold GPU", cv::WINDOW_NORMAL);
+    imshow("Binary image Otsu threshold GPU", result_host);
   }
 
   return imgOut;
@@ -257,8 +257,9 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, doubl
   cv::gpu::GpuMat imgOut = 
     cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
     
-  cv::gpu::GpuMat convImg = 
-    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());      
+  /*cv::gpu::GpuMat convImg = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());*/
+  cv::gpu::GpuMat convImg;      
     
   /*kernel_size = 3 + 2 * (ind % 5);
   kernel = Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size*kernel_size);*/
@@ -268,12 +269,17 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, doubl
   cv::gpu::Stream stream;
   stream.Null();
   
-  std::cout << "imageIn type: " << imgIn.type() << std::endl;
+  std::cout << "prima di filter2d " << std::endl;
+  cv::gpu::filter2D(imgIn, convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT);
+  std::cout << "dopo di filter2d " << std::endl;
+/*thresh=1;
+  cv::gpu::boxFilter(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ddepth, kernel, anchor, stream);
+*/
   
-  cv::gpu::filter2D(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT, stream);
+/*cv::Size ksize(3, 3);
+  cv::gpu::blur(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ksize, anchor, stream);
+*/  
   
-//gpu::filter2D(const GpuMat& src, GpuMat& dst, int ddepth, const Mat& kernel, Point anchor=Point(-1,-1), int borderType=BORDER_DEFAULT, Stream& stream=Stream::Null())
-
   double maxval = 255.0;
     
   cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
@@ -284,45 +290,12 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, doubl
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Convolution image", cv::WINDOW_NORMAL);
-    imshow("Convolution image", result_host);
+    namedWindow("Convolution image GPU", cv::WINDOW_NORMAL);
+    imshow("Convolution image GPU", result_host);
 
   }
   return imgOut;
 }
-
-#if 0
-/* ==========================================================================
-*        FUNCTION NAME: connectedComponents
-* FUNCTION DESCRIPTION: Found connected component
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-void callKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst)
-{
-  if (src.isContinuous() && dst.isContinuous())
-  {
-  
-    cudaKernel(src, dst);
-#if 0    
-    dim3 cthreads(16, 16);
-  
-    dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
-                    static_cast<double>(cthreads.x)))
-               , static_cast<int>(std::ceil(src.size().height / 
-                    static_cast<double>(cthreads.y))));
-
-    medianKernel<<<cblocks, cthreads>>>(src, dst);
-    //cudaStream_t stream = cv::cuda::StreamAccessor::getStream(_stream);
-    //myKernel<<<cblocks, cthreads, 0, stream>>>(input, output);
-  
-  //medianKernel(const cv::cuda::PtrStepSzb input, cv::cuda::PtrStepSzb output)
-#endif
-  }
-}
-#endif
 
 /* ==========================================================================
 *        FUNCTION NAME: iDivUp

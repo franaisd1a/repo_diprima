@@ -13,9 +13,10 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
 
 set(CUDA_SRC  ${SRC_PATH}/main.cpp 
               ${SRC_PATH}/main_simple.cpp
-              ${SRC_PATH}/main_2.cpp
-              ${SRC_PATH}/main_fits.cpp
-              ${SRC_PATH}/main_median.cu
+              #${SRC_PATH}/main_2.cpp
+              #${SRC_PATH}/main_fits.cpp
+              ${SRC_PATH}/main_GPU.cpp
+              ${SRC_PATH}/main_GPU_cuda.cu
               ${SRC_PATH}/function.cpp
               ${SRC_PATH}/function_GPU.cpp)
               #${SRC_PATH}/externalClass.cu)

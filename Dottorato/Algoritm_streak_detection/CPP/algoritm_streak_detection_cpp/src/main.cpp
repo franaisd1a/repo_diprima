@@ -26,11 +26,12 @@
 * ========================================================================== */
 #include <time.h>
 
-#include "main_2.h"
-#include "main_median.cuh"
+#include "main_GPU_cuda.cuh"
 #include "main_simple.h"
 #include "main_GPU.h"
-#include "main_fits.h"
+#include "macros.h"
+/*#include "main_2.h"
+#include "main_fits.h"*/
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -73,78 +74,88 @@ int main(int argc, char** argv)
   char* name_file = argv[1];
 
   clock_t start, stop;
-	double totalTime;
+	double totalTime, totalTimeCUDAkernel;
 
-  std::cout << "Start streaks points detection algorithms." << std::endl;
+  std::cout << "Start streaks points detection algorithms" << std::endl;
 
+  int repeatCycle = 10;
+
+for (int u=0; u<repeatCycle;++u)
+{
 /* ------------------------------- AlgoSimple ------------------------------- */
-
+#if 1
   start = clock();
 	
   // Algo simple
-  int algoSimple = 0;
-#if 1
-  algoSimple = main_simple(name_file);
-#endif
+
+  int algoSimple = main_simple(name_file);
+
 
   stop = clock();
 	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
-  std::cout << "algoSimple time: " << totalTime << std::endl;
-
+  //std::cout << "algoSimple time: " << totalTime << std::endl;
+  std::cout << "CPU time: " << totalTime << " sec" << std::endl;
+#endif
 /* --------------------------------- Algo2 ---------------------------------- */
-
+#if 0  
   start = clock();
 
   // Algo 2
-  int algo2 = 0;
-#if 0  
-  algo2 = main_2(name_file);
-#endif
+
+  int algo2 = main_2(name_file);
 
   stop = clock();
 	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
   std::cout << "algo2 time: " << totalTime << std::endl;
-
-/* ------------------------------- AlgoMedian ------------------------------- */
-
+#endif
+/* ----------------------------- AlgoCUDAkernel ----------------------------- */
+#if 1  
   start = clock();
 
-  // Algo 2
-  int algoMedian = 0;
-#if 1  
-  algoMedian = main_median(name_file);
-#endif
+  // AlgoCUDAkernel
+
+  int AlgoCUDAkernel = main_GPU_cuda(name_file);
+
 
   stop = clock();
-	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+	totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-  std::cout << "algoMedian time: " << totalTime << std::endl;
-
+  //std::cout << "AlgoCUDAkernel time: " << totalTimeCUDAkernel << std::endl;
+  std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
+#endif
 /* -------------------------------- AlgoGPU --------------------------------- */
-  
+#if 0
   start = clock();
   
   // Algo GPU
 
-  int algoGPU = 0;
-#if 0
-  algoGPU = main_GPU(name_file);
-#endif
+
+  int algoGPU = main_GPU(name_file);
+
 
   stop = clock();
 	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-  std::cout << "algoGPU time: " << totalTime << std::endl;
+  std::cout << "AlgoGPU time: " << totalTime << std::endl;
+#endif
 
+/* ------------------------------- TestFITS --------------------------------- */
   // Test fits
 #if 0
   int testFits = main_fits(name_file);
 #endif
+}
 
+if (repeatCycle>1)
+{
+  //std::cout << "algoSimple: " << totalTime << " AlgoCUDAkernel: "<< totalTimeCUDAkernel << std::endl;
+  std::cout << "End " << std::endl;
+}
   cv::waitKey(0);
 
-  return algoSimple+algo2+algoGPU;
+
+  return 1;
 
 }

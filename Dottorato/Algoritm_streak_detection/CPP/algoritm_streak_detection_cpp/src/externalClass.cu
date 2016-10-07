@@ -15,7 +15,7 @@ void externalClass::squareOnDevice(double *a_h, const int N) {
 }
 */
 
-void externalClass::cudaKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst)
+void externalClass::medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK)
 {
 	dim3 cthreads(16, 16);
 
@@ -24,6 +24,23 @@ void externalClass::cudaKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst)
 			   , static_cast<int>(std::ceil(src.size().height / 
 					static_cast<double>(cthreads.y))));
 
-	medianKernel<<<cblocks, cthreads>>>(src.ptr(), dst.ptr(), src.cols, src.rows);
+	medianKernel<<<cblocks, cthreads>>>(src.ptr(), dst.ptr(), src.cols, src.rows, szK);
+
+}
+
+void externalClass::convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK)
+{
+	dim3 cthreads(16, 16);
+
+	dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
+					static_cast<double>(cthreads.x)))
+			   , static_cast<int>(std::ceil(src.size().height / 
+					static_cast<double>(cthreads.y))));
+
+  /*unsigned short* arrayValue = 0;
+  size_t num_bytes = szK * szK * sizeof(unsigned short);
+  cudaMalloc 	( 	(void**)& arrayValue, num_bytes);*/
+
+	convolutionKernel<<<cblocks, cthreads>>>(src.ptr(), dst.ptr(), src.cols, src.rows, szK);
 
 }

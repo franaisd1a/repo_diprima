@@ -148,7 +148,6 @@ int main_GPU(char* name_file)
 
   int kerlen = 11;
 
-#if MEDIAN_FILTER_CPU
   /* CPU version of median filter */
   //Download data from GPU 
   cv::Mat bgSub;
@@ -156,15 +155,6 @@ int main_GPU(char* name_file)
   backgroundSub.release();
   
   Mat medianImg = medianFilter(bgSub, kerlen);
-#else
-  /* GPU version of median filter */
-  //gpu::GpuMat medianImgGPU;
-  cv::gpu::GpuMat medianImgGPU = 
-    cv::gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());  
-
-  callKernel(backgroundSub, medianImgGPU);
-  
-#endif
 
   fprintf(pFile, "End Median filter\n");
 
@@ -172,12 +162,10 @@ int main_GPU(char* name_file)
  * Binarization                                                            *
  * ----------------------------------------------------------------------- */
 
-#if MEDIAN_FILTER_CPU 
   //Move data on GPU 
   gpu::GpuMat medianImgGPU;
   medianImgGPU.upload(medianImg);
   
-#endif
 
   start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
@@ -236,17 +224,20 @@ int main_GPU(char* name_file)
   int lineType = 8;
   int shift = 0;
 
+cout << "points sz " << POINTS.size() << std::endl;
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
+    cout << "points " << i << std::endl;
     Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
     circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
 
     /*center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
     circle(color_Img_input, center, radius, color, thickness, lineType, shift);*/
   }
-
+cout << "STREAKS sz " << STREAKS.size() << std::endl;
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
+    cout << "STREAKS " << i << std::endl;
     Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
     circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
   }
@@ -259,8 +250,8 @@ int main_GPU(char* name_file)
   if (FIGURE)
   {
     // Create a window for display.
-    namedWindow("Display window", WINDOW_NORMAL);
-    imshow("Display window", color_Img_input);
+    namedWindow("Algo gpu", WINDOW_NORMAL);
+    imshow("Algo gpu", color_Img_input);
   }
 
 
@@ -272,6 +263,7 @@ int main_GPU(char* name_file)
   imshow("Display window2", result_host);
 #endif
 
+  cv::waitKey(0);
   
   fclose(pFile);
       
