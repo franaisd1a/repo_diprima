@@ -149,6 +149,9 @@ try
                              , sub2ind( imgSz ...
                                       , centroid(indexStreakValid,2) ...
                                       , centroid(indexStreakValid,1))];
+            output.majoraxis = majoraxis(indexStreakValid);
+            output.minoraxis = minoraxis(indexStreakValid);
+            output.orientation = orientation(indexStreakValid);
         end
     end
     
@@ -163,7 +166,11 @@ try
                 end
             end
             noisePoint=find(points.POINTS(:,3)<0);
-            points.POINTS(noisePoint,:)          = [];
+            points.POINTS(noisePoint,:)      = [];
+            points.majoraxis(noisePoint,:)   = [];
+            points.minoraxis(noisePoint,:)   = [];
+            points.orientation(noisePoint,:) = [];
+                        
 %             points(noisePoint,:)          = [];
 %             centroidP(noisePoint,:)       = [];
 %             areaP(noisePoint,:)           = [];

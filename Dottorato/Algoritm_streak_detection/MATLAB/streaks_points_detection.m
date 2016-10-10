@@ -11,12 +11,14 @@ global FIGURE FIGURE_1
 
 FIGURE=1;
 FIGURE_1=0;
-FILE=0;
+FILE=1;
 CLEAR=0;
 backgroundSubtraction=1;
 differentThreshold=0;
-FIT=1;
+subtractPointsImg=0;
+FIT=0;
 dilate=0;
+ELLIPSE=0;
 
 %% Input Folder
 
@@ -24,10 +26,16 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    inputDataDir='G:\Dottorato\Space debris image\SPADE\20161003';
+    %inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
 else
-    inputDataDir=wrkDir;
+    %inputDataDir=wrkDir;
+    %inputDataDir='D:\Dottorato\II anno\img detriti';
+    %inputDataDir='D:\Dottorato\Algoritm_streak_detection';
+    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005\jpegFormat';%SPADE\20161005\jpegFormat
+    inputDataDir='G:\Dottorato\Space debris image\EUTELSAT\1 Luglio 2013';
     extension='.jpg';
 end
 resultDir=fullfile(inputDataDir,'Result');
@@ -39,7 +47,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('hamr_104',extension);%hamr_186 150 209 204 170
+    name_picture=strcat('41384.00007800.TRK',extension);%hamr_186 150 209 204 170 deb_260
 end
 
 for file_number=1:length(files)
@@ -85,7 +93,8 @@ for file_number=1:length(files)
     end
     
     I_input_size = size(Img_input);
-    borders = [0.015, 0.985];   %[0.005, 0.995]
+    thickness = 0.005;%0.015 %0.005
+    borders = [thickness, 1-thickness];
     I_borders = [ceil(borders(1).*I_input_size), ...
                  floor(borders(2).*I_input_size)];
     
@@ -107,15 +116,15 @@ for file_number=1:length(files)
 
 %% Gaussian filter    
     
-    hsize=[100 100];
+    hsize=[31 31];%[100 100];
     sigma=30;%10 25
     gaussFilter = gaussianFilter( Img_input, hsize, sigma);
 
 %% Median filters
 
     if ~gaussFilter.error
-        littleKerlen=[3,3];
-%         bigKerlen=[15,15];%[21,21];
+        littleKerlen=[3,3];%[7 7];%[3,3];
+        bigKerlen=[21,21];%[15,15];%[21,21];
         madian = medianFilters( Img_input, littleKerlen);%, bigKerlen);
     end
    
@@ -135,7 +144,9 @@ for file_number=1:length(files)
 %% Hough transform
 
     if ~backgroundSub.error
-        angle = houghTransform( backgroundSub.subtractionImg);
+        %angle = houghTransform( backgroundSub.subtractionImg);
+        angle.error = 0;
+        angle.tetaStreak = 0;
     end
     
 %% Morphology opening
@@ -190,6 +201,80 @@ for file_number=1:length(files)
                                            I_borders);
     end
     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % % Median filters
+% % 
+% %     if ~gaussFilter.error
+% %         littleKerlen=[21 21];%[3,3];
+% %         bigKerlen=[15,15];%[21,21];
+% %         madianBig = medianFilters( Img_input, littleKerlen);%, bigKerlen);
+% %     end
+% %    
+% % % Background subtraction
+% % 
+% %     if ~madian.error
+% %         if backgroundSubtraction
+% %             figureName='Background subtraction image for points detection';
+% %             backgroundSubBig = imgSubtraction( madianBig.medianImg, ...
+% %                                             gaussFilter.blurImg, ...
+% %                                             figureName);
+% %         else
+% %             backgroundSubBig.subtractionImg = madianBig.medianImg;
+% %         end
+% %     end
+% % 
+% % % Morphology opening
+% % 
+% %     if ~angle.error
+% %         dimLine=40;%20
+% %         morphOpenBig = morphologyOpen( backgroundSubBig.subtractionImg, ...
+% %                                     dimLine, ...
+% %                                     angle.tetaStreak);
+% %     end
+% % 
+% % % Morphology TopHat
+% %     
+% %     if ~morphOpenBig.error
+% %         figureName='Morphology TopHat for points detection';
+% %         morphTopHatBig = imgSubtraction( backgroundSubBig.subtractionImg, ...
+% %                                       morphOpenBig.openImg, ...
+% %                                       figureName);
+% %     end
+% %     
+% % % Binarization
+% %     
+% %     if ~morphTopHatBig.error
+% %         figureName='Binary image for points detection';
+% %         pointBinaryBig = binarization( morphTopHatBig.subtractionImg, ...
+% %                                     differentThreshold, ...
+% %                                     figureName);
+% %     end
+% %     
+% % % Convolution kernel
+% %     
+% %     if ~pointBinaryBig.error
+% %         k=ones(3);
+% %         figureName='Convolution kernel for points detection';
+% %         convPointBig = convolution( pointBinaryBig.binaryImg, ...
+% %                                   k, ...
+% %                                   sum(sum(k)), ...
+% %                                   figureName);
+% %     end
+% %     
+% % % Remove Salt and Pepper Noise from Image
+% % 
+% %     if ~convPointBig.error
+% %         P=5;%3
+% %         remSalPepBig = removeSaltPepper( convPointBig.convImg, P);
+% %     end
+% % 
+% % % Connected components: streaks
+% %     
+% %     if ~remSalPepBig.error
+% %         POINTSbig = connectedComponentsPoints( remSalPepBig.remSaltPepperImg, ...
+% %                                            I_borders);
+% %     end
+% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ======================================================================= %
 %% Streaks detection
 % ======================================================================= %
@@ -218,10 +303,15 @@ for file_number=1:length(files)
 %% Points subtraction
 
     if ~dilatation.error
-        figureName='Points subtraction for streaks detection';
-        streakLessPoint = imgSubtraction( streakBinary.binaryImg, ...
-                                          dilatation.dilateImg, ...
-                                          figureName);
+        if subtractPointsImg
+            figureName='Points subtraction for streaks detection';
+            streakLessPoint = imgSubtraction( streakBinary.binaryImg, ...
+                                              dilatation.dilateImg, ...
+                                              figureName);
+        else
+            streakLessPoint.error = 0;
+            streakLessPoint.subtractionImg = streakBinary.binaryImg;
+        end
     end
     
 %% Convolution kernel for streaks detection
@@ -254,13 +344,24 @@ for file_number=1:length(files)
     end
     
 %% Plot of streaks and points    
-    
+
     if(FIGURE)
         figure(a);
         hold on;
         % Plot streaks' centroids
         if isfield(streaks, 'STREAKS')
             plot(streaks.STREAKS(:,1),streaks.STREAKS(:,2),'*r')
+            if(ELLIPSE)
+                t = linspace(0,2*pi);
+                for i=1:length(streaks.STREAKS(:,1))
+                    X1 = streaks.majoraxis(i)*cos(t)/2;
+                    Y1 = streaks.minoraxis(i)*sin(t)/2;
+                    w= -streaks.orientation(i);
+                    x = streaks.STREAKS(i,1) + X1*cosd(w) - Y1*sind(w);
+                    y = streaks.STREAKS(i,2) + X1*sind(w) + Y1*cosd(w);
+                    plot(x,y,'r')
+                end
+            end
         end
         if exist('STREAKSbig','var')
             plot(STREAKSbig(:,1),STREAKSbig(:,2),'*m')
@@ -268,15 +369,42 @@ for file_number=1:length(files)
         %Plot points' centroids
         if isfield(point, 'POINTS')
             plot(point.POINTS(:,1),point.POINTS(:,2),'+g')
+            if(ELLIPSE)
+                t = linspace(0,2*pi);
+                for i=1:length(point.POINTS(:,1))
+                    X1 = point.majoraxis(i)*cos(t)/2;
+                    Y1 = point.minoraxis(i)*sin(t)/2;
+                    w= -point.orientation(i);
+                    x = point.POINTS(i,1) + X1*cosd(w) - Y1*sind(w);
+                    y = point.POINTS(i,2) + X1*sind(w) + Y1*cosd(w);
+                    plot(x,y,'g')
+                end
+            end
         end
         if exist('POINTSbig','var')
-            plot(POINTSbig(:,1),POINTSbig(:,2),'+b')
+            if isfield(POINTSbig, 'POINTS')
+                plot(POINTSbig.POINTS(:,1),POINTSbig.POINTS(:,2),'+g')
+                if(ELLIPSE)
+                    t = linspace(0,2*pi);
+                    for i=1:length(POINTSbig.POINTS(:,1))
+                        X1 = POINTSbig.majoraxis(i)*cos(t)/2;
+                        Y1 = POINTSbig.minoraxis(i)*sin(t)/2;
+                        w= -POINTSbig.orientation(i);
+                        x = POINTSbig.POINTS(i,1) + X1*cosd(w) - Y1*sind(w);
+                        y = POINTSbig.POINTS(i,2) + X1*sind(w) + Y1*cosd(w);
+                        plot(x,y,'g')
+                    end
+                end
+            end
         end
+
+
     end
     nameFig=strcat(name,'.fig');
     pathFig=fullfile(resultDir,nameFig);
-    saveas(h,pathFig);
-    
+    if (FIGURE)
+        saveas(h,pathFig);
+    end
 %% End of process
 %Time calculation
     
@@ -289,7 +417,7 @@ for file_number=1:length(files)
         clearvars -except   timeTOT FIGURE FIGURE_1 FILE CLEAR ...
                             backgroundSubtraction differentThreshold ...
                             FIT dilate files jpg_format inputDataDir ...
-                            resultDir
+                            resultDir subtractPointsImg ELLIPSE
     end    
 end
 

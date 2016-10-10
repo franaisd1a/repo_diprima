@@ -102,11 +102,15 @@ try
                              sub2ind( imgSz, ...
                                       centroidP(find(points ==1),2) , ...
                                       centroidP(find(points ==1),1)) ];
+            output.majoraxis=majoraxisP(find(points==1));
+            output.minoraxis=minoraxisP(find(points==1));
+            output.orientation=orientationP(find(points==1));
         end
     end
     
     output.max_points_diameter=max_points_diameter;
     output.min_points_diameter=min_points_diameter;
+    
     
     tElapsed = toc(tStart);    
     disp(sprintf('End connectedComponentsPoints funtion %d sec.', tElapsed));

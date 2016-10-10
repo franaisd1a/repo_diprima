@@ -53,7 +53,7 @@ try
     level(4) = graythresh( img(end/2:end, end/2:end) );
     level(5) = graythresh( img                       );
     
-    level=level.*1.5;
+%     level=level.*1.5;
     level
     
     meanLevel   = mean  (level);

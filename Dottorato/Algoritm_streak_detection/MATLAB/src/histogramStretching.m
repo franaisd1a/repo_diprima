@@ -92,8 +92,12 @@ try
 % ----------------------------------------------------------------------- %
 
     cdfHistogram=zeros(histogram,1);
+    cdfHistogramVV=zeros(histogram,1);
+    sumCDF=0;
     for i=1:length(histogram)
-        cdfHistogram(i)=sum(histogram(1:i));
+        sumCDF = sumCDF + histogram(i);
+        cdfHistogram(i) = sumCDF;
+%         cdfHistogramVV(i)=sum(histogram(1:i));
     end
     
 % ----------------------------------------------------------------------- %
@@ -147,9 +151,11 @@ try
     if(FIGURE_1)
         figure('name','Histogram and cumulative distribution function');
         title('Histogram and cumulative distribution function');
-        semilogy(histogramXaxis, histogram);
+        %semilogy(histogramXaxis, histogram);
+        loglog(histogramXaxis, histogram);
         hold on;
-        semilogy(histogramXaxis, cdfHistogram,'r');
+%         semilogy(histogramXaxis, cdfHistogram,'r');
+        loglog(histogramXaxis, cdfHistogram,'r');
         xlabel('Grayscale value'); grid on;
         
 %         figure('name','Stretch image');

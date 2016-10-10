@@ -24,7 +24,8 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
 else
     inputDataDir=wrkDir;
