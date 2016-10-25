@@ -78,7 +78,7 @@ try
                 
 % Identify streaks
                 
-                if(majoraxis(i)/minoraxis(i)>6)%eccentricity(i,:)>0.9)
+                if(majoraxis(i)/minoraxis(i)>4)%6
                     streaks(i)=1;
                     if(min_streaks_minoraxis>minoraxis(i,:))
                         min_streaks_minoraxis=minoraxis(i,:);
@@ -160,24 +160,27 @@ try
         if isfield(output,'STREAKS')
             for j=1:length(output.STREAKS(:,1))
                 for i=1:length(points.POINTS(:,1))
-                    if(find(PixelIdxListStreaks{1,j}==points.POINTS(i,3)))
-                        points.POINTS(i,3)=-1;
+%                     if(find(PixelIdxListStreaks{1,j}==points.POINTS(i,3)))
+%                         points.POINTS(i,3)=-1;
+%                     end
+                    if(find(output.STREAKS(j,3)==points.pixelIdxListPoints{1,i}))
+                        output.STREAKS(j,3)=-1;
                     end
                 end
             end
-            noisePoint=find(points.POINTS(:,3)<0);
-            points.POINTS(noisePoint,:)      = [];
-            points.majoraxis(noisePoint,:)   = [];
-            points.minoraxis(noisePoint,:)   = [];
-            points.orientation(noisePoint,:) = [];
+            
+            noiseStreak=find(output.STREAKS(:,3)<0);
+            output.STREAKS(noiseStreak,:)     = [];
+            output.majoraxis(noiseStreak,:)   = [];
+            output.minoraxis(noiseStreak,:)   = [];
+            output.orientation(noiseStreak,:) = [];
+%             noisePoint=find(points.POINTS(:,3)<0);
+%             points.POINTS(noisePoint,:)      = [];
+%             points.majoraxis(noisePoint,:)   = [];
+%             points.minoraxis(noisePoint,:)   = [];
+%             points.orientation(noisePoint,:) = [];
                         
-%             points(noisePoint,:)          = [];
-%             centroidP(noisePoint,:)       = [];
-%             areaP(noisePoint,:)           = [];
-%             eccentricityP(noisePoint,:)   = [];
-%             majoraxisP(noisePoint,:)      = [];
-%             minoraxisP(noisePoint,:)      = [];
-%             orientationP(noisePoint,:)    = [];
+
         end
     end
     

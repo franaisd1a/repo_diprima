@@ -41,16 +41,21 @@ try
 
     tStart=tic;
     
-    level = graythresh( img );
-    binaryImg = im2bw(img, level);
+    if islogical(img)
+        binaryImg = img;
+    else
+        level = graythresh( img );
+        binaryImg = im2bw(img, level);
+    end
     
     [H,T,R] = hough(binaryImg,'RhoResolution',0.5,'ThetaResolution',0.5);
     
     %P  = houghpeaks(H,5,'threshold',ceil(0.3*max(H(:))));
-    P  = houghpeaks(H,1,'threshold',ceil(0.9*max(H(:))),'NHoodSize',[31 31]);
+    P  = houghpeaks(H,5,'threshold',ceil(0.9*max(H(:))),'NHoodSize',[31 31]);
     x = T(P(:,2));
     y = R(P(:,1));
-    output.tetaStreak=x+90;
+    output.tetaStreak=unique(x)+90;
+    
     
     if(FIGURE_1)
         figure('name','Hough transform');

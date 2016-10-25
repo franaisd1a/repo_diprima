@@ -47,7 +47,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00008029.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('41384.00007909.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
@@ -114,87 +114,38 @@ for file_number=1:length(files)
 %% Points detection
 % ======================================================================= %
 
-%% Gaussian filter    
-    
-    hsize=[31 31];%[100 100];
-    sigma=30;%10 25
-    gaussFilter = gaussianFilter( Img_input, hsize, sigma);
-    meanFIlter = mean2(Img_input);
-
 %% Median filters
-
-    if ~gaussFilter.error
-        littleKerlen=[3,3];%[7 7];%[3,3];
-        bigKerlen=[21,21];%[15,15];%[21,21];
-        madian = medianFilters( Img_input, littleKerlen);%, bigKerlen);
-    end
+    
+    littleKerlen=[3,3];%[7 7];%[3,3];
+    madian = medianFilters( Img_input, littleKerlen);
    
-%% Background subtraction
-
-    if ~madian.error
-        if backgroundSubtraction
-            figureName='Background subtraction image for points detection';
-            backgroundSub = imgSubtraction( madian.medianImg, ...
-                                            gaussFilter.blurImg, ...
-                                            figureName);
-        else
-            backgroundSub.subtractionImg = madian.medianImg;
-        end
-    end
-    
-%% Hough transform
-
-    if ~backgroundSub.error
-        %angle = houghTransform( backgroundSub.subtractionImg);
-        angle.error = 0;
-        angle.tetaStreak = 0;
-    end
-    
-%% Morphology opening
-
-    if ~angle.error
-        dimLine=40;%20
-        morphOpen = morphologyOpen( backgroundSub.subtractionImg, ...
-                                    dimLine, ...
-                                    angle.tetaStreak);
-    end
-
-%% Morphology TopHat
-    
-    if ~morphOpen.error
-        figureName='Morphology TopHat for points detection';
-        morphTopHat = imgSubtraction( backgroundSub.subtractionImg, ...
-                                      morphOpen.openImg, ...
-                                      figureName);
-    end
-    
 %% Binarization
-    
-    if ~morphTopHat.error
-        figureName='Binary image for points detection';
-        pointBinary = binarization( morphTopHat.subtractionImg, ...
-                                    differentThreshold, ...
-                                    figureName);
+        
+    threshold = 150/255;%220
+    bynInputImg = im2bw(madian.medianImg, threshold);
+    if(FIGURE_1)
+        figureName='Binary image';
+        figure('name',figureName);
+        imshow(bynInputImg);
     end
-    
+
 %% Convolution kernel
-    
-    if ~pointBinary.error
-        k=ones(3);
-        figureName='Convolution kernel for points detection';
-        convPoint = convolution( pointBinary.binaryImg, ...
-                                  k, ...
-                                  sum(sum(k)), ...
-                                  figureName);
-    end
-    
+        
+    k=ones(3);
+    figureName='Convolution kernel for points detection';
+    convThreshold = 6;
+    convPoint = convolution( bynInputImg, ...
+                             k, ...
+                             convThreshold, ...
+                             figureName);
+
 %% Remove Salt and Pepper Noise from Image
 
     if ~convPoint.error
         P=5;%3
         remSalPep = removeSaltPepper( convPoint.convImg, P);
     end
-
+    
 %% Connected components: streaks
     
     if ~remSalPep.error
@@ -202,139 +153,77 @@ for file_number=1:length(files)
                                            I_borders);
     end
     
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% % % Median filters
-% % 
-% %     if ~gaussFilter.error
-% %         littleKerlen=[21 21];%[3,3];
-% %         bigKerlen=[15,15];%[21,21];
-% %         madianBig = medianFilters( Img_input, littleKerlen);%, bigKerlen);
-% %     end
-% %    
-% % % Background subtraction
-% % 
-% %     if ~madian.error
-% %         if backgroundSubtraction
-% %             figureName='Background subtraction image for points detection';
-% %             backgroundSubBig = imgSubtraction( madianBig.medianImg, ...
-% %                                             gaussFilter.blurImg, ...
-% %                                             figureName);
-% %         else
-% %             backgroundSubBig.subtractionImg = madianBig.medianImg;
-% %         end
-% %     end
-% % 
-% % % Morphology opening
-% % 
-% %     if ~angle.error
-% %         dimLine=40;%20
-% %         morphOpenBig = morphologyOpen( backgroundSubBig.subtractionImg, ...
-% %                                     dimLine, ...
-% %                                     angle.tetaStreak);
-% %     end
-% % 
-% % % Morphology TopHat
-% %     
-% %     if ~morphOpenBig.error
-% %         figureName='Morphology TopHat for points detection';
-% %         morphTopHatBig = imgSubtraction( backgroundSubBig.subtractionImg, ...
-% %                                       morphOpenBig.openImg, ...
-% %                                       figureName);
-% %     end
-% %     
-% % % Binarization
-% %     
-% %     if ~morphTopHatBig.error
-% %         figureName='Binary image for points detection';
-% %         pointBinaryBig = binarization( morphTopHatBig.subtractionImg, ...
-% %                                     differentThreshold, ...
-% %                                     figureName);
-% %     end
-% %     
-% % % Convolution kernel
-% %     
-% %     if ~pointBinaryBig.error
-% %         k=ones(3);
-% %         figureName='Convolution kernel for points detection';
-% %         convPointBig = convolution( pointBinaryBig.binaryImg, ...
-% %                                   k, ...
-% %                                   sum(sum(k)), ...
-% %                                   figureName);
-% %     end
-% %     
-% % % Remove Salt and Pepper Noise from Image
-% % 
-% %     if ~convPointBig.error
-% %         P=5;%3
-% %         remSalPepBig = removeSaltPepper( convPointBig.convImg, P);
-% %     end
-% % 
-% % % Connected components: streaks
-% %     
-% %     if ~remSalPepBig.error
-% %         POINTSbig = connectedComponentsPoints( remSalPepBig.remSaltPepperImg, ...
-% %                                            I_borders);
-% %     end
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ======================================================================= %
 %% Streaks detection
 % ======================================================================= %
 
-%% Binarization of the morphological opening image for streaks detection
+%% Hough transform
 
-    if ~point.error
-        figureName='Binary image for streaks detection';
-        streakBinary = binarization( morphOpen.openImg, ...
-                                     ~differentThreshold, ...
-                                     figureName);
-    end
-    
-%% Morphology dilation
-
-    if ~streakBinary.error
-        if dilate
-            dilatation = morphologyDilatation( remSalPep.remSaltPepperImg, ...
-                                               point.min_points_diameter/2)
-        else
-            dilatation.error=0;
-            dilatation.dilateImg=remSalPep.remSaltPepperImg;
+    if ~convPoint.error
+        B = imresize(convPoint.convImg,0.5);
+        B2= im2bw(B, 0.1);
+        if(FIGURE_1)
+            figure('name','Downsample image');
+            imshow(B2);
         end
+        angle = houghTransform( B2 );%convPoint.convImg );
     end
-    
-%% Points subtraction
 
-    if ~dilatation.error
-        if subtractPointsImg
-            figureName='Points subtraction for streaks detection';
-            streakLessPoint = imgSubtraction( streakBinary.binaryImg, ...
-                                              dilatation.dilateImg, ...
-                                              figureName);
-        else
-            streakLessPoint.error = 0;
-            streakLessPoint.subtractionImg = streakBinary.binaryImg;
-        end
-    end
+% Sum binary image
+    sumStraksImg = false(I_input_size(1),I_input_size(2));
+    %sumStraksImg = logical(sumStraksImg);
     
+    for b=1:length(angle.tetaStreak)
+        
+%% Morphology opening
+        angle.tetaStreak(b)
+        if ~angle.error
+            dimLine=20;%40
+            morphOpen = morphologyOpen( convPoint.convImg, ...
+                                        dimLine, ...
+                                        angle.tetaStreak(b));
+        end
+
 %% Convolution kernel for streaks detection
     
-    if ~streakLessPoint.error
-        k=ones(1,21);
-        convThreshold=9;
-        figureName='Covolution kernel for streak detection';
-        convStreak = convolution( streakLessPoint.subtractionImg, ...
-                                  k, ...
-                                  convThreshold, ...
-                                  figureName);
+        if ~morphOpen.error
+            len=21;
+            theta = -angle.tetaStreak(b) * pi / 180;
+            x = round((len-1)/2 * cos(theta));
+            y = -round((len-1)/2 * sin(theta));
+            [c,r] = iptui.intline(-x,x,-y,y);
+            M = 2*max(abs(r)) + 1;
+            N = 2*max(abs(c)) + 1;
+            nhood = zeros(M,N);
+            idx = sub2ind([M N], r + max(abs(r)) + 1, c + max(abs(c)) + 1);
+            nhood(idx) = 1;
+            
+            convThreshold=9;
+            figureName='Covolution kernel for streak detection';
+            convStreak = convolution( morphOpen.openImg, ...
+                                      nhood, ...
+                                      convThreshold, ...
+                                      figureName);
+        end
+        
+%% Binary image with streaks
+
+        sumStraksImg = sumStraksImg + convStreak.convImg;
+        
     end
     
 %% Connected components: streaks
     
-    if ~convStreak.error
-        streaks = connectedComponentsStreaks( convStreak.convImg, ...
+    if ~point.error
+        streaks = connectedComponentsStreaks( sumStraksImg, ... %convStreak.convImg, ...
                                             I_borders, ...
                                             point);
     end
-        
+
+% ======================================================================= %
+%% End computation
+% ======================================================================= %
+
 %% Write result    
     
     nameTXT=strcat(name,'.txt');
