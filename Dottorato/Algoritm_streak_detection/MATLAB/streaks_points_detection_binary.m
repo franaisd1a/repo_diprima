@@ -11,12 +11,12 @@ global FIGURE FIGURE_1
 
 FIGURE=1;
 FIGURE_1=0;
-FILE=0;
+FILE=1;
 CLEAR=0;
 backgroundSubtraction=1;
 differentThreshold=0;
 subtractPointsImg=0;
-FIT=0;
+FIT=1;
 dilate=0;
 ELLIPSE=0;
 
@@ -26,8 +26,10 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
-    inputDataDir='G:\Dottorato\Space debris image\SPADE\20161003';
+    inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
+    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161003';
+    %inputDataDir='D:\Dottorato\Space debris image\Loiano';
     %inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
 else
@@ -47,7 +49,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00007909.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('41384.00007947.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
@@ -118,7 +120,7 @@ for file_number=1:length(files)
     
     littleKerlen=[3,3];%[7 7];%[3,3];
     madian = medianFilters( Img_input, littleKerlen);
-   
+            
 %% Binarization
         
     threshold = 150/255;%220
@@ -146,10 +148,19 @@ for file_number=1:length(files)
         remSalPep = removeSaltPepper( convPoint.convImg, P);
     end
     
-%% Connected components: streaks
+%% Morphology opening
+    
+    seD = strel('disk',6);%6selezionare dimensione
+    openPoints = imopen(remSalPep.remSaltPepperImg,seD);
+    if(FIGURE_1)
+        figure('name','Morphology open image for points detection');
+        imshow(openPoints);
+    end
+    
+%% Connected components: points
     
     if ~remSalPep.error
-        point = connectedComponentsPoints( remSalPep.remSaltPepperImg, ...
+        point = connectedComponentsPoints( openPoints, ...
                                            I_borders);
     end
     
@@ -160,7 +171,7 @@ for file_number=1:length(files)
 %% Hough transform
 
     if ~convPoint.error
-        B = imresize(convPoint.convImg,0.5);
+        B = imresize(remSalPep.remSaltPepperImg,0.5);%convPoint.convImg
         B2= im2bw(B, 0.1);
         if(FIGURE_1)
             figure('name','Downsample image');
@@ -209,7 +220,10 @@ for file_number=1:length(files)
 %% Binary image with streaks
 
         sumStraksImg = sumStraksImg + convStreak.convImg;
-        
+        if(FIGURE_1)
+            figure(14)
+            imshow(sumStraksImg)
+        end
     end
     
 %% Connected components: streaks
@@ -253,9 +267,7 @@ for file_number=1:length(files)
                 end
             end
         end
-        if exist('STREAKSbig','var')
-            plot(STREAKSbig(:,1),STREAKSbig(:,2),'*m')
-        end
+        
         %Plot points' centroids
         if isfield(point, 'POINTS')
             plot(point.POINTS(:,1),point.POINTS(:,2),'+g')
@@ -271,24 +283,7 @@ for file_number=1:length(files)
                 end
             end
         end
-        if exist('POINTSbig','var')
-            if isfield(POINTSbig, 'POINTS')
-                plot(POINTSbig.POINTS(:,1),POINTSbig.POINTS(:,2),'+g')
-                if(ELLIPSE)
-                    t = linspace(0,2*pi);
-                    for i=1:length(POINTSbig.POINTS(:,1))
-                        X1 = POINTSbig.majoraxis(i)*cos(t)/2;
-                        Y1 = POINTSbig.minoraxis(i)*sin(t)/2;
-                        w= -POINTSbig.orientation(i);
-                        x = POINTSbig.POINTS(i,1) + X1*cosd(w) - Y1*sind(w);
-                        y = POINTSbig.POINTS(i,2) + X1*sind(w) + Y1*cosd(w);
-                        plot(x,y,'g')
-                    end
-                end
-            end
-        end
-
-
+        
     end
     nameFig=strcat(name,'.fig');
     pathFig=fullfile(resultDir,nameFig);

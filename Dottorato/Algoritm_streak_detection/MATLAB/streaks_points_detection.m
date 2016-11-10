@@ -47,7 +47,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00008029.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('41384.00007909.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)

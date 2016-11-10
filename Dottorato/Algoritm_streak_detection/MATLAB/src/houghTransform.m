@@ -50,10 +50,13 @@ try
     
     [H,T,R] = hough(binaryImg,'RhoResolution',0.5,'ThetaResolution',0.5);
     
-    %P  = houghpeaks(H,5,'threshold',ceil(0.3*max(H(:))));
+    %P0  = houghpeaks(H,5,'threshold',ceil(0.9*max(H(:))));
     P  = houghpeaks(H,5,'threshold',ceil(0.9*max(H(:))),'NHoodSize',[31 31]);
     x = T(P(:,2));
     y = R(P(:,1));
+    
+    x(length(x)+1)=-90; %Obbligo di ricerca a 0° di inclinazione
+    
     output.tetaStreak=unique(x)+90;
     
     

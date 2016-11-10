@@ -116,7 +116,8 @@ try
             PixelIdxListStreaks(noiseThin) = [];
             stats(noiseThin,:)          = [];
             
-            noiseShort=find(majoraxis<ceil(max_streaks_majoraxis/2));%Per eliminare le strisciate corte
+            %noiseShort=find(majoraxis<ceil(max_streaks_majoraxis/2));
+            noiseShort=find(majoraxis<ceil(max_streaks_majoraxis*0.75));%Per eliminare le strisciate corte
             streaks(noiseShort,:)        = [];
             centroid(noiseShort,:)       = [];
             area(noiseShort,:)           = [];

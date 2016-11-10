@@ -89,8 +89,10 @@ try
         
         n_points  = sum(points);
         if(n_points)
-            noise=find(majoraxisP<ceil(max_points_diameter/4));%2 Per eliminare i punti piccoli
-            %noise=find(minoraxisP<ceil(max_streaks_minoraxis/2));
+            % Per eliminare i punti piccoli
+            threshValue=((max_points_diameter/4)+(mean(majoraxisP)/2))/2;
+            noise=find(majoraxisP<threshValue);
+            %noise=find(minoraxisP<ceil(max_streaks_minoraxis/4));%2
             
             % Remove noisy points
             points(noise,:)             = [];
