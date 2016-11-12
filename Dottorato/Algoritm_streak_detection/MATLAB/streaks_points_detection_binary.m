@@ -10,8 +10,8 @@ global FIGURE FIGURE_1
 %% Macro
 
 FIGURE=1;
-FIGURE_1=0;
-FILE=1;
+FIGURE_1=1;
+FILE=0;
 CLEAR=0;
 backgroundSubtraction=1;
 differentThreshold=0;
@@ -26,8 +26,8 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
-    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
+    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
     %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161003';
     %inputDataDir='D:\Dottorato\Space debris image\Loiano';
     %inputDataDir='D:\Dottorato\II anno\img detriti';
@@ -49,7 +49,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00007947.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('41384.00008017.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
@@ -229,9 +229,9 @@ for file_number=1:length(files)
 %% Connected components: streaks
     
     if ~point.error
-        streaks = connectedComponentsStreaks( sumStraksImg, ... %convStreak.convImg, ...
-                                            I_borders, ...
-                                            point);
+        [streaks, point] = connectedComponentsStreaks( sumStraksImg, ... %convStreak.convImg, ...
+                                                        I_borders, ...
+                                                        point);
     end
 
 % ======================================================================= %
@@ -266,8 +266,7 @@ for file_number=1:length(files)
                     plot(x,y,'r')
                 end
             end
-        end
-        
+        end        
         %Plot points' centroids
         if isfield(point, 'POINTS')
             plot(point.POINTS(:,1),point.POINTS(:,2),'+g')
@@ -282,14 +281,14 @@ for file_number=1:length(files)
                     plot(x,y,'g')
                 end
             end
-        end
-        
+        end        
     end
     nameFig=strcat(name,'.fig');
     pathFig=fullfile(resultDir,nameFig);
     if (FIGURE)
         saveas(h,pathFig);
     end
+    
 %% End of process
 %Time calculation
     
@@ -303,7 +302,7 @@ for file_number=1:length(files)
                             backgroundSubtraction differentThreshold ...
                             FIT dilate files jpg_format inputDataDir ...
                             resultDir subtractPointsImg ELLIPSE
-    end    
+    end
 end
 
 if FILE

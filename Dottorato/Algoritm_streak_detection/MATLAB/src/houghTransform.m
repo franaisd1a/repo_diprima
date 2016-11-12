@@ -55,11 +55,6 @@ try
     x = T(P(:,2));
     y = R(P(:,1));
     
-    x(length(x)+1)=-90; %Obbligo di ricerca a 0° di inclinazione
-    
-    output.tetaStreak=unique(x)+90;
-    
-    
     if(FIGURE_1)
         figure('name','Hough transform');
         imshow(H,[],'XData',T,'YData',R,'InitialMagnification','fit');
@@ -69,7 +64,12 @@ try
         axis on, axis normal, hold on;
         plot(x,y,'s','color','green');
     end
-    tElapsed = toc(tStart);    
+    
+    x(length(x)+1)=-90; %Obbligo di ricerca a 0° di inclinazione
+    
+    output.tetaStreak=unique(x)+90;
+    
+    tElapsed = toc(tStart);
     disp(sprintf('End houghTransform funtion %d sec.', tElapsed));
     disp(sprintf('\n'));
     output.error=0;
