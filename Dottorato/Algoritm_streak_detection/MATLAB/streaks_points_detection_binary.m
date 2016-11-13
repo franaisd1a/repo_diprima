@@ -10,7 +10,7 @@ global FIGURE FIGURE_1
 %% Macro
 
 FIGURE=1;
-FIGURE_1=1;
+FIGURE_1=0;
 FILE=0;
 CLEAR=0;
 backgroundSubtraction=1;
@@ -49,7 +49,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00008017.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('41384.00008008.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
@@ -141,7 +141,7 @@ for file_number=1:length(files)
                              convThreshold, ...
                              figureName);
 
-%% Remove Salt and Pepper Noise from Image
+%% Remove Salt and Pepper Noise
 
     if ~convPoint.error
         P=5;%3
@@ -235,6 +235,57 @@ for file_number=1:length(files)
     end
 
 % ======================================================================= %
+%% ROI Extraction
+% ======================================================================= %
+
+    if isfield(streaks, 'STREAKS')
+        roiStreaks  = roiExtraction( madian.medianImg, ...
+                                     streaks.STREAKS, ...
+                                     streaks.majoraxis, ...
+                                     streaks.minoraxis, ...
+                                     streaks.orientation);
+    end
+
+%% Binarization
+        
+%     e=1500;
+%     ROI = cell(length(streaks.STREAKS(:,1)),3);
+%     for i=1:length(streaks.STREAKS(:,1))
+%         thresholdFPmin = 130/255;
+%         thresholdFPmax = 230/255;
+%         ROI{i,1} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmin);
+%         ROI{i,2} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmax);
+% %         ROI{i,3} = ROI{i,1} - ROI{i,2};
+%         
+%         %use watershed analysis
+%         D = -bwdist(~ROI{i,1},'euclidean');
+%         D(~ROI{i,1}) = -inf;  %set background to be infinitely far away
+%         ROI{i,3} = watershed(D);
+%         
+%         if(FIGURE_1)
+%             
+%             figure(e);
+% %             subplot(3,1,1), subimage(ROI{i,1})
+% %             subplot(3,1,2), subimage(ROI{i,2})
+% %             subplot(3,1,3), subimage(ROI{i,3},[1 3])
+%             imshow(ROI{i,3},[0 10])
+%             e=e+1;
+%         end
+%     end
+
+    for i=1:length(streaks.STREAKS(:,1))
+        %outputFP  = falsePositiveDetection( roiStreaks.ROI{i,1} );
+        [outputFP, streaks]  = falsePositive( roiStreaks.ROI{i,1}, ...
+                                              i, ...
+                                              streaks );
+    end
+    
+%     %use watershed analysis
+%     D = -bwdist(~im,'euclidean');
+%     D(~im) = -inf;  %set background to be infinitely far away
+%     im2 = watershed(D);
+    
+% ======================================================================= %
 %% End computation
 % ======================================================================= %
 
@@ -254,7 +305,8 @@ for file_number=1:length(files)
         hold on;
         % Plot streaks' centroids
         if isfield(streaks, 'STREAKS')
-            plot(streaks.STREAKS(:,1),streaks.STREAKS(:,2),'*r')
+            plot(streaks.STREAKS(:,1),streaks.STREAKS(:,2),'*r');
+            fprintf('Number of streaks: %d\n', length(streaks.STREAKS(:,1)));
             if(ELLIPSE)
                 t = linspace(0,2*pi);
                 for i=1:length(streaks.STREAKS(:,1))
@@ -270,6 +322,7 @@ for file_number=1:length(files)
         %Plot points' centroids
         if isfield(point, 'POINTS')
             plot(point.POINTS(:,1),point.POINTS(:,2),'+g')
+            fprintf('Number of points: %d\n', length(point.POINTS(:,1)));
             if(ELLIPSE)
                 t = linspace(0,2*pi);
                 for i=1:length(point.POINTS(:,1))

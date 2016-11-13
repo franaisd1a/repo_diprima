@@ -161,12 +161,20 @@ try
         if isfield(output,'STREAKS')
             for j=1:length(output.STREAKS(:,1))
                 for i=1:length(points.POINTS(:,1))
-                    if(find(PixelIdxListStreaks{1,j}==points.POINTS(i,3)))
-                        points.POINTS(i,3)=-1;
+                    %if(find(PixelIdxListStreaks{1,j}==points.POINTS(i,3)))
+                    %    points.POINTS(i,3)=-1;
+                    %end
+                    %if(points.POINTS(i,3)~=-1)
+                    %    if(find(output.STREAKS(j,3)==points.pixelIdxListPoints{1,i}))
+                    %        output.STREAKS(j,3)=-1;
+                    %    end
+                    %end
+                    if(find(output.STREAKS(j,3)==points.pixelIdxListPoints{1,i}))
+                        output.STREAKS(j,3)=-1;
                     end
-                    if(points.POINTS(i,3)~=-1)
-                        if(find(output.STREAKS(j,3)==points.pixelIdxListPoints{1,i}))
-                            output.STREAKS(j,3)=-1;
+                    if(output.STREAKS(j,3)~=-1)
+                        if(find(PixelIdxListStreaks{1,j}==points.POINTS(i,3)))
+                            points.POINTS(i,3)=-1;
                         end
                     end
                 end
