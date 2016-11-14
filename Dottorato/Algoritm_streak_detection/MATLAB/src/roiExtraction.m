@@ -71,9 +71,15 @@ try
         if(limInfXs<1)
             limInfXs=1;
             limSupXs=limInfXs+2*height-1;
+            if(limSupXs>imgSz(1))
+                limSupXs=imgSz(1);
+            end
         end
         if(limSupXs>imgSz(1))
             limInfXs=imgSz(1)-2*height+1;
+            if (limInfXs<1)
+                limInfXs=1;
+            end
             limSupXs=imgSz(1);
         end
         
@@ -82,9 +88,15 @@ try
         if(limInfYs<1)
             limInfYs=1;
             limSupYs=limInfYs+2*width-1;
+            if(limSupYs>imgSz(2))
+                limSupYs=imgSz(2);
+            end
         end
         if(limSupYs>imgSz(2))
             limInfYs=imgSz(2)-2*width+1;
+            if (limInfYs<1)
+                limInfYs=1;
+            end
             limSupYs=imgSz(2);
         end
         
