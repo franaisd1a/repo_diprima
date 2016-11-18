@@ -153,6 +153,7 @@ try
             output.majoraxis = majoraxis(indexStreakValid);
             output.minoraxis = minoraxis(indexStreakValid);
             output.orientation = orientation(indexStreakValid);
+            output.pixelIdxList = PixelIdxListStreaks(indexStreakValid);
         end
     end
     
@@ -169,7 +170,7 @@ try
                     %        output.STREAKS(j,3)=-1;
                     %    end
                     %end
-                    if(find(output.STREAKS(j,3)==points.pixelIdxListPoints{1,i}))
+                    if(find(output.STREAKS(j,3)==points.pixelIdxList{1,i}))
                         output.STREAKS(j,3)=-1;
                     end
                     if(output.STREAKS(j,3)~=-1)
@@ -181,24 +182,25 @@ try
             end
             
             noiseStreak=find(output.STREAKS(:,3)<0);
-            output.STREAKS(noiseStreak,:)     = [];
-            output.majoraxis(noiseStreak,:)   = [];
-            output.minoraxis(noiseStreak,:)   = [];
-            output.orientation(noiseStreak,:) = [];
+            output.STREAKS(noiseStreak,:)      = [];
+            output.majoraxis(noiseStreak,:)    = [];
+            output.minoraxis(noiseStreak,:)    = [];
+            output.orientation(noiseStreak,:)  = [];
+            output.pixelIdxList(noiseStreak,:) = [];
             
             noisePoint=find(points.POINTS(:,3)<0);
-            points.POINTS(noisePoint,:)      = [];
-            points.majoraxis(noisePoint,:)   = [];
-            points.minoraxis(noisePoint,:)   = [];
-            points.orientation(noisePoint,:) = [];
-                        
+            points.POINTS(noisePoint,:)       = [];
+            points.majoraxis(noisePoint,:)    = [];
+            points.minoraxis(noisePoint,:)    = [];
+            points.orientation(noisePoint,:)  = [];
+            points.pixelIdxList(noisePoint) = [];
 
         end
     end
     
-    output.min_streaks_minoraxis=min_streaks_minoraxis;
-    output.max_streaks_minoraxis=max_streaks_minoraxis;
-    output.max_streaks_majoraxis=max_streaks_majoraxis;
+    output.min_streaks_minoraxis = min_streaks_minoraxis;
+    output.max_streaks_minoraxis = max_streaks_minoraxis;
+    output.max_streaks_majoraxis = max_streaks_majoraxis;
     
     tElapsed = toc(tStart);    
     disp(sprintf('End connectedComponentsStreaks funtion %d sec.', tElapsed));

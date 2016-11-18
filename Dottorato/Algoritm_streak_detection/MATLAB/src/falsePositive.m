@@ -3,7 +3,7 @@ function [ output, streaks ] = falsePositive( varargin )
 % Search for false positive detection
 
 global FIGURE_1
-debugFig = 1;
+debugFig = 0;
 disp('Start falsePositive function.')
 
 %% Input
@@ -152,3 +152,32 @@ end
 
 end
 
+%     e=1500;
+%     ROI = cell(length(streaks.STREAKS(:,1)),3);
+%     for i=1:length(streaks.STREAKS(:,1))
+%         thresholdFPmin = 130/255;
+%         thresholdFPmax = 230/255;
+%         ROI{i,1} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmin);
+%         ROI{i,2} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmax);
+% %         ROI{i,3} = ROI{i,1} - ROI{i,2};
+%         
+%         %use watershed analysis
+%         D = -bwdist(~ROI{i,1},'euclidean');
+%         D(~ROI{i,1}) = -inf;  %set background to be infinitely far away
+%         ROI{i,3} = watershed(D);
+%         
+%         if(FIGURE_1)
+%             
+%             figure(e);
+% %             subplot(3,1,1), subimage(ROI{i,1})
+% %             subplot(3,1,2), subimage(ROI{i,2})
+% %             subplot(3,1,3), subimage(ROI{i,3},[1 3])
+%             imshow(ROI{i,3},[0 10])
+%             e=e+1;
+%         end
+%     end
+
+%     %use watershed analysis
+%     D = -bwdist(~im,'euclidean');
+%     D(~im) = -inf;  %set background to be infinitely far away
+%     im2 = watershed(D);

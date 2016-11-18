@@ -27,9 +27,9 @@ fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
     %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
-    inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
+    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
     %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161003';
-    %inputDataDir='D:\Dottorato\Space debris image\Loiano';
+    inputDataDir='D:\Dottorato\Space debris image\Loiano';
     %inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
 else
@@ -49,7 +49,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('41384.00008008.TRK',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('deb_296',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
@@ -235,56 +235,35 @@ for file_number=1:length(files)
     end
 
 % ======================================================================= %
-%% ROI Extraction
+%% Refinements
 % ======================================================================= %
 
+%% ROI Extraction
+%estrarre roi con maschera dilatata dell'ellisse che circoscrive l'oggetto
     if isfield(streaks, 'STREAKS')
-        roiStreaks  = roiExtraction( madian.medianImg, ...
+        roiStreaks  = roiExtraction( madian.medianImg, ... %rawImg
                                      streaks.STREAKS, ...
                                      streaks.majoraxis, ...
                                      streaks.minoraxis, ...
                                      streaks.orientation);
     end
 
-%% Binarization
-        
-%     e=1500;
-%     ROI = cell(length(streaks.STREAKS(:,1)),3);
-%     for i=1:length(streaks.STREAKS(:,1))
-%         thresholdFPmin = 130/255;
-%         thresholdFPmax = 230/255;
-%         ROI{i,1} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmin);
-%         ROI{i,2} = im2bw(roiStreaks.ROI{i,1}, thresholdFPmax);
-% %         ROI{i,3} = ROI{i,1} - ROI{i,2};
-%         
-%         %use watershed analysis
-%         D = -bwdist(~ROI{i,1},'euclidean');
-%         D(~ROI{i,1}) = -inf;  %set background to be infinitely far away
-%         ROI{i,3} = watershed(D);
-%         
-%         if(FIGURE_1)
-%             
-%             figure(e);
-% %             subplot(3,1,1), subimage(ROI{i,1})
-% %             subplot(3,1,2), subimage(ROI{i,2})
-% %             subplot(3,1,3), subimage(ROI{i,3},[1 3])
-%             imshow(ROI{i,3},[0 10])
-%             e=e+1;
-%         end
-%     end
+%% False positive detection
 
+%studiare bene la soglia deve tenere conto di:
+%dimensione stelle e strisciate
+
+%controllare solo se il rapporto tra i semi assi è basso
+    thresholdAxis = 0.8*(streaks.max_streaks_majoraxis/streaks.max_streaks_minoraxis);
     for i=1:length(streaks.STREAKS(:,1))
         %outputFP  = falsePositiveDetection( roiStreaks.ROI{i,1} );
-        [outputFP, streaks]  = falsePositive( roiStreaks.ROI{i,1}, ...
-                                              i, ...
-                                              streaks );
+        if(streaks.majoraxis(i)/streaks.minoraxis(i)<thresholdAxis)
+            [outputFP, streaks]  = falsePositive( roiStreaks.ROI{i,1}, ...
+                                                  i, ...
+                                                  streaks );
+        end
     end
-    
-%     %use watershed analysis
-%     D = -bwdist(~im,'euclidean');
-%     D(~im) = -inf;  %set background to be infinitely far away
-%     im2 = watershed(D);
-    
+
 % ======================================================================= %
 %% End computation
 % ======================================================================= %
@@ -334,7 +313,7 @@ for file_number=1:length(files)
                     plot(x,y,'g')
                 end
             end
-        end        
+        end
     end
     nameFig=strcat(name,'.fig');
     pathFig=fullfile(resultDir,nameFig);

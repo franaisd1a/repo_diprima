@@ -102,7 +102,7 @@ try
             majoraxisP(noise,:)         = [];
             minoraxisP(noise,:)         = [];
             orientationP(noise,:)       = [];
-            PixelIdxListPoints(noise) = [];
+            PixelIdxListPoints(noise)   = [];
 %             for n=1:length(noise)
 %                 pixelListP{noise(n)} = [];
 %             end
@@ -120,7 +120,7 @@ try
             output.majoraxis=majoraxisP(circPoint);
             output.minoraxis=minoraxisP(circPoint);
             output.orientation=orientationP(circPoint);
-            output.pixelIdxListPoints=PixelIdxListPoints(circPoint);
+            output.pixelIdxList = PixelIdxListPoints(circPoint);
 %             output.pixelList=cell(max_dim_array,1);
 %             for c=1:max_dim_array
 %                 output.pixelList{c}=pixelListP{circPoint(c)};
@@ -132,7 +132,7 @@ try
     output.min_points_diameter=min_points_diameter;
     
     
-    tElapsed = toc(tStart);    
+    tElapsed = toc(tStart);
     disp(sprintf('End connectedComponentsPoints funtion %d sec.', tElapsed));
     disp(sprintf('\n'));
     output.error=0;

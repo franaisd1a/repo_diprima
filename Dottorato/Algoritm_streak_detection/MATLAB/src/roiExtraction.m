@@ -63,9 +63,8 @@ try
         width=(2^expSTREAKdimensionX);
         expSTREAKdimensionY=ceil(log2(round(height)));
         height=(2^expSTREAKdimensionY);
-    
-
-    
+        
+        % Top left and bottom right vertex
         limInfXs=center(i,2)-height;
         limSupXs=center(i,2)+height-1;
         if(limInfXs<1)
@@ -100,10 +99,25 @@ try
             limSupYs=imgSz(2);
         end
         
-        %prendere area pari a potenza di 2
-        
-        output.ROI{i,1} = img(limInfXs:limSupXs, limInfYs:limSupYs);
         output.ROI{i,2} = [limInfXs,limInfYs , limSupXs,limSupYs];
+        
+        % ROI extraction
+        output.ROI{i,1} = img(limInfXs:limSupXs, limInfYs:limSupYs);
+        
+        szRoi = size(output.ROI{i,1});
+        
+        % Elliptical mask
+        
+        a = linspace(0,2*pi);
+        X1 = majAxis*cos(a)/2;
+        Y1 = 1.5*minAxis*sin(a)/2;
+        w= -t;
+        x = (center(i,1) + X1*cosd(w) - Y1*sind(w))-limInfYs;
+        y = (center(i,2) + X1*sind(w) + Y1*cosd(w))-limInfXs;
+
+        mask = uint8(poly2mask(x, y, szRoi(1), szRoi(2)));
+        
+        output.ROI{i,1} = output.ROI{i,1} .* mask;
         
         if(FIGURE_1)
             b=500;

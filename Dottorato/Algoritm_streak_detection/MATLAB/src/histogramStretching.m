@@ -104,7 +104,7 @@ try
 %% Contrast Stretching
 % ----------------------------------------------------------------------- %
     
-    LUT=zeros(histogram,1);
+    LUT=zeros(length(histogram),1);
     peakMax=max(histogram);
     grayColor=round(histogramXaxis(find(histogram==peakMax)));%find(histogram==peakMax);
     
