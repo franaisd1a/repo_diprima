@@ -4,7 +4,7 @@
 * ========================================================================== */
 
 /* ==========================================================================
-*   INCLUDE FILE NAME: main_GPU.h
+*   INCLUDE FILE NAME: main_GPU_cuda.h
 * INCLUDE DESCRIPTION: Algo simple for streaks and points detection on GPU
 *       CREATION DATE: 20160727
 *             AUTHORS: Francesco Diprima
@@ -17,13 +17,13 @@
 *
 * ========================================================================== */
 
-#ifndef MAIN_GPU_H
-#define MAIN_GPU_H
+#ifndef MAIN_GPU_CUDA_H
+#define MAIN_GPU_CUDA_H
 
 /* ==========================================================================
 * INCLUDE
 * ========================================================================== */
-#include "function.h"
+#include "function_GPU.h"
 
 /* ==========================================================================
 * MACROS
@@ -36,13 +36,13 @@
 /* ==========================================================================
 * FUNCTION DECLARATION
 * ========================================================================== */
-
+ 
 /**
-* main_GPU Algo simple for streaks and points detection on GPU
+* main_GPU_cuda Algo for streaks and points detection on GPU with CUDA kernel
 * @param imgIn Input image
 * @return 
 */
-int main_GPU(char* name_file);
+int main_GPU_cuda(char* name_file);
 
-#endif /* MAIN_GPU_H */
+#endif /* MAIN_GPU_CUDA_H */
 

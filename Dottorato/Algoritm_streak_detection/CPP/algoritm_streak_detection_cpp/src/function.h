@@ -24,7 +24,8 @@
 * INCLUDE: Basic include file.
 * ========================================================================== */
 #include <vector>
-#include <cstdint>
+//#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <math.h>
 #include <string.h>
@@ -159,5 +160,14 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 */
 cv::Mat hough(cv::Mat& imgIn);
 
+/**
+* timeElapsed Compute elapsed time
+* @param start Start reference time
+* @param strName String to plot
+* @return Elapsed time
+*/
+void timeElapsed(clock_t start, const char* strName);
 
 #endif /* FUNCTION_H */
+
+

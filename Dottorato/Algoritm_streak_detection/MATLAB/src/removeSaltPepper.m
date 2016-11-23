@@ -47,7 +47,7 @@ try
     output.remSaltPepperImg = bwareaopen(img,P,conn);
     
     if(FIGURE_1)
-        figure('name','Bynari image less salt and pepper noise for points detection');
+        figure('name','Binary image less salt and pepper noise for points detection');
         imshow(output.remSaltPepperImg);
     end
     

@@ -15,7 +15,7 @@ FILE=0;
 CLEAR=0;
 backgroundSubtraction=1;
 differentThreshold=0;
-FIT=1;
+FIT=0;
 dilate=0;
 
 %% Input Folder
@@ -24,10 +24,12 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
+    inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
 else
-    inputDataDir=wrkDir;
+    %inputDataDir=wrkDir;
+    inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.jpg';
 end
 resultDir=fullfile(inputDataDir,'Result');
@@ -39,7 +41,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('hamr_101',extension);%hamr_186 150 209 204
+    name_picture=strcat('deb_260',extension);%hamr_186 150 209 204
 end
 
 for file_number=1:length(files)

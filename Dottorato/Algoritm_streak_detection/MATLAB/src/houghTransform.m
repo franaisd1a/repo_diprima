@@ -3,7 +3,7 @@ function [ output ] = houghTransform( varargin )
 % Hough Transform on a N1 X N2 image to calculate the inclination angle of
 % the streaks
 
-% global FIGURE FIGURE_1
+global FIGURE_1
 disp('Start houghTransform function.')
 
 %% Input
@@ -41,14 +41,35 @@ try
 
     tStart=tic;
     
-    [H1,T1,R1] = hough(img,'RhoResolution',0.5,'ThetaResolution',0.5);
+    if islogical(img)
+        binaryImg = img;
+    else
+        level = graythresh( img );
+        binaryImg = im2bw(img, level);
+    end
     
-    %P  = houghpeaks(H,5,'threshold',ceil(0.3*max(H(:))));
-    P1  = houghpeaks(H1,1,'threshold',ceil(0.9*max(H1(:))),'NHoodSize',[31 31]);
-    x1 = T1(P1(:,2));
-    output.tetaStreak=x1+90;
+    [H,T,R] = hough(binaryImg,'RhoResolution',0.5,'ThetaResolution',0.5);
     
-    tElapsed = toc(tStart);    
+    %P0  = houghpeaks(H,5,'threshold',ceil(0.9*max(H(:))));
+    P  = houghpeaks(H,5,'threshold',ceil(0.9*max(H(:))),'NHoodSize',[31 31]);
+    x = T(P(:,2));
+    y = R(P(:,1));
+    
+    if(FIGURE_1)
+        figure('name','Hough transform');
+        imshow(H,[],'XData',T,'YData',R,'InitialMagnification','fit');
+        xlabel('\theta');
+        ylabel('\rho');
+        colormap(hot), colorbar;
+        axis on, axis normal, hold on;
+        plot(x,y,'s','color','green');
+    end
+    
+    x(length(x)+1)=-90; %Obbligo di ricerca a 0° di inclinazione
+    
+    output.tetaStreak=unique(x)+90;
+    
+    tElapsed = toc(tStart);
     disp(sprintf('End houghTransform funtion %d sec.', tElapsed));
     disp(sprintf('\n'));
     output.error=0;

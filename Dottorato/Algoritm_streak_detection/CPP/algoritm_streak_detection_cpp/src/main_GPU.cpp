@@ -35,7 +35,7 @@
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
-
+#define MEDIAN_FILTER_CPU 0U
 /* ==========================================================================
 * MODULE PRIVATE TYPE DECLARATIONS
 * ========================================================================== */
@@ -64,6 +64,7 @@ using namespace std;
 * ========================================================================== */
 int main_GPU(char* name_file)
 {
+  cout << "GPU algorithms ." << std::endl;
   /* Open file */
   FILE * pFile;
   pFile = fopen ("consoleGPU.txt","w");
@@ -79,7 +80,9 @@ int main_GPU(char* name_file)
   
   int channels = Img_input.channels();
   int depth = Img_input.depth();
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
+  //cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
+  cv::Point_<int> I_input_size(Img_input.cols, Img_input.rows);
+  
   cv::Point_<double> borders = { 0.015, 0.985 };
   Vec<int, 4> imgBorders = {static_cast<int>(ceil( borders.x * I_input_size.x))
                           , static_cast<int>(ceil( borders.x * I_input_size.y))
@@ -98,9 +101,14 @@ int main_GPU(char* name_file)
   fprintf(pFile, "Device number %d\n", deviceCount);
 
   //Move data on GPU 
-  gpu::GpuMat dstImgGPU, srcImgGPU;
+  gpu::GpuMat srcImgGPU = 
+    gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());
+    
   srcImgGPU.upload(Img_input);
     
+  gpu::GpuMat dstImgGPU = 
+    gpu::createContinuous(Img_input.rows, Img_input.cols, Img_input.type());
+  
     
 /* ======================================================================= *
  * Big Points detection                                                    *
@@ -112,7 +120,11 @@ int main_GPU(char* name_file)
 
   int hsize[2] = {31, 31};//{101, 101};
   double sigma = 30;
+  clock_t start = clock();
+
   gpu::GpuMat gaussImg = gaussianFilter(srcImgGPU, hsize, sigma);
+
+  timeElapsed(start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -120,8 +132,12 @@ int main_GPU(char* name_file)
  * Background subtraction                                                  *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+
   gpu::GpuMat backgroundSub = subtractImage(srcImgGPU, gaussImg);
   
+  timeElapsed(start, "Background subtraction");
+
   gaussImg.release();
 
   fprintf(pFile, "End Background subtraction\n");
@@ -130,16 +146,17 @@ int main_GPU(char* name_file)
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
 
+  int kerlen = 11;
+
+  /* CPU version of median filter */
   //Download data from GPU 
   cv::Mat bgSub;
   backgroundSub.download(bgSub);
   backgroundSub.release();
-
-  int kerlen = 11;
+  
   Mat medianImg = medianFilter(bgSub, kerlen);
 
   fprintf(pFile, "End Median filter\n");
-
 
 /* ----------------------------------------------------------------------- *
  * Binarization                                                            *
@@ -148,7 +165,12 @@ int main_GPU(char* name_file)
   //Move data on GPU 
   gpu::GpuMat medianImgGPU;
   medianImgGPU.upload(medianImg);
+  
+
+  start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
+
+  timeElapsed(start, "Binarization");
 
   medianImgGPU.release();
 
@@ -163,8 +185,11 @@ int main_GPU(char* name_file)
   double threshConv = szKernel*szKernel;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
   
+  start = clock();
   gpu::GpuMat convImgGPU = convolution(binaryImgGPU, kernel, threshConv);
   
+  timeElapsed(start, "Convolution");
+
   fprintf(pFile, "End Convolution kernel\n");
 
   //Download data from GPU 
@@ -199,17 +224,20 @@ int main_GPU(char* name_file)
   int lineType = 8;
   int shift = 0;
 
+cout << "points sz " << POINTS.size() << std::endl;
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
+    cout << "points " << i << std::endl;
     Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
     circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
 
     /*center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
     circle(color_Img_input, center, radius, color, thickness, lineType, shift);*/
   }
-
+cout << "STREAKS sz " << STREAKS.size() << std::endl;
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
+    cout << "STREAKS " << i << std::endl;
     Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
     circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
   }
@@ -222,8 +250,8 @@ int main_GPU(char* name_file)
   if (FIGURE)
   {
     // Create a window for display.
-    namedWindow("Display window", WINDOW_NORMAL);
-    imshow("Display window", color_Img_input);
+    namedWindow("Algo gpu", WINDOW_NORMAL);
+    imshow("Algo gpu", color_Img_input);
   }
 
 
@@ -235,6 +263,7 @@ int main_GPU(char* name_file)
   imshow("Display window2", result_host);
 #endif
 
+  cv::waitKey(0);
   
   fclose(pFile);
       

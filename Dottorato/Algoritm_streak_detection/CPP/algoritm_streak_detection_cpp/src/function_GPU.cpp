@@ -58,7 +58,9 @@
 * ========================================================================== */
 cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigma)
 {
-  cv::gpu::GpuMat imgOut;
+  //cv::gpu::GpuMat imgOut;
+  cv::gpu::GpuMat imgOut = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());  
 
   cv::Size h = { hsize[0], hsize[1] };
 
@@ -70,8 +72,8 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Gaussain filter", cv::WINDOW_NORMAL);
-    imshow("Gaussain filter", result_host);
+    namedWindow("Gaussain filter GPU", cv::WINDOW_NORMAL);
+    imshow("Gaussain filter GPU", result_host);
   }
 
   return imgOut;
@@ -87,7 +89,10 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
 * ========================================================================== */
 cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
 {
-  cv::gpu::GpuMat imgOut;
+  //cv::gpu::GpuMat imgOut;
+  cv::gpu::GpuMat imgOut = 
+    cv::gpu::createContinuous(imgA.rows, imgA.cols, imgA.type());
+      
   cv::gpu::subtract(imgA, imgB, imgOut);
   
   if (FIGURE_1)
@@ -95,8 +100,8 @@ cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Subtracted image", cv::WINDOW_NORMAL);
-    imshow("Subtracted image", result_host);
+    namedWindow("Subtracted image GPU", cv::WINDOW_NORMAL);
+    imshow("Subtracted image GPU", result_host);
   }
   
   return imgOut;
@@ -112,7 +117,9 @@ cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
 * ========================================================================== */
 cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_streak)
 {
-  cv::gpu::GpuMat imgOut;
+  //cv::gpu::GpuMat imgOut;
+  cv::gpu::GpuMat imgOut = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());  
 
   int iter = 1;
   cv::Point anchor = cv::Point(-1, -1);
@@ -127,8 +134,8 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
-    imshow("Morphology opening with rectangular kernel", result_host);
+    namedWindow("Morphology opening with rectangular kernel GPU", cv::WINDOW_NORMAL);
+    imshow("Morphology opening with rectangular kernel GPU", result_host);
   }
 
   return imgOut;
@@ -144,14 +151,20 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
 * ========================================================================== */
 cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn)
 {
-  cv::gpu::GpuMat imgOut, binImg;
+  //cv::gpu::GpuMat imgOut, binImg;
+  
+  cv::gpu::GpuMat imgOut = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
+    
+  cv::gpu::GpuMat binImg = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());      
     
   double maxval = 255.0;
   double level = 0.0;
   
   level = cv::gpu::threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
   
-  level = level * 1.5;
+  level = level * 2.5;//1.5
   
   cv::gpu::threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
@@ -164,8 +177,8 @@ cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn)
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
-    imshow("Binary image Otsu threshold", result_host);
+    namedWindow("Binary image Otsu threshold GPU", cv::WINDOW_NORMAL);
+    imshow("Binary image Otsu threshold GPU", result_host);
   }
 
   return imgOut;
@@ -238,340 +251,81 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, cv::Mat& kernel, double thresh)
+cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, double thresh)
 {
-  cv::gpu::GpuMat imgOut, convImg;
+  //cv::gpu::GpuMat imgOut, convImg;
+  cv::gpu::GpuMat imgOut = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
+    
+  /*cv::gpu::GpuMat convImg = 
+    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());*/
+  cv::gpu::GpuMat convImg;      
+    
   /*kernel_size = 3 + 2 * (ind % 5);
   kernel = Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size*kernel_size);*/
 
   int ddepth = -1;
   cv::Point anchor = cv::Point(-1, -1);
+  cv::gpu::Stream stream;
+  stream.Null();
   
+  std::cout << "prima di filter2d " << std::endl;
   cv::gpu::filter2D(imgIn, convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT);
-
+  std::cout << "dopo di filter2d " << std::endl;
+/*thresh=1;
+  cv::gpu::boxFilter(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ddepth, kernel, anchor, stream);
+*/
+  
+/*cv::Size ksize(3, 3);
+  cv::gpu::blur(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ksize, anchor, stream);
+*/  
+  
   double maxval = 255.0;
-
+    
   cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
+//cv::gpu::threshold(imgIn, imgOut, thresh, maxval, cv::THRESH_BINARY);
   
   if (FIGURE_1)
   {
     cv::Mat result_host;
     imgOut.download(result_host);
     // Create a window for display.
-    namedWindow("Convolution image", cv::WINDOW_NORMAL);
-    imshow("Convolution image", result_host);
+    namedWindow("Convolution image GPU", cv::WINDOW_NORMAL);
+    imshow("Convolution image GPU", result_host);
 
   }
   return imgOut;
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: connectedComponents
-* FUNCTION DESCRIPTION: Found connected component
+*        FUNCTION NAME: iDivUp
+* FUNCTION DESCRIPTION: Rounded division 
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-#if 0
-std::vector< cv::Vec<int, 3> > connectedComponents
-(
-  cv::Mat& imgIn
-  , cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
-)
-{
-  std::vector<std::vector<cv::Point> > contours;
-  std::vector<cv::Vec4i> hierarchy;
-  cv::Point offset = cv::Point(0, 0);
-    
-  findContours( imgIn, contours, hierarchy, CV_RETR_EXTERNAL
-                , CV_CHAIN_APPROX_NONE , offset);
-
-  
-  if (contours.size() > 0)
-  {
-    POINTS = connectedComponentsPoints
-    (imgIn, contours, borders);
-
-    STREAKS = connectedComponentsStreaks
-    (imgIn, contours, borders);
-  }
-  else
-  {
-    POINTS = { 0,0,0 };
-  }
-
-  if (FIGURE_1)
-  {
-    /// Draw contours
-    cv::Mat drawing = cv::Mat::zeros(imgIn.size(), CV_8UC3);
-    for (int i = 0; i < contours.size(); i++)
-    {
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
-    }
-
-    /// Show in a window
-    namedWindow("Contours", cv::WINDOW_NORMAL);
-    imshow("Contours", drawing);
-  }
-  return POINTS;
+int iDivUp(int a, int b)
+{ 
+  return ((a % b) != 0) ? (a / b + 1) : (a / b); 
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: connectedComponentsPoints
-* FUNCTION DESCRIPTION: Found centroid of circular connected components
+*        FUNCTION NAME: gpuErrchk
+* FUNCTION DESCRIPTION: CUDA error check
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-std::vector< cv::Vec<int, 3> > connectedComponentsPoints
-(
-  cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point > >& contours
-  , cv::Vec<int, 4>& borders
-)
+#define gpuErrchk(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, char *file, int line, bool abort=true)
 {
-  int max_points_diameter = 0; 
-  int min_points_diameter = std::max(imgIn.cols, imgIn.rows);
-
-  /* Initialize vector */  
-  std::vector< int >        points(contours.size());
-  std::vector< cv::Point >  centroid(contours.size());
-  std::vector< int >        majorAxis(contours.size());
-  std::vector< int >        minorAxis(contours.size());
-  
-  for (size_t i = 0; i < contours.size(); ++i)
-  {
-    cv::Point2f center;
-    float radius;
-    minEnclosingCircle(contours[i], center, radius);
-
-    cv::Point centerP = { static_cast<int>(round(center.x)) 
-                        , static_cast<int>(round(center.y)) };
-
-    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
-       && (centerP.y>borders[1] && centerP.y<borders[3]))
+    if (code != cudaSuccess) 
     {
-      centroid.at(i) = centerP;
-
-      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
-      
-      /* Identify circular connect components */
-      if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
-      {
-        points.at(i) = 1;
-        if (majorAxis.at(i) > max_points_diameter)
-        {
-          max_points_diameter = majorAxis.at(i);
-        }
-        if (minorAxis.at(i) < min_points_diameter)
-        {
-          min_points_diameter = minorAxis.at(i);
-        }
-      } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
+        fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        if (abort) exit(code);
     }
-  } //for (size_t i = 0; i < contours.size(); ++i)
-
-  int init = 0;
-  int n_points = std::accumulate(points.begin(), points.end(), init);
-  
-  if (n_points)
-  {
-    for (size_t j = 0; j < contours.size(); ++j)
-    {
-      /* Delete little circular connect components */
-      if (majorAxis.at(j)<ceil(max_points_diameter/2))
-      {
-        points.at(j) = 0;
-      }
-    }
-  } //if (n_points)
-
-  n_points = std::accumulate(points.begin(), points.end(), init);
-  std::vector< cv::Vec<int, 3> >  outPOINTS(n_points);
-
-  if (n_points)
-  {
-    int indx = 0;
-    for (size_t k = 0; k < contours.size(); ++k)
-    {
-      if (1 == points.at(k))
-      {
-        outPOINTS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
-        indx++;
-      }
-    }
-  } //if (n_points)
-
-  return outPOINTS;
 }
-
-/* ==========================================================================
-*        FUNCTION NAME: connectedComponentsStreaks
-* FUNCTION DESCRIPTION: Found centroid of linear connected components
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
-(
-  cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point > >& contours
-  , cv::Vec<int, 4>& borders
-)
-{
-  int max_streaks_majoraxis = 0; 
-  int min_streaks_minoraxis = std::max(imgIn.cols, imgIn.rows);
-
-  /* Initialize vector */  
-  std::vector< int >        streaks(contours.size());
-  std::vector< cv::Point >  centroid(contours.size());
-  std::vector< int >        majorAxis(contours.size());
-  std::vector< int >        minorAxis(contours.size());
-  
-  for (size_t i = 0; i < contours.size(); ++i)
-  {
-    cv::Point2f center;
-    float radius;
-    minEnclosingCircle(contours[i], center, radius);
-
-    cv::Point centerP = { static_cast<int>(round(center.x)) 
-                        , static_cast<int>(round(center.y)) };
-
-    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
-       && (centerP.y>borders[1] && centerP.y<borders[3]))
-    {
-      centroid.at(i) = centerP;
-
-      cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-      majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-      minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
-      
-      /* Identify linear connect components */
-      if (majorAxis.at(i) / minorAxis.at(i) > 6)
-      {
-        streaks.at(i) = 1;
-        if (majorAxis.at(i) > max_streaks_majoraxis)
-        {
-          max_streaks_majoraxis = majorAxis.at(i);
-        }
-        if (minorAxis.at(i) < min_streaks_minoraxis)
-        {
-          min_streaks_minoraxis = minorAxis.at(i);
-        }
-      } //if (majorAxis.at(i) / minorAxis.at(i) > 6)
-    }
-  } //for (size_t i = 0; i < contours.size(); ++i)
-
-  int init = 0;
-  int n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  
-  if (n_streaks)
-  {
-    if (n_streaks < 2)
-    {
-      min_streaks_minoraxis=2;
-    }
-    for (size_t j = 0; j < contours.size(); ++j)
-    {
-      /* Delete short linear connect components */
-      if (minorAxis.at(j) < ceil(min_streaks_minoraxis))
-      {
-        streaks.at(j) = 0;
-      }
-    }
-  } //if (n_streaks)
-  
-  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  
-  if (n_streaks)
-  {
-    for (size_t j = 0; j < contours.size(); ++j)
-    {
-      /* Delete short linear connect components */
-      if (majorAxis.at(j)<ceil(max_streaks_majoraxis/2))
-      {
-        streaks.at(j) = 0;
-      }
-    }
-  } //if (n_streaks)
-
-  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  std::vector< cv::Vec<int, 3> >  outSTREAKS(n_streaks);
-
-  if (n_streaks)
-  {
-    int indx = 0;
-    for (size_t k = 0; k < contours.size(); ++k)
-    {
-      if (1 == streaks.at(k))
-      {
-        outSTREAKS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
-        indx++;
-      }
-    }
-  } //if (n_streaks)
-
-  return outSTREAKS;
-}
-
-  /* ==========================================================================
-*        FUNCTION NAME: hough
-* FUNCTION DESCRIPTION: Hough transform
-*        CREATION DATE: 20160911
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-cv::Mat hough(cv::Mat& imgIn)
-{
-  cv::Mat imgOut, binImg, color_dst;
-    
-  double maxval = 255.0;
-  double level = 0.0;
-  
-  level = threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
-
-  level = level * 1.5;
-  
-  threshold(imgIn, binImg, level, maxval, cv::THRESH_BINARY);
-  
-  namedWindow("Hough binary transform", cv::WINDOW_NORMAL);
-  imshow("Hough binary transform", binImg);
-
-  cvtColor( binImg, color_dst, CV_GRAY2BGR );
-
-  double rho = 0.5;
-  double theta = 0.5;
-  int threshold = 100;
-  double minLineLength= 50;
-  double maxLineGap = 1;
-  std::vector<cv::Vec4i> lines;
-
-  HoughLinesP(binImg, lines, rho, theta, threshold, minLineLength, maxLineGap);
-
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-      line( color_dst, cv::Point(lines[i][0], lines[i][1]),
-          cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
-  }
-
-  if (FIGURE_1)
-  {
-    // Create a window for display.
-    namedWindow("Hough transform", cv::WINDOW_NORMAL);
-    imshow("Hough transform", color_dst);
-  }
-
-  return imgOut;
-}
-#endif
 
 

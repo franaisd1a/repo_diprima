@@ -91,18 +91,22 @@ try
 %% Compute the cumulative distribution histogram function
 % ----------------------------------------------------------------------- %
 
-    cdfHistogram=zeros(histogram,1);
-    for i=1:length(histogram)
-        cdfHistogram(i)=sum(histogram(1:i));
-    end
+%     cdfHistogram=zeros(histogram,1);
+%     cdfHistogramVV=zeros(histogram,1);
+%     sumCDF=0;
+%     for i=1:length(histogram)
+%         sumCDF = sumCDF + histogram(i);
+%         cdfHistogram(i) = sumCDF;
+% %         cdfHistogramVV(i)=sum(histogram(1:i));
+%     end
     
 % ----------------------------------------------------------------------- %
 %% Contrast Stretching
 % ----------------------------------------------------------------------- %
     
-    LUT=zeros(histogram,1);
+    LUT=zeros(length(histogram),1);
     peakMax=max(histogram);
-    grayColor=find(histogram==peakMax);
+    grayColor=round(histogramXaxis(find(histogram==peakMax)));%find(histogram==peakMax);
     
 % Compute value in function of the max peak
 
@@ -119,7 +123,7 @@ try
         
     for i=grayColor:length(histogram)-1
         if histogram(i)<highThresh
-            maxValue=i*1.05;%1.5
+            maxValue=i*1;%1.05
             break;
         end
     end
@@ -144,16 +148,25 @@ try
 
     output.stretchImg=uint8(output.stretchImg);
         
+    [histogramNew,histogramXaxisNew] = imhist(output.stretchImg,outputByteDepth);
+    
     if(FIGURE_1)
-        figure('name','Histogram and cumulative distribution function');
+        figure('name','Histogram raw image');
         title('Histogram and cumulative distribution function');
-        semilogy(histogramXaxis, histogram);
+        %semilogy(histogramXaxis, histogram);
+        loglog(histogramXaxis, histogram);
         hold on;
-        semilogy(histogramXaxis, cdfHistogram,'r');
+%         semilogy(histogramXaxis, cdfHistogram,'r');
+%         loglog(histogramXaxis, cdfHistogram,'r');
         xlabel('Grayscale value'); grid on;
         
 %         figure('name','Stretch image');
 %         imshow(output.stretchImg);
+
+        figure('name','Histogram strech image');
+        title('Histogram and cumulative distribution function');
+        %semilogy(histogramXaxis, histogram);
+        loglog(histogramXaxisNew, histogramNew);
     end
     
     tElapsed = toc(tStart);    
