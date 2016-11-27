@@ -15,9 +15,29 @@ IF /I "%inParam%" NEQ "%expParam%" (
 	)
 )
 
+echo "******************************"
+set imgPath=%1
+echo %imgPath%
 
-set imgName=%1
 
+set imgPath=%imgPath:\=/%
+set imgPath=%imgPath:"=%
+
+set disk=%imgPath:~0,1%
+
+set name=%imgPath:~2%
+
+IF /I "%disk%" EQU "C" ( 
+	set strLeft=/cygdrive/c
+)
+IF /I "%disk%" EQU "D" ( 
+	set strLeft=/cygdrive/d
+)
+
+set imgName=%strLeft%%name% 
+echo %imgName%
+
+echo "******************************"
 
 set PATH=%PATH%:"C:\Cygwin\bin"
 
