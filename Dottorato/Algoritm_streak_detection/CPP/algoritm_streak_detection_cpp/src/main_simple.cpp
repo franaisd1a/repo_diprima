@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <time.h>
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
@@ -201,13 +202,14 @@ int main_simple(char* name_file)
 
     Img_input.release();
 
-    int radius = 5;
+    int radius = 15;
     Scalar colorP = {0,255,0};
     Scalar colorS = {0,0,255};
     int thickness = -1;
     int lineType = 8;
     int shift = 0;
 
+    std::cout << "Detected points: " << POINTS.size() << std::endl;
     for (size_t i = 0; i < POINTS.size(); ++i)
     {
       Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
@@ -217,10 +219,12 @@ int main_simple(char* name_file)
       circle(color_Img_input, center, radius, color, thickness, lineType, shift);*/
     }
 
+    std::cout << "Detected streaks: " << STREAKS.size() << std::endl;
     for (size_t i = 0; i < STREAKS.size(); ++i)
     {
       Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
       circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
+      std::cout << "Centroid streaks: " << STREAKS.at(i)[0] << " " << STREAKS.at(i)[1] << std::endl;
     }
 
     // Create a window for display.

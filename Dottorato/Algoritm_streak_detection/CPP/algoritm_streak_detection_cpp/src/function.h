@@ -30,6 +30,7 @@
 #include <math.h>
 #include <string.h>
 #include <numeric>
+#include <time.h>
 
 #include <opencv2/opencv.hpp>
 //#include <opencv\highgui.h>
@@ -41,7 +42,6 @@
 /*#define FIGURE 1U
 #define FIGURE_1 1U
 #define FILE_READ 1U
->>>>>>> 25ca7522b38b196796d1db243ca7a31cc6da06eb
 #define CLEAR 0U
 #define BACKGROUND_SUBTRACTION 1U
 #define DIFFERENT_THRESHOLD 1U

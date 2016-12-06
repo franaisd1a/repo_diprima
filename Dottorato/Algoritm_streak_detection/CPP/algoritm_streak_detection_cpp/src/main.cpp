@@ -26,13 +26,17 @@
 * ========================================================================== */
 #include <time.h>
 
-#include "main_GPU_cuda.cuh"
+//#include "main_GPU_cuda.cuh"
 #include "main_simple.h"
-#include "main_GPU.h"
+//#include "main_GPU.h"
 #include "macros.h"
 /*#include "main_2.h"
 #include "main_fits.h"*/
 
+/*#include    <objbase.h>
+#import "C:\Program Files (x86)\Diffraction Limited\MaxIm DL V5\MaxIm CCD.dll"
+//#import "D:\Dottorato\DRIVER_ASCOM\montaturaccd\montaturaccd\obj\x86\Debug\Interop.MaxIm.dll"
+*/
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
@@ -74,25 +78,25 @@ int main(int argc, char** argv)
   char* name_file = argv[1];
 
   clock_t start, stop;
-	double totalTime, totalTimeCUDAkernel;
+  double totalTime, totalTimeCUDAkernel;
 
   std::cout << "Start streaks points detection algorithms" << std::endl;
 
-  int repeatCycle = 10;
+  int repeatCycle = 1;
 
 for (int u=0; u<repeatCycle;++u)
 {
 /* ------------------------------- AlgoSimple ------------------------------- */
 #if 1
   start = clock();
-	
+  
   // Algo simple
 
   int algoSimple = main_simple(name_file);
 
 
   stop = clock();
-	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
   //std::cout << "algoSimple time: " << totalTime << std::endl;
   std::cout << "CPU time: " << totalTime << " sec" << std::endl;
@@ -106,12 +110,12 @@ for (int u=0; u<repeatCycle;++u)
   int algo2 = main_2(name_file);
 
   stop = clock();
-	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
   std::cout << "algo2 time: " << totalTime << std::endl;
 #endif
 /* ----------------------------- AlgoCUDAkernel ----------------------------- */
-#if 1  
+#if 0  
   start = clock();
 
   // AlgoCUDAkernel
@@ -120,7 +124,7 @@ for (int u=0; u<repeatCycle;++u)
 
 
   stop = clock();
-	totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
   //std::cout << "AlgoCUDAkernel time: " << totalTimeCUDAkernel << std::endl;
   std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
@@ -136,7 +140,7 @@ for (int u=0; u<repeatCycle;++u)
 
 
   stop = clock();
-	totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
   std::cout << "AlgoGPU time: " << totalTime << std::endl;
 #endif

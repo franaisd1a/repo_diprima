@@ -165,7 +165,7 @@ cv::Mat binarization(cv::Mat& imgIn)
   
   level = threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
 
-  level = level * 1.5;
+  //level = level * 1.5;
   
   threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
@@ -317,7 +317,7 @@ std::vector< cv::Vec<int, 3> > connectedComponents
   {
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgIn.size(), CV_8UC3);
-    for (uint i = 0; i < contours.size(); i++)
+    for (int i = 0; i < contours.size(); i++)
     {
       cv::Scalar color = cv::Scalar(0, 255, 0);
       drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
