@@ -36,6 +36,9 @@
 //#include <opencv\highgui.h>
 #include <opencv/highgui.h>
 
+#include <stdlib.h>
+#include <fitsio.h>
+
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
@@ -55,6 +58,26 @@
 /* ==========================================================================
 * FUNCTION DECLARATION
 * ========================================================================== */
+
+/**
+* fileExt Get file extension
+* @param nameFile Input file name
+* @param img cv::Mat image
+*/
+char* fileExt(const char* nameFile);
+
+/**
+* readFit Read .fit file and write in opencv Mat
+* @param nameFile Input file name
+* @param img cv::Mat image
+*/
+void readFit(char* nameFile, cv::Mat& img);
+
+/**
+* histogramStretching Histogram Stretching
+* @param imgIn Input image
+*/
+cv::Mat histogramStretching(cv::Mat& imgIn);
 
 /**
 * gaussianFilter Filter an image using Gaussian lowpass filter

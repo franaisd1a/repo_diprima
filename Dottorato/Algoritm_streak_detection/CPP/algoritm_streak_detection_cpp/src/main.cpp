@@ -30,13 +30,10 @@
 #include "main_simple.h"
 //#include "main_GPU.h"
 #include "macros.h"
-/*#include "main_2.h"
-#include "main_fits.h"*/
+//#include "main_2.h"
+#include "main_fits.h"
 
-/*#include    <objbase.h>
-#import "C:\Program Files (x86)\Diffraction Limited\MaxIm DL V5\MaxIm CCD.dll"
-//#import "D:\Dottorato\DRIVER_ASCOM\montaturaccd\montaturaccd\obj\x86\Debug\Interop.MaxIm.dll"
-*/
+
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
@@ -151,6 +148,9 @@ for (int u=0; u<repeatCycle;++u)
   int testFits = main_fits(name_file);
 #endif
 }
+
+
+/* -------------------------------------------------------------------------- */
 
 if (repeatCycle>1)
 {

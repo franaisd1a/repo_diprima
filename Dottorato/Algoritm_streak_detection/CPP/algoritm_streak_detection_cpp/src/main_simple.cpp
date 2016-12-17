@@ -61,23 +61,48 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-int main_simple(char* name_file)
+int main_simple(char* nameFile)
 {
   //cout << "CPU algorithms." << std::endl;
 
-  /* Open file */
+  /* Open log file */
   FILE * pFile;
   pFile = fopen ("consoleSimple.txt","w");
-   
-  // Read file
-  Mat Img_input = imread(name_file, CV_LOAD_IMAGE_GRAYSCALE );
   
-  // Check for invalid file
-  if (!Img_input.data)  {
-    cout << "Error: could not open or find the image." << std::endl;
+
+  /* Read file extension */
+
+  char* ext = fileExt(nameFile);
+  const char* extJPG = "jpg";
+  const char* extFIT = "fit";
+
+  /* Read image */
+
+  Mat Img_input;
+
+  if (0==strcmp(ext, extJPG))
+  {
+    // Read file
+    Img_input = imread(nameFile, CV_LOAD_IMAGE_GRAYSCALE);
+
+    // Check for invalid file
+    if (!Img_input.data) {
+      cout << "Error: could not open or find the image." << std::endl;
+      return -1;
+    }
+  }
+  else if (0==strcmp(ext, extFIT))
+  {
+    readFit(nameFile, Img_input);
+  }
+  else
+  {
+    printf("Error in reading process.\n");
+    fprintf(pFile, "Error in reading process.\n");
     return -1;
   }
-  
+
+
   int channels = Img_input.channels();
   int depth = Img_input.depth();
   cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
@@ -93,6 +118,12 @@ int main_simple(char* name_file)
 /* ======================================================================= *
  * Big Points detection                                                    *
  * ======================================================================= */
+
+/* ----------------------------------------------------------------------- *
+ * Histogram Stretching                                                    *
+ * ----------------------------------------------------------------------- */
+
+  Mat histStretch = histogramStretching(Img_input);
 
 /* ----------------------------------------------------------------------- *
  * Gaussian filter                                                         *

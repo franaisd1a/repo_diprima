@@ -48,6 +48,189 @@
 * ========================================================================== */
 
 /* ==========================================================================
+*        FUNCTION NAME: readFit
+* FUNCTION DESCRIPTION: Read .fit file and convert to opencv Mat
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+char* fileExt(const char* strN)
+{
+  char nameFile[1024];
+  strcpy ( nameFile, strN );
+  char* pch;
+  char *path[32][256];
+  pch = strtok(nameFile,"\\");
+  size_t count = 0;
+  while (pch != NULL)
+  {
+    //printf ("%s\n",pch);
+    *path[count] = pch;
+    pch = strtok (NULL, "\\");
+    count++;
+  }
+  char *name = *path[count-1];
+  
+  pch = strtok(name,".");
+  while (pch != NULL)
+  {    
+    //printf ("%s\n",pch);
+    *path[count] = pch;
+    pch = strtok (NULL, ".");
+    count++;
+  }
+  char* ext = *path[count-1];
+
+  return ext;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: readFit
+* FUNCTION DESCRIPTION: Read .fit file and convert to opencv Mat
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void readFit(char* nameFile, cv::Mat& img)
+{
+  // Check for invalid input
+  fitsfile *fptr;
+  char card[FLEN_CARD];
+  int status = 0;
+  int nkeys = 0;
+  int ii = 0; /* MUST initialize status */
+  //fits_open_file(&fptr, argv[1], READONLY, &status);
+  fits_open_file(&fptr, nameFile, READONLY, &status);
+  fits_get_hdrspace(fptr, &nkeys, NULL, &status);
+  for (ii = 1; ii <= nkeys; ii++) {
+    fits_read_record(fptr, ii, card, &status); /* read keyword */
+    if (FIT_HEADER)
+    {
+      printf("%s\n", card);
+    }
+  }
+  
+  int naxis = 0;
+  int status1 = 0;
+  int imgDim = fits_get_img_dim(fptr, &naxis, &status1);
+  
+  if (2 != naxis)
+  {
+    printf("Error! 3d image.\n");
+  }
+
+  int maxdim= 2;
+  int bitpix= 0;
+  int naxis2 = 0;
+  long naxes[2] = { 0, 0 };
+  int statusImg= 0;
+  int imgParam = fits_get_img_param(fptr, maxdim, &bitpix, &naxis2, naxes, &statusImg);
+  
+
+  /* Read image */
+  
+  int statusRead = 0;
+  void *nulval = NULL;//0;//
+  long fpixel[2] = {1, 1};
+  long nelements = naxes[0] * naxes[1];
+  int anynul = 0;
+  
+  int datatype = TUSHORT;
+  unsigned short* array = (unsigned short*)malloc(sizeof(unsigned short) * nelements);
+  int readImg = fits_read_pix(fptr, datatype, fpixel, nelements, nulval, array, &anynul, &status);
+
+  img = cv::Mat(naxes[1], naxes[0], CV_16U, array);
+  // Create a window for display.
+  namedWindow("Input .fit image", cv::WINDOW_NORMAL);
+  imshow("Input .fit image", img);
+
+  printf("END\n\n"); /* terminate listing with END */
+  fits_close_file(fptr, &status);
+  if (status) /* print any error messages */
+  {
+    fits_report_error(stderr, status);
+  }  
+  return;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: histogramStretching
+* FUNCTION DESCRIPTION: Histogram Stretching
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat histogramStretching(cv::Mat& imgIn)
+{
+  int depth = imgIn.depth();
+  int type = imgIn.type();
+  
+  int color = 0;
+
+  if (0 == type) {
+    color = static_cast<int>(::pow(2, 8)) - 1;
+  } else if (2 == type) {
+    color = static_cast<int>(::pow(2, 16)) - 1;
+  } else {
+    printf("Error. Unsupported pixel type.\n");
+  }
+  cv::Mat hist = cv::Mat::zeros(1, color, CV_16U);
+
+  int row = 0, col = 0;
+  ushort value = 0;
+  for (row = 0; row < imgIn.rows; ++row)
+  {
+    const ushort* pLine = imgIn.ptr<ushort>(row);
+    for (int col = 0; col < imgIn.cols; col++) {
+      value = pLine[col];
+
+      ushort* pLineH = hist.ptr<ushort>(0);
+      pLineH[value] +=  1;
+    }
+  }
+
+  double maxHistValue = 0, minHistValue = 0;
+  cv::Point minLocHistValue = 0, maxLocHistValue = 0;
+  cv::minMaxLoc(imgIn, &minHistValue, &maxHistValue, &minLocHistValue, &maxLocHistValue, cv::noArray());
+
+  double peakMax = 0, peakMin = 0;
+  cv::Point peakMinLoc = 0, peakMaxLoc = 0;
+  cv::minMaxLoc(hist, &peakMin, &peakMax, &peakMinLoc, &peakMaxLoc, cv::noArray());
+
+
+  const double percentile[2] = { 0.432506, (1 - 0.97725) };
+  double  lowThresh = peakMax * percentile[0];
+  double highThresh = peakMax * percentile[1];
+
+  int i = 0, k = 0;
+  int minValue = 0, maxValue = 0;
+  for (i = 0; i < peakMaxLoc.x; ++i)
+  {
+    k = peakMaxLoc.x - i;
+    double val = static_cast<double>(hist.at<ushort>(0, k));
+    if (val < lowThresh) {
+      minValue = k;
+      break;
+    }
+  }
+
+  for (i = peakMaxLoc.x; i < hist.cols; ++i)
+  {
+    double val = static_cast<double>(hist.at<ushort>(0, i));
+    if (val < highThresh) {
+      maxValue = i;
+      break;
+    }
+  }
+
+
+  return imgIn;
+}
+
+/* ==========================================================================
 *        FUNCTION NAME: gaussianFilter
 * FUNCTION DESCRIPTION: Gaussian lowpass filter
 *        CREATION DATE: 20160727
@@ -603,11 +786,8 @@ cv::Mat hough(cv::Mat& imgIn)
 void timeElapsed(clock_t start, const char* strName)
 {
   clock_t stop = clock();
-	double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+  double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
   std::cout << strName << " time: " << totalTime << std::endl;
 
 }
-
-
-

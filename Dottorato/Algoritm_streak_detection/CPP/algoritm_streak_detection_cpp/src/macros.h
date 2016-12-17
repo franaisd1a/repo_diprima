@@ -24,9 +24,10 @@
 * MACROS
 * ========================================================================== */
 #define FIGURE 1U
-#define FIGURE_1 0U
+#define FIGURE_1 1U
 #define READ_FILE 1U
 #define TIME_STAMP 0U
+#define FIT_HEADER 1U
 #define CLEAR 0U
 #define BACKGROUND_SUBTRACTION 1U
 #define DIFFERENT_THRESHOLD 1U
