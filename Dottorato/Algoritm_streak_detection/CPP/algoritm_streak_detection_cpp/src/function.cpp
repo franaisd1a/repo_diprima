@@ -151,7 +151,7 @@ void readFit(char* nameFile, cv::Mat& img)
   if (status) /* print any error messages */
   {
     fits_report_error(stderr, status);
-  }  
+  }
   return;
 }
 
@@ -167,7 +167,8 @@ cv::Mat histogramStretching(cv::Mat& imgIn)
 {
   int depth = imgIn.depth();
   int type = imgIn.type();
-  
+  double outputByteDepth = 255.0;
+
   int color = 0;
 
   if (0 == type) {
@@ -178,14 +179,14 @@ cv::Mat histogramStretching(cv::Mat& imgIn)
     printf("Error. Unsupported pixel type.\n");
   }
   cv::Mat hist = cv::Mat::zeros(1, color, CV_16U);
+  cv::Mat LUT = cv::Mat::zeros(1, color, CV_32F);
 
   int row = 0, col = 0;
-  ushort value = 0;
   for (row = 0; row < imgIn.rows; ++row)
   {
     const ushort* pLine = imgIn.ptr<ushort>(row);
-    for (int col = 0; col < imgIn.cols; col++) {
-      value = pLine[col];
+    for (int col = 0; col < imgIn.cols; ++col) {
+      ushort value = pLine[col];
 
       ushort* pLineH = hist.ptr<ushort>(0);
       pLineH[value] +=  1;
@@ -226,8 +227,45 @@ cv::Mat histogramStretching(cv::Mat& imgIn)
     }
   }
 
+  double scaleFactor = outputByteDepth/(maxValue-minValue);
+  
+  for (i = 0; i < hist.cols; ++i)
+  {
+    if (i < minValue)
+    {
+      LUT.at<float>(0, i) = 0;
+    }
+    else if (i > maxValue) {
+      LUT.at<float>(0, i) = outputByteDepth;
+    }
+    else {
+      LUT.at<float>(0, i) = (i - minValue)*scaleFactor;
+    }
+  }
 
-  return imgIn;
+  cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, CV_8U);
+
+  for (row = 0; row < imgIn.rows; ++row)
+  {
+    const ushort* pLimgIn = imgIn.ptr<ushort>(row);
+    const float* pLlut = LUT.ptr<float>(0);
+    uchar* pLimgOut = imgOut.ptr<uchar>(row);
+
+    for (int col = 0; col < imgIn.cols; ++col) {
+      ushort valueIn = pLimgIn[col];
+      float valueLUT = pLlut[valueIn];
+      pLimgOut[col] =  static_cast<uchar>(valueLUT);
+    }
+  }
+  
+  if (FIGURE_1)
+  {
+    // Create a window for display.
+    namedWindow("8bits image", cv::WINDOW_NORMAL);
+    imshow("8bits image", imgOut);
+  }
+
+  return imgOut;
 }
 
 /* ==========================================================================
@@ -302,7 +340,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen)
 
 /* ==========================================================================
 *        FUNCTION NAME: morphologyOpen
-* FUNCTION DESCRIPTION: Morphology opening
+* FUNCTION DESCRIPTION: Morphology opening with linear structuring element
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -311,18 +349,61 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen)
 cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak)
 {
   cv::Mat imgOut;
-
   int iter = 1;
   cv::Point anchor = cv::Point(-1, -1);
 
+#if 1
+  int xDim = static_cast<int>(::round(dimLine * ::cos(teta_streak)));
+  int yDim = static_cast<int>(::round(dimLine * ::sin(teta_streak)));
+
+  cv::Mat structEl = cv::Mat::zeros(yDim, xDim, CV_8U);
+  //void line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
+  cv::Point pt1;
+  cv::Point pt2;
+  const cv::Scalar color = cv::Scalar( 1, 1, 1 );
+  int thickness = 1;
+  int lineType = 8;
+  int shift = 0;
+  line(structEl, pt1, pt2, color, thickness, lineType, shift);
+#else
   //InputArray kernel;
-  cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1));
+  cv::Mat structEl = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1));
+#endif
+
+  morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structEl, anchor, iter
+    , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
+
+  if (FIGURE_1) {
+    // Create a window for display.
+    namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
+    imshow("Morphology opening with rectangular kernel", imgOut);
+  }
+
+  return imgOut;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: morphologyOpen
+* FUNCTION DESCRIPTION: Morphology opening with linear structuring element
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat morphologyOpen(cv::Mat& imgIn, int rad)
+{
+  cv::Mat imgOut;
+  int iter = 1;
+  cv::Point anchor = cv::Point(-1, -1);
+  cv::Size size = cv::Size(rad, rad);
+
+  //InputArray kernel;
+  cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_ELLIPSE, size, anchor);
 
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
-  if (FIGURE_1)
-  {
+  if (FIGURE_1) {
     // Create a window for display.
     namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
     imshow("Morphology opening with rectangular kernel", imgOut);
@@ -333,7 +414,7 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak)
 
 /* ==========================================================================
 *        FUNCTION NAME: binarization
-* FUNCTION DESCRIPTION: Image binarization
+* FUNCTION DESCRIPTION: Image binarization using Otsu method
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -358,6 +439,29 @@ cv::Mat binarization(cv::Mat& imgIn)
     namedWindow("Binary image", WINDOW_NORMAL);
     imshow("Binary image", binImg);*/
 
+    // Create a window for display.
+    namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
+    imshow("Binary image Otsu threshold", imgOut);
+  }
+
+  return imgOut;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: binarization
+* FUNCTION DESCRIPTION: Image binarization
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat binarization(cv::Mat& imgIn, double level)
+{
+  cv::Mat imgOut;
+  double maxval = 255.0;    
+  double res = threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
+
+  if (FIGURE_1) {  
     // Create a window for display.
     namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
     imshow("Binary image Otsu threshold", imgOut);
@@ -437,17 +541,35 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
   /*kernel_size = 3 + 2 * (ind % 5);
   kernel = Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size*kernel_size);*/
 
-  int ddepth = -1;
+  int ddepth = CV_32F;
   cv::Point anchor = cv::Point(-1, -1);
   double delta = 0;
 
   filter2D(imgIn, convImg, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
 
-  //double level = 0.0;
+  int depth = imgIn.depth();
+  int type = imgIn.type();
+
+#if 0
+  int row = 0, col = 0;
+  for (row = 0; row < convImg.rows; ++row)
+  {
+    const float* pLine = convImg.ptr<float>(row);
+    for (int col = 0; col < convImg.cols; ++col) {
+      float value = pLine[col];
+      printf("%f ", static_cast<float>(value));
+    }
+    printf("\n\n");
+  }
+#endif
+
   double maxval = 255.0;
 
-  //level = cv::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
-  cv::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
+  cv::threshold(convImg, imgOut, thresh*maxval, maxval, cv::THRESH_BINARY);
+
+  double alpha = 1, beta = 0;
+  //convertTo(OutputArray m, int rtype, double alpha=1, double beta=0 )
+  imgOut.convertTo(imgOut, CV_8U, alpha, beta);
 
   if (FIGURE_1)
   {
@@ -745,9 +867,11 @@ cv::Mat hough(cv::Mat& imgIn)
   
   threshold(imgIn, binImg, level, maxval, cv::THRESH_BINARY);
   
-  namedWindow("Hough binary transform", cv::WINDOW_NORMAL);
-  imshow("Hough binary transform", binImg);
-
+  if (FIGURE_1)
+  {
+    namedWindow("Hough binary transform", cv::WINDOW_NORMAL);
+    imshow("Hough binary transform", binImg);
+  }
   cvtColor( binImg, color_dst, CV_GRAY2BGR );
 
   double rho = 0.5;

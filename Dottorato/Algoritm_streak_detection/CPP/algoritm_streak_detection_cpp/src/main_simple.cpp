@@ -115,45 +115,30 @@ int main_simple(char* nameFile)
   fprintf(pFile, "Image channels: %d\n", channels);
   fprintf(pFile, "Image depth bit: %d\n", depth);
   
-/* ======================================================================= *
- * Big Points detection                                                    *
- * ======================================================================= */
-
+  
 /* ----------------------------------------------------------------------- *
  * Histogram Stretching                                                    *
  * ----------------------------------------------------------------------- */
 
-  Mat histStretch = histogramStretching(Img_input);
+  Mat histStretch;
+  if (0 == strcmp(ext, extJPG))
+  {
+    histStretch = Img_input;
+  }
+  else if (0 == strcmp(ext, extFIT))
+  {
+    histStretch = histogramStretching(Img_input);
+  }
 
-/* ----------------------------------------------------------------------- *
- * Gaussian filter                                                         *
- * ----------------------------------------------------------------------- */
+  int depth2 = histStretch.depth();
+  int type = histStretch.type();
 
-  int hsize[2] = {31, 31};//{101, 101};
-  double sigma = 30;
+
+/* ======================================================================= *
+ * Points detection                                                        *
+ * ======================================================================= */
+
   clock_t start = clock();
-
-  Mat gaussImg = gaussianFilter(Img_input, hsize, sigma);
-
-  if (TIME_STAMP) {
-    timeElapsed(start, "Gaussian filter");}
-
-  fprintf(pFile, "End Gaussian filter\n");
-
-/* ----------------------------------------------------------------------- *
- * Background subtraction                                                  *
- * ----------------------------------------------------------------------- */
-
-  start = clock();
-
-  Mat backgroundSub = Img_input - gaussImg;
-
-  gaussImg.release();
-
-  if (TIME_STAMP) {
-    timeElapsed(start, "Background subtraction");}
-
-  fprintf(pFile, "End Background subtraction\n");
 
 /* ----------------------------------------------------------------------- *
  * Median filter                                                           *
@@ -161,15 +146,13 @@ int main_simple(char* nameFile)
 
   start = clock();
   
-  int kerlen = 11;
-  Mat medianImg = medianFilter(backgroundSub, kerlen);
+  int kerlen = 3;
+  Mat medianImg = medianFilter(histStretch, kerlen);
+  //backgroundSub.release();
 
-  backgroundSub.release();
-
-  if (TIME_STAMP) {
-    timeElapsed(start, "Median filter");}
-  
+  if (TIME_STAMP) timeElapsed(start, "Median filter");
   fprintf(pFile, "End Median filter\n");
+
 
 /* ----------------------------------------------------------------------- *
  * Binarization                                                            *
@@ -177,39 +160,56 @@ int main_simple(char* nameFile)
 
   start = clock();
 
-  Mat binaryImg = binarization(medianImg);
-
+  double level = 150;//150 / 255
+  Mat binaryImg = binarization(medianImg, level);
   medianImg.release();
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Binarization");}
-
+  if (TIME_STAMP) timeElapsed(start, "Binarization");
   fprintf(pFile, "End Binarization\n");
+
 
 /* ----------------------------------------------------------------------- *
  * Convolution kernel                                                      *
  * ----------------------------------------------------------------------- */
 
+  start = clock();
+
   int szKernel = 3;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
-  double threshConv = szKernel*szKernel;
+  double threshConv = 6;// szKernel*szKernel;
+  
+  Mat convImg = convolution(binaryImg, kernel, threshConv);
+  binaryImg.release();
+
+  if (TIME_STAMP) timeElapsed(start, "Convolution");
+  fprintf(pFile, "End Convolution kernel\n");
+  
+
+/* ----------------------------------------------------------------------- *
+ * Morphology opening                                                      *
+ * ----------------------------------------------------------------------- */
 
   start = clock();
 
-  Mat convImg = convolution(binaryImg, kernel, threshConv);
+  int radDisk = 6;  
+  Mat openImg = morphologyOpen(convImg, radDisk);
+  convImg.release();
+
+  if (TIME_STAMP) timeElapsed(start, "Morphology opening");
+  fprintf(pFile, "End Morphology opening kernel\n");
   
-  binaryImg.release();
-
-  if (TIME_STAMP) {
-    timeElapsed(start, "Convolution");}
-
-  fprintf(pFile, "End Convolution kernel\n");
-
+  
+/* ======================================================================= *
+ * Streaks detection                                                       *
+ * ======================================================================= */
+  cv::waitKey(0);
 /* ----------------------------------------------------------------------- *
  * Hough transform                                                         *
  * ----------------------------------------------------------------------- */
 #if 0
-  Mat houghImg = hough(medianImg);
+  start = clock();
+
+  Mat houghImg = hough(convImg);
 #endif
 
 /* ----------------------------------------------------------------------- *
@@ -220,7 +220,7 @@ int main_simple(char* nameFile)
 
   std::vector< cv::Vec<int, 3> > STREAKS;
   
-  connectedComponents(convImg, imgBorders, POINTS, STREAKS);
+  connectedComponents(openImg, imgBorders, POINTS, STREAKS);
 
 /* ----------------------------------------------------------------------- *
  * Plot result                                                             *
@@ -229,7 +229,7 @@ int main_simple(char* nameFile)
   if (FIGURE)
   {
     Mat color_Img_input;
-    cvtColor( Img_input, color_Img_input, CV_GRAY2BGR );
+    cvtColor( histStretch, color_Img_input, CV_GRAY2BGR );
 
     Img_input.release();
 

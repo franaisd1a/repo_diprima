@@ -114,6 +114,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @return outImage Morphology opening image
 */
 cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
+cv::Mat morphologyOpen(cv::Mat& imgIn, int rad);
 
 /**
 * binarization Image binarization
@@ -123,6 +124,7 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
 * @return outImage Morphology opening image
 */
 cv::Mat binarization(cv::Mat& imgIn);
+cv::Mat binarization(cv::Mat& imgIn, double level);
 cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
 
 /**
