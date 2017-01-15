@@ -183,7 +183,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 * @param imgIn Input image
 * @return outImage 
 */
-cv::Mat hough(cv::Mat& imgIn);
+std::vector<std::pair<float, int>> hough(cv::Mat& imgIn);
 
 /**
 * timeElapsed Compute elapsed time

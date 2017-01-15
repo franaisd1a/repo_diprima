@@ -142,11 +142,12 @@ void readFit(char* nameFile, cv::Mat& img)
   int readImg = fits_read_pix(fptr, datatype, fpixel, nelements, nulval, array, &anynul, &status);
 
   img = cv::Mat(naxes[1], naxes[0], CV_16U, array);
-  // Create a window for display.
-  namedWindow("Input .fit image", cv::WINDOW_NORMAL);
-  imshow("Input .fit image", img);
-
-  printf("END\n\n"); /* terminate listing with END */
+  if (FIGURE_1) {
+    // Create a window for display.
+    namedWindow("Input .fit image", cv::WINDOW_NORMAL);
+    imshow("Input .fit image", img);
+  }
+  printf("END .fit header\n\n"); /* terminate listing with END */
   fits_close_file(fptr, &status);
   if (status) /* print any error messages */
   {
@@ -258,8 +259,7 @@ cv::Mat histogramStretching(cv::Mat& imgIn)
     }
   }
   
-  if (FIGURE_1)
-  {
+  if (FIGURE) {
     // Create a window for display.
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
@@ -538,8 +538,6 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag)
 cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
 {
   cv::Mat imgOut, convImg;
-  /*kernel_size = 3 + 2 * (ind % 5);
-  kernel = Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size*kernel_size);*/
 
   int ddepth = CV_32F;
   cv::Point anchor = cv::Point(-1, -1);
@@ -547,36 +545,17 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
 
   filter2D(imgIn, convImg, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
 
-  int depth = imgIn.depth();
-  int type = imgIn.type();
-
-#if 0
-  int row = 0, col = 0;
-  for (row = 0; row < convImg.rows; ++row)
-  {
-    const float* pLine = convImg.ptr<float>(row);
-    for (int col = 0; col < convImg.cols; ++col) {
-      float value = pLine[col];
-      printf("%f ", static_cast<float>(value));
-    }
-    printf("\n\n");
-  }
-#endif
-
   double maxval = 255.0;
 
   cv::threshold(convImg, imgOut, thresh*maxval, maxval, cv::THRESH_BINARY);
 
   double alpha = 1, beta = 0;
-  //convertTo(OutputArray m, int rtype, double alpha=1, double beta=0 )
   imgOut.convertTo(imgOut, CV_8U, alpha, beta);
 
-  if (FIGURE_1)
-  {
+  if (FIGURE_1) {
     // Create a window for display.
     namedWindow("Convolution image", cv::WINDOW_NORMAL);
     imshow("Convolution image", imgOut);
-
   }
   return imgOut;
 }
@@ -854,49 +833,75 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat hough(cv::Mat& imgIn)
+std::vector<std::pair<float, int>> hough(cv::Mat& imgIn)
 {
-  cv::Mat imgOut, binImg, color_dst;
-    
-  double maxval = 255.0;
-  double level = 0.0;
+  double rho = 1; //0.5;
+  double theta = 2*CV_PI / 180; //CV_PI / (2*180); r:pi=g:180
+  int threshold = 60;
   
-  level = threshold(imgIn, binImg, cv::THRESH_OTSU, maxval, cv::THRESH_BINARY);
+  std::vector<cv::Vec2f> houghVal;
+  HoughLines(imgIn, houghVal, rho, theta, threshold);
+  
+  // Loop for find lines with high thresoldh
+  size_t maxNumAngles = 10;
+  bool exitL = true;
 
-  level = level * 1.5;
-  
-  threshold(imgIn, binImg, level, maxval, cv::THRESH_BINARY);
-  
-  if (FIGURE_1)
+  while (exitL)
   {
-    namedWindow("Hough binary transform", cv::WINDOW_NORMAL);
-    imshow("Hough binary transform", binImg);
-  }
-  cvtColor( binImg, color_dst, CV_GRAY2BGR );
-
-  double rho = 0.5;
-  double theta = 0.5;
-  int threshold = 100;
-  double minLineLength= 50;
-  double maxLineGap = 1;
-  std::vector<cv::Vec4i> lines;
-
-  HoughLinesP(binImg, lines, rho, theta, threshold, minLineLength, maxLineGap);
-
-  for( size_t i = 0; i < lines.size(); i++ )
-  {
-      line( color_dst, cv::Point(lines[i][0], lines[i][1]),
-          cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+    if (houghVal.size() > maxNumAngles)
+    {
+      threshold = threshold * 1.5;
+      HoughLines(imgIn, houghVal, rho, theta, threshold);
+    }    
+    else if ((houghVal.size()>=5) && (houghVal.size() <= 10))
+    {
+      exitL = false;
+    }
+    else
+    {
+      threshold = threshold / 1.05;
+      HoughLines(imgIn, houghVal, rho, theta, threshold);
+    }
   }
 
-  if (FIGURE_1)
+  
+  // Select the inclination angles
+  std::vector<float> angle;
+  for (size_t i = 0; i < houghVal.size(); ++i)
   {
+    angle.push_back(houghVal.at(i)[1]);
+  }
+
+  int count = 0;
+  std::vector<std::pair<float, int>> countAngle;
+  for (size_t i = 0; i < houghVal.size(); ++i)
+  {
+    int a = std::count(angle.begin(), angle.end(), angle.at(i));
+    countAngle.push_back(std::make_pair(angle.at(i), a));
+    count = count + a;
+    if (houghVal.size() == count) break;
+  }
+
+  if (FIGURE_1) {
+    cv::Mat color_dst;
+    cvtColor( imgIn, color_dst, CV_GRAY2BGR );
+    double minLineLength = 20;
+    double maxLineGap = 1;
+    std::vector<cv::Vec4i> lines;
+    HoughLinesP(imgIn, lines, rho, theta, threshold, minLineLength, maxLineGap);
+
+    for (size_t i = 0; i < lines.size(); i++) {
+      line(color_dst, cv::Point(lines[i][0], lines[i][1]),
+        cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0, 0, 255), 3, 8);
+    }
+
     // Create a window for display.
     namedWindow("Hough transform", cv::WINDOW_NORMAL);
     imshow("Hough transform", color_dst);
+    cv::waitKey(0);
   }
-
-  return imgOut;
+  
+  return countAngle;
 }
 
 /* ==========================================================================

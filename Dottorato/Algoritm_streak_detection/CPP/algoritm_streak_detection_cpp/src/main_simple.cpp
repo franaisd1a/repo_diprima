@@ -105,16 +105,17 @@ int main_simple(char* nameFile)
 
   int channels = Img_input.channels();
   int depth = Img_input.depth();
+  fprintf(pFile, "Image channels: %d\n", channels);
+  fprintf(pFile, "Image depth bit: %d\n", depth);
+
   cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
   cv::Point_<double> borders = { 0.015, 0.985 };
   Vec<int, 4> imgBorders = {static_cast<int>(ceil( borders.x * I_input_size.x))
                           , static_cast<int>(ceil( borders.x * I_input_size.y))
                           , static_cast<int>(floor(borders.y * I_input_size.x))
-                          , static_cast<int>(floor(borders.y * I_input_size.y))};
-  
-  fprintf(pFile, "Image channels: %d\n", channels);
-  fprintf(pFile, "Image depth bit: %d\n", depth);
-  
+                          , static_cast<int>(floor(borders.y * I_input_size.y))};  
+  //printf("imgBorders: %d %d %d %d", imgBorders[0], imgBorders[1], imgBorders[2], imgBorders[3]);
+      
   
 /* ----------------------------------------------------------------------- *
  * Histogram Stretching                                                    *
@@ -133,7 +134,22 @@ int main_simple(char* nameFile)
   int depth2 = histStretch.depth();
   int type = histStretch.type();
 
+/* ----------------------------------------------------------------------- *
+ * Set image borders with zero                                             *
+ * ----------------------------------------------------------------------- */
+  
+  cv::Rect border(cv::Point(0, 0), Img_input.size());
+  cv::Scalar color(0, 0, 0);
+  int thickness = max(imgBorders[0], imgBorders[1]);
 
+  cv::rectangle(histStretch, border, color, thickness);  
+
+  if (FIGURE_1) {
+    // Create a window for display.
+    namedWindow("img", cv::WINDOW_NORMAL);
+    imshow("img", histStretch);
+  }
+  
 /* ======================================================================= *
  * Points detection                                                        *
  * ======================================================================= */
@@ -193,7 +209,6 @@ int main_simple(char* nameFile)
 
   int radDisk = 6;  
   Mat openImg = morphologyOpen(convImg, radDisk);
-  convImg.release();
 
   if (TIME_STAMP) timeElapsed(start, "Morphology opening");
   fprintf(pFile, "End Morphology opening kernel\n");
@@ -202,14 +217,20 @@ int main_simple(char* nameFile)
 /* ======================================================================= *
  * Streaks detection                                                       *
  * ======================================================================= */
-  cv::waitKey(0);
+  
 /* ----------------------------------------------------------------------- *
  * Hough transform                                                         *
  * ----------------------------------------------------------------------- */
-#if 0
+#if 1
   start = clock();
 
-  Mat houghImg = hough(convImg);
+  Mat resizeImg;
+  double f = 0.5;
+  Size dsize = { 0, 0 };
+  resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
+  
+  std::vector<std::pair<float, int>> countAngle = hough(resizeImg);
+  convImg.release();
 #endif
 
 /* ----------------------------------------------------------------------- *
