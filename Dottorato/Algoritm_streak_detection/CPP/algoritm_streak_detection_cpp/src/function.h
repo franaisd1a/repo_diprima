@@ -113,7 +113,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak);
+cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta);
 cv::Mat morphologyOpen(cv::Mat& imgIn, int rad);
 
 /**
@@ -193,6 +193,12 @@ std::vector<std::pair<float, int>> hough(cv::Mat& imgIn);
 */
 void timeElapsed(clock_t start, const char* strName);
 
+/**
+* linearKernel Compute linear structural element
+* @param dimLine Line dimension
+* @param teta_streak Line inclination angle
+* @return kernel Kernel with linear structural element
+*/
+cv::Mat linearKernel(int dimLine, double teta);
+
 #endif /* FUNCTION_H */
-
-

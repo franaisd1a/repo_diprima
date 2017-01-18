@@ -346,30 +346,31 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat morphologyOpen(cv::Mat& imgIn, int dimLine, double teta_streak)
+cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta)
 {
-  cv::Mat imgOut;
-  int iter = 1;
-  cv::Point anchor = cv::Point(-1, -1);
+  cv::Mat imgOut;  
 
-#if 1
-  int xDim = static_cast<int>(::round(dimLine * ::cos(teta_streak)));
-  int yDim = static_cast<int>(::round(dimLine * ::sin(teta_streak)));
+  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
+  cv::Mat structEl = cv::Mat::zeros(yDim, dimLine, CV_8U);
 
-  cv::Mat structEl = cv::Mat::zeros(yDim, xDim, CV_8U);
-  //void line(Mat& img, Point pt1, Point pt2, const Scalar& color, int thickness=1, int lineType=8, int shift=0)
-  cv::Point pt1;
-  cv::Point pt2;
-  const cv::Scalar color = cv::Scalar( 1, 1, 1 );
+  cv::Point pt1 = { 0, 0 };
+  cv::Point pt2 = { 0, 0 };
+  if (teta > 0) {
+    pt1 = { 0, yDim };
+    pt2 = { dimLine, 0};
+  } else {
+    pt1 = { 0, 0 };
+    pt2 = { dimLine, yDim};
+  }
+
+  const cv::Scalar color = cv::Scalar(255, 255, 255);
   int thickness = 1;
   int lineType = 8;
   int shift = 0;
   line(structEl, pt1, pt2, color, thickness, lineType, shift);
-#else
-  //InputArray kernel;
-  cv::Mat structEl = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1));
-#endif
 
+  int iter = 1;
+  cv::Point anchor = cv::Point(-1, -1);
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structEl, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
@@ -919,4 +920,37 @@ void timeElapsed(clock_t start, const char* strName)
   
   std::cout << strName << " time: " << totalTime << std::endl;
 
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: hough
+* FUNCTION DESCRIPTION: Hough transform
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat linearKernel(int dimLine, double teta)
+{
+  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
+  cv::Mat kernel = cv::Mat::zeros(yDim, dimLine, CV_8U);
+
+  cv::Point pt1 = { 0, 0 };
+  cv::Point pt2 = { 0, 0 };
+  if (teta > 0) {
+    pt1 = { 0, yDim };
+    pt2 = { dimLine, 0 };
+  }
+  else {
+    pt1 = { 0, 0 };
+    pt2 = { dimLine, yDim };
+  }
+
+  const cv::Scalar color = cv::Scalar(255, 255, 255);
+  int thickness = 1;
+  int lineType = 8;
+  int shift = 0;
+  line(kernel, pt1, pt2, color, thickness, lineType, shift);
+
+  return kernel;
 }

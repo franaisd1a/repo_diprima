@@ -116,10 +116,13 @@ int main_simple(char* nameFile)
                           , static_cast<int>(floor(borders.y * I_input_size.y))};  
   //printf("imgBorders: %d %d %d %d", imgBorders[0], imgBorders[1], imgBorders[2], imgBorders[3]);
       
-  
+  clock_t start = clock();
+
 /* ----------------------------------------------------------------------- *
  * Histogram Stretching                                                    *
  * ----------------------------------------------------------------------- */
+
+  start = clock();
 
   Mat histStretch;
   if (0 == strcmp(ext, extJPG))
@@ -133,6 +136,10 @@ int main_simple(char* nameFile)
 
   int depth2 = histStretch.depth();
   int type = histStretch.type();
+
+  if (TIME_STAMP) timeElapsed(start, "Histogram Stretching");
+  fprintf(pFile, "End Histogram Stretching\n");
+
 
 /* ----------------------------------------------------------------------- *
  * Set image borders with zero                                             *
@@ -153,9 +160,7 @@ int main_simple(char* nameFile)
 /* ======================================================================= *
  * Points detection                                                        *
  * ======================================================================= */
-
-  clock_t start = clock();
-
+  
 /* ----------------------------------------------------------------------- *
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
@@ -221,7 +226,7 @@ int main_simple(char* nameFile)
 /* ----------------------------------------------------------------------- *
  * Hough transform                                                         *
  * ----------------------------------------------------------------------- */
-#if 1
+
   start = clock();
 
   Mat resizeImg;
@@ -229,10 +234,40 @@ int main_simple(char* nameFile)
   Size dsize = { 0, 0 };
   resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
   
-  std::vector<std::pair<float, int>> countAngle = hough(resizeImg);
+  std::vector<std::pair<float, int>> angle = hough(resizeImg);
   convImg.release();
-#endif
 
+  if (TIME_STAMP) timeElapsed(start, "Hough transform");
+  fprintf(pFile, "End Hough transform kernel\n");
+
+/* ----------------------------------------------------------------------- *
+ * Sum streaks binary image                                                *
+ * ----------------------------------------------------------------------- */
+
+  cv::Mat sumStrImg = cv::Mat::zeros(Img_input.rows, Img_input.cols, CV_8U);
+
+  for (int i = 0; i < angle.size(); ++i)
+  {
+/* ----------------------------------------------------------------------- *
+ * Morphology opening with linear kernel                                   *
+ * ----------------------------------------------------------------------- */
+
+    int dimLine = 20;
+    double teta_streak = -10 * CV_PI / 180;
+
+    cv::Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
+
+/* ----------------------------------------------------------------------- *
+ * Convolution with linear kernel                                          *
+ * ----------------------------------------------------------------------- */
+
+    Mat kernelL = linearKernel(dimLine, angle.at(i).first);
+
+    double threshConvL =9;
+    Mat convStreak = convolution(morpOpLin, kernelL, threshConvL);
+
+    sumStrImg = sumStrImg + convStreak;
+  }
 /* ----------------------------------------------------------------------- *
  * Connected components                                                    *
  * ----------------------------------------------------------------------- */
