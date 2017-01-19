@@ -235,7 +235,7 @@ int main_simple(char* nameFile)
   resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
   
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
-  convImg.release();
+  //convImg.release();
 
   if (TIME_STAMP) timeElapsed(start, "Hough transform");
   fprintf(pFile, "End Hough transform kernel\n");
@@ -245,15 +245,14 @@ int main_simple(char* nameFile)
  * ----------------------------------------------------------------------- */
 
   cv::Mat sumStrImg = cv::Mat::zeros(Img_input.rows, Img_input.cols, CV_8U);
-
+  
   for (int i = 0; i < angle.size(); ++i)
   {
 /* ----------------------------------------------------------------------- *
  * Morphology opening with linear kernel                                   *
  * ----------------------------------------------------------------------- */
 
-    int dimLine = 20;
-    double teta_streak = -10 * CV_PI / 180;
+    int dimLine = 21;
 
     cv::Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
 
@@ -262,12 +261,15 @@ int main_simple(char* nameFile)
  * ----------------------------------------------------------------------- */
 
     Mat kernelL = linearKernel(dimLine, angle.at(i).first);
-
     double threshConvL =9;
+
     Mat convStreak = convolution(morpOpLin, kernelL, threshConvL);
 
     sumStrImg = sumStrImg + convStreak;
   }
+  namedWindow("Final image", cv::WINDOW_NORMAL);
+  imshow("Final image", sumStrImg);
+  cv::waitKey(0);
 /* ----------------------------------------------------------------------- *
  * Connected components                                                    *
  * ----------------------------------------------------------------------- */

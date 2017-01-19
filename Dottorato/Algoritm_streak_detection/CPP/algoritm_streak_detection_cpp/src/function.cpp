@@ -142,11 +142,11 @@ void readFit(char* nameFile, cv::Mat& img)
   int readImg = fits_read_pix(fptr, datatype, fpixel, nelements, nulval, array, &anynul, &status);
 
   img = cv::Mat(naxes[1], naxes[0], CV_16U, array);
-  if (FIGURE_1) {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Input .fit image", cv::WINDOW_NORMAL);
     imshow("Input .fit image", img);
-  }
+#endif
   printf("END .fit header\n\n"); /* terminate listing with END */
   fits_close_file(fptr, &status);
   if (status) /* print any error messages */
@@ -259,11 +259,11 @@ cv::Mat histogramStretching(cv::Mat& imgIn)
     }
   }
   
-  if (FIGURE) {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -284,12 +284,11 @@ cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma)
 
   GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT);
   
-  if (FIGURE_1)
-  {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Gaussain filter", cv::WINDOW_NORMAL);
     imshow("Gaussain filter", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -308,12 +307,11 @@ cv::Mat medianFilter(cv::Mat& imgIn, int kerlen)
 
   medianBlur(imgIn, imgOut, kerlen);
 
-  if (FIGURE_1)
-  {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Median filter", cv::WINDOW_NORMAL);
     imshow("Median filter", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -348,37 +346,20 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen)
 * ========================================================================== */
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta)
 {
-  cv::Mat imgOut;  
+  cv::Mat imgOut;
 
-  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
-  cv::Mat structEl = cv::Mat::zeros(yDim, dimLine, CV_8U);
-
-  cv::Point pt1 = { 0, 0 };
-  cv::Point pt2 = { 0, 0 };
-  if (teta > 0) {
-    pt1 = { 0, yDim };
-    pt2 = { dimLine, 0};
-  } else {
-    pt1 = { 0, 0 };
-    pt2 = { dimLine, yDim};
-  }
-
-  const cv::Scalar color = cv::Scalar(255, 255, 255);
-  int thickness = 1;
-  int lineType = 8;
-  int shift = 0;
-  line(structEl, pt1, pt2, color, thickness, lineType, shift);
+  cv::Mat structEl = linearKernel(dimLine, teta);
 
   int iter = 1;
   cv::Point anchor = cv::Point(-1, -1);
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structEl, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
-  if (FIGURE_1) {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
     imshow("Morphology opening with rectangular kernel", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -404,11 +385,11 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int rad)
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
-  if (FIGURE_1) {
+#if FIGURE_1
     // Create a window for display.
-    namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
-    imshow("Morphology opening with rectangular kernel", imgOut);
-  }
+    namedWindow("Morphology opening with circular kernel", cv::WINDOW_NORMAL);
+    imshow("Morphology opening with circular kernel", imgOut);
+#endif
 
   return imgOut;
 }
@@ -434,8 +415,7 @@ cv::Mat binarization(cv::Mat& imgIn)
   
   threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
-  if (FIGURE_1)
-  {
+#if FIGURE_1
     /* Create a window for display.
     namedWindow("Binary image", WINDOW_NORMAL);
     imshow("Binary image", binImg);*/
@@ -443,7 +423,7 @@ cv::Mat binarization(cv::Mat& imgIn)
     // Create a window for display.
     namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
     imshow("Binary image Otsu threshold", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -462,11 +442,11 @@ cv::Mat binarization(cv::Mat& imgIn, double level)
   double maxval = 255.0;    
   double res = threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
 
-  if (FIGURE_1) {  
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
     imshow("Binary image Otsu threshold", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -518,12 +498,11 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag)
 
   /*da completare*/
 
-  if (FIGURE_1)
-  {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Binary image", cv::WINDOW_NORMAL);
     imshow("Binary image", imgOut);
-  }
+#endif
 
   return imgOut;
 }
@@ -553,11 +532,11 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double thresh)
   double alpha = 1, beta = 0;
   imgOut.convertTo(imgOut, CV_8U, alpha, beta);
 
-  if (FIGURE_1) {
+#if FIGURE_1
     // Create a window for display.
     namedWindow("Convolution image", cv::WINDOW_NORMAL);
     imshow("Convolution image", imgOut);
-  }
+#endif
   return imgOut;
 }
 
@@ -598,8 +577,7 @@ std::vector< cv::Vec<int, 3> > connectedComponents
     POINTS = { 0,0,0 };
   }
 
-  if (FIGURE_1)
-  {
+#if FIGURE_1
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgIn.size(), CV_8UC3);
     for (int i = 0; i < contours.size(); i++)
@@ -611,7 +589,7 @@ std::vector< cv::Vec<int, 3> > connectedComponents
     /// Show in a window
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
-  }
+#endif
   return POINTS;
 }
 
@@ -883,7 +861,7 @@ std::vector<std::pair<float, int>> hough(cv::Mat& imgIn)
     if (houghVal.size() == count) break;
   }
 
-  if (FIGURE_1) {
+#if FIGURE_1
     cv::Mat color_dst;
     cvtColor( imgIn, color_dst, CV_GRAY2BGR );
     double minLineLength = 20;
@@ -900,7 +878,7 @@ std::vector<std::pair<float, int>> hough(cv::Mat& imgIn)
     namedWindow("Hough transform", cv::WINDOW_NORMAL);
     imshow("Hough transform", color_dst);
     cv::waitKey(0);
-  }
+#endif
   
   return countAngle;
 }
@@ -933,6 +911,7 @@ void timeElapsed(clock_t start, const char* strName)
 cv::Mat linearKernel(int dimLine, double teta)
 {
   int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
+  if (0 == yDim) { yDim = 1; }
   cv::Mat kernel = cv::Mat::zeros(yDim, dimLine, CV_8U);
 
   cv::Point pt1 = { 0, 0 };
