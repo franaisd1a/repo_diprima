@@ -77,7 +77,7 @@ void readFit(char* nameFile, cv::Mat& img);
 * histogramStretching Histogram Stretching
 * @param imgIn Input image
 */
-cv::Mat histogramStretching(cv::Mat& imgIn);
+cv::Mat histogramStretching(const cv::Mat& imgIn);
 
 /**
 * gaussianFilter Filter an image using Gaussian lowpass filter
@@ -86,7 +86,7 @@ cv::Mat histogramStretching(cv::Mat& imgIn);
 * @param sigma Filter standard deviation
 * @return outImage Filtered image
 */
-cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma);
+cv::Mat gaussianFilter(const cv::Mat& imgIn, int hsize[2], double sigma);
 
 /**
 * gaussianFilter Filter an image using median filter
@@ -94,7 +94,7 @@ cv::Mat gaussianFilter(cv::Mat& imgIn, int hsize[2], double sigma);
 * @param kerlen Little Kernel
 * @return outImage Filtered image
 */
-cv::Mat medianFilter(cv::Mat& imgIn, int kerlen);
+cv::Mat medianFilter(const cv::Mat& imgIn, int kerlen);
 
 /**
 * gaussianFilter Filter an image using the difference between two median filter
@@ -103,7 +103,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int kerlen);
 * @param bigKerlen Big Kernel
 * @return outImage Filtered image
 */
-cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
+cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 
 /**
 * morphologyOpen Morphology opening on image with a rectangular kernel rotate of
@@ -114,7 +114,7 @@ cv::Mat medianFilter(cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @return outImage Morphology opening image
 */
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta);
-cv::Mat morphologyOpen(cv::Mat& imgIn, int rad);
+cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad);
 
 /**
 * binarization Image binarization
@@ -123,9 +123,9 @@ cv::Mat morphologyOpen(cv::Mat& imgIn, int rad);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::Mat binarization(cv::Mat& imgIn);
-cv::Mat binarization(cv::Mat& imgIn, double level);
-cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
+cv::Mat binarization(const cv::Mat& imgIn);
+cv::Mat binarization(const cv::Mat& imgIn, double level);
+cv::Mat binarizationDiffTh(const cv::Mat& imgIn, int flag);
 
 /**
 * convolution Convolution images
@@ -134,7 +134,7 @@ cv::Mat binarizationDiffTh(cv::Mat& imgIn, int flag);
 * @param threshold Threshold
 * @return outImage Convolution images
 */
-cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double threshold);
+cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double threshold);
 
 /**
 * connectedComponents Found connected components
@@ -142,10 +142,11 @@ cv::Mat convolution(cv::Mat& imgIn, cv::Mat& kernel, double threshold);
 * @param borders Image borders
 * @return 
 */
-std::vector< cv::Vec<int, 3> > connectedComponents
+void connectedComponents
 (
-  cv::Mat& imgIn
-  , cv::Vec<int, 4>& borders
+  const cv::Mat& imgPoints
+  , const cv::Mat& imgStreaks
+  , const cv::Vec<int, 4>& borders
   , std::vector< cv::Vec<int, 3> >& POINTS
   , std::vector< cv::Vec<int, 3> >& STREAKS
 );
@@ -159,9 +160,9 @@ std::vector< cv::Vec<int, 3> > connectedComponents
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 (
-  cv::Mat& imgIn
+  const cv::Mat& imgIn
   , std::vector<std::vector<cv::Point> >& contours
-  , cv::Vec<int, 4>& borders
+  , const cv::Vec<int, 4>& borders
 );
 
 /**
@@ -173,9 +174,11 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 (
-  cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point> >& contours
-  , cv::Vec<int, 4>& borders
+  const cv::Mat& imgIn
+  , std::vector<std::vector<cv::Point > >& contoursS
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector<std::vector<cv::Point > >& contoursP
+  , const cv::Vec<int, 4>& borders
 );
 
 /**
@@ -183,7 +186,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 * @param imgIn Input image
 * @return outImage 
 */
-std::vector<std::pair<float, int>> hough(cv::Mat& imgIn);
+std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn);
 
 /**
 * timeElapsed Compute elapsed time

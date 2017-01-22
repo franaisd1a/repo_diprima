@@ -39,7 +39,7 @@ end
 try
   
 % ----------------------------------------------------------------------- %
-%% Remove Salt and Pepper Noise from Image
+%% Connected Components Streaks
 % ----------------------------------------------------------------------- %
 
     tStart=tic;
