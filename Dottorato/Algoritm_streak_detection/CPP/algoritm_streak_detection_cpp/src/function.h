@@ -42,14 +42,6 @@
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
-/*#define FIGURE 1U
-#define FIGURE_1 1U
-#define FILE_READ 1U
-#define CLEAR 0U
-#define BACKGROUND_SUBTRACTION 1U
-#define DIFFERENT_THRESHOLD 1U
-#define FIT 1U
-#define DILATE 1U*/
 
 /* ==========================================================================
 * CLASS DECLARATION
@@ -62,20 +54,22 @@
 /**
 * fileExt Get file extension
 * @param nameFile Input file name
-* @param img cv::Mat image
+* @return File extension
 */
 char* fileExt(const char* nameFile);
 
 /**
-* readFit Read .fit file and write in opencv Mat
+* readFit Read .fit file and copy in opencv Mat
 * @param nameFile Input file name
-* @param img cv::Mat image
+* @param stream Output stream
+* @param img Output cv::Mat image
 */
-void readFit(char* nameFile, cv::Mat& img);
+void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img);
 
 /**
 * histogramStretching Histogram Stretching
 * @param imgIn Input image
+* @return Output stretched image
 */
 cv::Mat histogramStretching(const cv::Mat& imgIn);
 
@@ -89,18 +83,18 @@ cv::Mat histogramStretching(const cv::Mat& imgIn);
 cv::Mat gaussianFilter(const cv::Mat& imgIn, int hsize[2], double sigma);
 
 /**
-* gaussianFilter Filter an image using median filter
+* medianFilter Filter an image using median filter
 * @param imgIn Input image
-* @param kerlen Little Kernel
+* @param kerlen Kernel size
 * @return outImage Filtered image
 */
 cv::Mat medianFilter(const cv::Mat& imgIn, int kerlen);
 
 /**
-* gaussianFilter Filter an image using the difference between two median filter
+* medianFilter Filter an image using the difference between two median filter
 * @param imgIn Input image
-* @param littleKerlen Little Kernel
-* @param bigKerlen Big Kernel
+* @param littleKerlen Little Kernel size
+* @param bigKerlen Big Kernel size
 * @return outImage Filtered image
 */
 cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen);
@@ -114,21 +108,33 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @return outImage Morphology opening image
 */
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta);
+
+/**
+* morphologyOpen Morphology opening on image with a circular kernel. 
+* @param imgIn Input image
+* @param rad Kernel radius
+* @return outImage Morphology opening image
+*/
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad);
 
 /**
-* binarization Image binarization
+* binarization Image binarization using Otsu method
 * @param imgIn Input image
-* @param dimLine Line dimension
-* @param teta_streak Line inclination angle
-* @return outImage Morphology opening image
+* @return Binary image
 */
 cv::Mat binarization(const cv::Mat& imgIn);
+
+/**
+* binarization Image binarization using user threshold
+* @param imgIn Input image
+* @param level User threshold
+* @return Binary image
+*/
 cv::Mat binarization(const cv::Mat& imgIn, double level);
 cv::Mat binarizationDiffTh(const cv::Mat& imgIn, int flag);
 
 /**
-* convolution Convolution images
+* convolution Image convolution
 * @param imgIn Input image
 * @param kernel Convolution kernel
 * @param threshold Threshold
@@ -138,9 +144,11 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double threshol
 
 /**
 * connectedComponents Found connected components
-* @param imgIn Input image
+* @param imgPoints Input image for points detection
+* @param imgStreaks Input image for streaks detection
 * @param borders Image borders
-* @return 
+* @param POINTS Vector with points centroid
+* @param STREAKS Vector with streaks centroid
 */
 void connectedComponents
 (
@@ -154,9 +162,9 @@ void connectedComponents
 /**
 * connectedComponents Found centroid of circular connected components
 * @param imgIn Input image
-* @param contours Contours found by findContours function
+* @param contours Contours found by findContours
 * @param borders Image borders
-* @return Vector with circular connect componets coordinates
+* @return Vector with points centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 (
@@ -168,9 +176,11 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 /**
 * connectedComponentsStreaks Found centroid of Streaks
 * @param imgIn Input image
-* @param contours Contours found by findContours function
+* @param contoursS Streaks contours found by findContours
+* @param POINTS Vector with points centroid
+* @param contoursP Points contours found by findContours
 * @param borders Image borders
-* @return Vector with streaks coordinates
+* @return Vector with streaks centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 (
@@ -184,24 +194,44 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 /**
 * hough Hough transform
 * @param imgIn Input image
-* @return outImage 
+* @return Vector with lines incination angle
 */
 std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn);
 
 /**
 * timeElapsed Compute elapsed time
+* @param stream Output stream
 * @param start Start reference time
 * @param strName String to plot
-* @return Elapsed time
 */
-void timeElapsed(clock_t start, const char* strName);
+void timeElapsed(std::ostream& stream, clock_t start, const char* strName);
 
 /**
-* linearKernel Compute linear structural element
+* linearKernel Create linear structural element
 * @param dimLine Line dimension
-* @param teta_streak Line inclination angle
-* @return kernel Kernel with linear structural element
+* @param teta Line inclination angle
+* @return Kernel with linear structural element
 */
 cv::Mat linearKernel(int dimLine, double teta);
+
+/**
+* stamp Print on file and console the input string
+* @param stream Output stream
+* @param strName String to write
+*/
+void stamp(std::ostream& stream, const char* strName);
+
+/**
+* writeResult Print on file and console the result points and streaks centroid
+* @param stream Output stream
+* @param POINTS Vector with points centroid
+* @param STREAKS Vector with streaks centroid
+*/
+void writeResult
+(
+  std::ostream& stream
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector< cv::Vec<int, 3> >& STREAKS
+);
 
 #endif /* FUNCTION_H */

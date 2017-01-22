@@ -48,8 +48,8 @@
 * ========================================================================== */
 
 /* ==========================================================================
-*        FUNCTION NAME: readFit
-* FUNCTION DESCRIPTION: Read .fit file and convert to opencv Mat
+*        FUNCTION NAME: fileExt
+* FUNCTION DESCRIPTION: Get file extension
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -87,13 +87,13 @@ char* fileExt(const char* strN)
 
 /* ==========================================================================
 *        FUNCTION NAME: readFit
-* FUNCTION DESCRIPTION: Read .fit file and convert to opencv Mat
+* FUNCTION DESCRIPTION: Read .fit file and copy in opencv Mat
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-void readFit(char* nameFile, cv::Mat& img)
+void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
 {
   // Check for invalid input
   fitsfile *fptr;
@@ -108,7 +108,9 @@ void readFit(char* nameFile, cv::Mat& img)
     fits_read_record(fptr, ii, card, &status); /* read keyword */
     if (FIT_HEADER)
     {
-      printf("%s\n", card);
+#if STAMP
+      stamp(stream, card);
+#endif
     }
   }
   
@@ -118,7 +120,7 @@ void readFit(char* nameFile, cv::Mat& img)
   
   if (2 != naxis)
   {
-    printf("Error! 3d image.\n");
+    stamp(stream, "Error! 3d image.");
   }
 
   int maxdim= 2;
@@ -132,7 +134,7 @@ void readFit(char* nameFile, cv::Mat& img)
   /* Read image */
   
   int statusRead = 0;
-  void *nulval = NULL;//0;//
+  void *nulval = NULL;
   long fpixel[2] = {1, 1};
   long nelements = naxes[0] * naxes[1];
   int anynul = 0;
@@ -148,8 +150,9 @@ void readFit(char* nameFile, cv::Mat& img)
     namedWindow("Input .fit image", cv::WINDOW_NORMAL);
     imshow("Input .fit image", img);
 #endif
-
-  printf("END .fit header\n\n"); /* terminate listing with END */
+#if STAMP
+  stamp(stream, "END .fit header\n");
+#endif
   fits_close_file(fptr, &status);
   if (status) /* print any error messages */
   {
@@ -203,8 +206,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   double peakMax = 0, peakMin = 0;
   cv::Point peakMinLoc = 0, peakMaxLoc = 0;
   cv::minMaxLoc(hist, &peakMin, &peakMax, &peakMinLoc, &peakMaxLoc, cv::noArray());
-
-
+  
   const double percentile[2] = { 0.432506, (1 - 0.97725) };
   double  lowThresh = peakMax * percentile[0];
   double highThresh = peakMax * percentile[1];
@@ -262,7 +264,6 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   }
   
 #if FIGURE_1
-    // Create a window for display.
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
 #endif
@@ -281,7 +282,6 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 cv::Mat gaussianFilter(const cv::Mat& imgIn, int hsize[2], double sigma)
 {
   cv::Mat imgOut;
-
   cv::Size h = { hsize[0], hsize[1] };
 
   GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT);
@@ -306,11 +306,9 @@ cv::Mat gaussianFilter(const cv::Mat& imgIn, int hsize[2], double sigma)
 cv::Mat medianFilter(const cv::Mat& imgIn, int kerlen)
 {
   cv::Mat imgOut;
-
   medianBlur(imgIn, imgOut, kerlen);
 
 #if FIGURE_1
-    // Create a window for display.
     namedWindow("Median filter", cv::WINDOW_NORMAL);
     imshow("Median filter", imgOut);
 #endif
@@ -334,6 +332,11 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen)
   medianBlur(imgIn, imgBigKer, bigKerlen);
 
   imgOut = imgOut - imgBigKer;
+
+  #if FIGURE_1
+    namedWindow("Subtraction of median filter", cv::WINDOW_NORMAL);
+    imshow("Subtraction of median filter", imgOut);
+#endif
 
   return imgOut;
 }
@@ -368,7 +371,7 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta)
 
 /* ==========================================================================
 *        FUNCTION NAME: morphologyOpen
-* FUNCTION DESCRIPTION: Morphology opening with linear structuring element
+* FUNCTION DESCRIPTION: Morphology opening with circular structuring element
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -432,7 +435,7 @@ cv::Mat binarization(const cv::Mat& imgIn)
 
 /* ==========================================================================
 *        FUNCTION NAME: binarization
-* FUNCTION DESCRIPTION: Image binarization
+* FUNCTION DESCRIPTION: Image binarization using user threshold
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -445,9 +448,8 @@ cv::Mat binarization(const cv::Mat& imgIn, double level)
   double res = threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
 
 #if FIGURE_1
-    // Create a window for display.
-    namedWindow("Binary image Otsu threshold", cv::WINDOW_NORMAL);
-    imshow("Binary image Otsu threshold", imgOut);
+    namedWindow("Binary image user threshold", cv::WINDOW_NORMAL);
+    imshow("Binary image user threshold", imgOut);
 #endif
 
   return imgOut;
@@ -592,17 +594,20 @@ void connectedComponents
       POINTS.push_back({ outPOINTS.at(j)[0], outPOINTS.at(j)[1], 0 });
     }
   }
-
-
+  
 #if FIGURE_1
     /// Draw contours
-    cv::Mat drawing = cv::Mat::zeros(imgIn.size(), CV_8UC3);
-    for (int i = 0; i < contours.size(); i++)
+    cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
+    for (int i = 0; i < contoursP.size(); i++)
     {
       cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, cv::Point());
+      drawContours(drawing, contoursP, i, color, 2, 8, hierarchyP, 0, cv::Point());
     }
-
+    for (int i = 0; i < contoursS.size(); i++)
+    {
+      cv::Scalar color = cv::Scalar(0, 255, 0);
+      drawContours(drawing, contoursS, i, color, 2, 8, hierarchyS, 0, cv::Point());
+    }
     /// Show in a window
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
@@ -1007,24 +1012,29 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: hough
-* FUNCTION DESCRIPTION: Hough transform
+*        FUNCTION NAME: timeElapsed
+* FUNCTION DESCRIPTION: Compute elapsed time
 *        CREATION DATE: 20160911
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-void timeElapsed(clock_t start, const char* strName)
+void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
 {
   clock_t stop = clock();
   double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
-  std::cout << strName << " time: " << totalTime << std::endl;
+#if STAMP_FILE_INFO
+  stream << strName << " time: " << totalTime << std::endl;
+#endif
+#if STAMP_CONSOLE
+  printf("%s time: %f\n", strName, totalTime);
+#endif
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: hough
-* FUNCTION DESCRIPTION: Hough transform
+*        FUNCTION NAME: linearKernel
+* FUNCTION DESCRIPTION: Create linear structural element
 *        CREATION DATE: 20160911
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -1054,4 +1064,55 @@ cv::Mat linearKernel(int dimLine, double teta)
   line(kernel, pt1, pt2, color, thickness, lineType, shift);
 
   return kernel;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: stamp
+* FUNCTION DESCRIPTION: Print on file and console the input string
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void stamp(std::ostream& stream, const char* strName)
+{
+#if STAMP_FILE_INFO
+  stream << strName << std::endl;
+#endif
+#if STAMP_CONSOLE
+  printf("%s\n", strName);
+#endif
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: writeResult
+* FUNCTION DESCRIPTION: Print on file and console the result points and 
+*                       streaks centroid
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void writeResult
+(
+  std::ostream& stream
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector< cv::Vec<int, 3> >& STREAKS
+)
+{
+  std::string s_nP = "Detected points: " + std::to_string(POINTS.size());
+  stamp(stream, s_nP.c_str());
+  for (size_t i = 0; i < POINTS.size(); ++i)
+  {
+    std::string cP = "Centroid points: " + std::to_string(POINTS.at(i)[0]) + " " + std::to_string(POINTS.at(i)[1]);
+    stamp(stream, cP.c_str());
+  }
+
+  std::string s_nS = "Detected streaks: " + std::to_string(STREAKS.size());
+  stamp(stream, s_nS.c_str());
+  for (size_t i = 0; i < STREAKS.size(); ++i)
+  {
+    std::string cS = "Centroid streaks: " + std::to_string(STREAKS.at(i)[0]) + " " + std::to_string(STREAKS.at(i)[1]);
+    stamp(stream, cS.c_str());
+  }
 }

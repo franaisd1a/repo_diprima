@@ -72,8 +72,7 @@ int main_simple(char* nameFile)
   clock_t start = clock();
 
   /* Open log file */
-  FILE * pFile;
-  pFile = fopen ("consoleSimple.txt","w");
+  std::ofstream infoFile("infoAlgoSimple.txt");
   
   /* Read file extension */
   char* ext = fileExt(nameFile);
@@ -89,23 +88,25 @@ int main_simple(char* nameFile)
 
     // Check for invalid file
     if (!Img_input.data) {
-      cout << "Error: could not open or find the image." << std::endl;
+      stamp(infoFile, "Error: could not open or find the image.");
       return -1;
     }
   }
-  else if (0==strcmp(ext, extFIT)) {
-    readFit(nameFile, Img_input);
-  }
-  else {
-    printf("Error in reading process.\n");
-    fprintf(pFile, "Error in reading process.\n");
+  else if (0 == strcmp(ext, extFIT)) {
+    readFit(nameFile, infoFile, Img_input);
+  } else {
+    stamp(infoFile, "Error in reading process.");
     return -1;
   }
 
   int channels = Img_input.channels();
   int depth = Img_input.depth();
-  fprintf(pFile, "Image channels: %d\n", channels);
-  fprintf(pFile, "Image depth bit: %d\n", depth);
+#if STAMP
+  std::string s_Ch = "Image channels: " + std::to_string(channels);
+  stamp(infoFile, s_Ch.c_str());
+  std::string s_Dp = "Image depth bit: " + std::to_string(depth);
+  stamp(infoFile, s_Dp.c_str());
+#endif
 
   cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
   double bordersThick = 0.015;
@@ -114,11 +115,9 @@ int main_simple(char* nameFile)
                           , static_cast<int>(ceil( borders.x * I_input_size.y))
                           , static_cast<int>(floor(borders.y * I_input_size.x))
                           , static_cast<int>(floor(borders.y * I_input_size.y))};  
-  //printf("imgBorders: %d %d %d %d", imgBorders[0], imgBorders[1], imgBorders[2], imgBorders[3]);
-  
-#if TIME_STAMP
-  timeElapsed(start, "Open and read file");
-  fprintf(pFile, "End Open and read file\n");
+    
+#if STAMP
+  timeElapsed(infoFile, start, "Open and read file");
 #endif
 
 
@@ -138,12 +137,8 @@ int main_simple(char* nameFile)
     histStretch = histogramStretching(Img_input);
   }
 
-  /*int depth2 = histStretch.depth();
-  int type = histStretch.type();*/
-
-#if TIME_STAMP
-  timeElapsed(start, "Histogram Stretching");
-  fprintf(pFile, "End Histogram Stretching\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Histogram Stretching");
 #endif
 
 
@@ -156,13 +151,13 @@ int main_simple(char* nameFile)
   int thickness = max(imgBorders[0], imgBorders[1]);
 
   cv::rectangle(histStretch, border, color, thickness);  
-#endif
+
 #if FIGURE_1
     // Create a window for display.
     namedWindow("img", cv::WINDOW_NORMAL);
     imshow("img", histStretch);
 #endif
-  
+#endif
 
 /* ======================================================================= *
  * Points detection                                                        *
@@ -178,9 +173,8 @@ int main_simple(char* nameFile)
   Mat medianImg = medianFilter(histStretch, kerlen);
   //backgroundSub.release();
 
-#if TIME_STAMP
-  timeElapsed(start, "Median filter");
-  fprintf(pFile, "End Median filter\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Median filter");
 #endif
 
 
@@ -190,13 +184,12 @@ int main_simple(char* nameFile)
 
   start = clock();
 
-  double level = 150;//150 / 255
+  double level = 150;
   Mat binaryImg = binarization(medianImg, level);
   medianImg.release();
 
-#if TIME_STAMP
-  timeElapsed(start, "Binarization");
-  fprintf(pFile, "End Binarization\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Binarization");
 #endif
 
 
@@ -208,14 +201,13 @@ int main_simple(char* nameFile)
 
   int szKernel = 3;
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
-  double threshConv = 6;// szKernel*szKernel;
+  double threshConv = 6;
   
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   binaryImg.release();
 
-#if TIME_STAMP
-  timeElapsed(start, "Convolution");
-  fprintf(pFile, "End Convolution kernel\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Convolution");
 #endif
 
 
@@ -228,9 +220,8 @@ int main_simple(char* nameFile)
   int radDisk = 6;  
   Mat openImg = morphologyOpen(convImg, radDisk);
 
-#if TIME_STAMP
-  timeElapsed(start, "Morphology opening");
-  fprintf(pFile, "End Morphology opening kernel\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Morphology opening");
 #endif
   
 
@@ -250,11 +241,12 @@ int main_simple(char* nameFile)
   resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
   
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
-  //convImg.release();
-
-#if TIME_STAMP
-  timeElapsed(start, "Hough transform");
-  fprintf(pFile, "End Hough transform kernel\n");
+  resizeImg.release();
+  
+#if STAMP
+  std::string s_nH = "Number of inclination angles: " + std::to_string(angle.size());
+  stamp(infoFile, s_nH.c_str());
+  timeElapsed(infoFile, start, "Hough transform");
 #endif
 
 
@@ -281,7 +273,7 @@ int main_simple(char* nameFile)
  * ----------------------------------------------------------------------- */
 
     Mat kernelL = linearKernel(dimLine, angle.at(i).first);
-    double threshConvL =9;
+    double threshConvL = 9;
 
     Mat convStreak = convolution(morpOpLin, kernelL, threshConvL);
 
@@ -289,13 +281,12 @@ int main_simple(char* nameFile)
   }
 
 #if FIGURE_1
-  namedWindow("Final image", cv::WINDOW_NORMAL);
-  imshow("Final image", sumStrImg);
+  namedWindow("Final binary image", cv::WINDOW_NORMAL);
+  imshow("Final binary image", sumStrImg);
 #endif
   
-#if TIME_STAMP
-  timeElapsed(start, "Sum streaks binary");
-  fprintf(pFile, "End Sum streaks binary\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Sum streaks binary");
 #endif
 
 
@@ -310,11 +301,18 @@ int main_simple(char* nameFile)
   
   connectedComponents(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
 
-#if TIME_STAMP
-  timeElapsed(start, "Connected components");
-  fprintf(pFile, "End Connected components\n");
+#if STAMP
+  timeElapsed(infoFile, start, "Connected components");
 #endif
 
+
+/* ----------------------------------------------------------------------- *
+ * Write result                                                             *
+ * ----------------------------------------------------------------------- */
+
+  writeResult(infoFile, POINTS, STREAKS);
+    
+  
 /* ----------------------------------------------------------------------- *
  * Plot result                                                             *
  * ----------------------------------------------------------------------- */
@@ -326,37 +324,25 @@ int main_simple(char* nameFile)
 
     Img_input.release();
 
-    int radius = 15;
+    int radius = 11;
     Scalar colorP = {0,255,0};
     Scalar colorS = {0,0,255};
     int thickness = -1;
     int lineType = 8;
     int shift = 0;
 
-    std::cout << "Detected points: " << POINTS.size() << std::endl;
-    for (size_t i = 0; i < POINTS.size(); ++i)
-    {
+    for (size_t i = 0; i < POINTS.size(); ++i) {
       Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
       circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
-      std::cout << "Centroid points: " << POINTS.at(i)[0] << " " << POINTS.at(i)[1] << std::endl;
     }
-
-    std::cout << "Detected streaks: " << STREAKS.size() << std::endl;
-    for (size_t i = 0; i < STREAKS.size(); ++i)
-    {
+    for (size_t i = 0; i < STREAKS.size(); ++i) {
       Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
       circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
-      std::cout << "Centroid streaks: " << STREAKS.at(i)[0] << " " << STREAKS.at(i)[1] << std::endl;
     }
 
     // Create a window for display.
     namedWindow("Algo simple", WINDOW_NORMAL);
     imshow("Algo simple", color_Img_input);
   }
-
-  fclose(pFile);
-  
-  //cv::waitKey(0);
-  
   return 0;
 }
