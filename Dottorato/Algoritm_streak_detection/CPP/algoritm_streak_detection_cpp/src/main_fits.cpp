@@ -212,14 +212,9 @@ int main_fits(char* name_file)
       printf("%d ", val);
     }
   }
-  
 
   cv::waitKey(0);
   
-  return 1;
-  
+  return 1;  
 }
-
-
-  
  

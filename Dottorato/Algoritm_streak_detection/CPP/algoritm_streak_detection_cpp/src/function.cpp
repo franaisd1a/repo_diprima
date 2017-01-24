@@ -55,8 +55,10 @@
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-char* fileExt(const char* strN)
+std::vector<char*> fileExt(const char* strN)
 {
+  std::vector<char*> vec;
+
   char nameFile[1024];
   strcpy ( nameFile, strN );
   char* pch;
@@ -71,6 +73,19 @@ char* fileExt(const char* strN)
     count++;
   }
   char *name = *path[count-1];
+
+  char s_pathFileName[256];
+  strcpy (s_pathFileName, *path[0]);
+  for (size_t i = 1; i < count - 1; ++i)
+  {
+    strcat(s_pathFileName, "\\");
+    strcat(s_pathFileName, *path[i]);
+  }
+  strcat(s_pathFileName, "\\");
+  
+  char s_pathResFile[256];
+  strcpy (s_pathResFile, s_pathFileName);
+  strcat(s_pathResFile, "Result\\");
   
   pch = strtok(name,".");
   while (pch != NULL)
@@ -80,9 +95,15 @@ char* fileExt(const char* strN)
     pch = strtok (NULL, ".");
     count++;
   }
+  char* fileName = *path[count-2];
   char* ext = *path[count-1];
+  
+  vec.push_back(fileName);
+  vec.push_back(ext);
+  vec.push_back(s_pathFileName);
+  vec.push_back(s_pathResFile);
 
-  return ext;
+  return vec;
 }
 
 /* ==========================================================================
@@ -106,12 +127,11 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
   fits_get_hdrspace(fptr, &nkeys, NULL, &status);
   for (ii = 1; ii <= nkeys; ii++) {
     fits_read_record(fptr, ii, card, &status); /* read keyword */
-    if (FIT_HEADER)
-    {
-#if STAMP
+#if SPD_STAMP_FIT_HEADER
+# if SPD_STAMP
       stamp(stream, card);
+# endif
 #endif
-    }
   }
   
   int naxis = 0;
@@ -145,12 +165,12 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
 
   img = cv::Mat(naxes[1], naxes[0], CV_16U, array);
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Input .fit image", cv::WINDOW_NORMAL);
     imshow("Input .fit image", img);
 #endif
-#if STAMP
+#if SPD_STAMP
   stamp(stream, "END .fit header\n");
 #endif
   fits_close_file(fptr, &status);
@@ -263,7 +283,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
     }
   }
   
-#if FIGURE_1
+#if SPD_FIGURE_1
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
 #endif
@@ -286,7 +306,7 @@ cv::Mat gaussianFilter(const cv::Mat& imgIn, int hsize[2], double sigma)
 
   GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT);
   
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Gaussain filter", cv::WINDOW_NORMAL);
     imshow("Gaussain filter", imgOut);
@@ -308,7 +328,7 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int kerlen)
   cv::Mat imgOut;
   medianBlur(imgIn, imgOut, kerlen);
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     namedWindow("Median filter", cv::WINDOW_NORMAL);
     imshow("Median filter", imgOut);
 #endif
@@ -333,7 +353,7 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen)
 
   imgOut = imgOut - imgBigKer;
 
-  #if FIGURE_1
+#if SPD_FIGURE_1
     namedWindow("Subtraction of median filter", cv::WINDOW_NORMAL);
     imshow("Subtraction of median filter", imgOut);
 #endif
@@ -360,7 +380,7 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta)
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structEl, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
     imshow("Morphology opening with rectangular kernel", imgOut);
@@ -390,7 +410,7 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
   morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Morphology opening with circular kernel", cv::WINDOW_NORMAL);
     imshow("Morphology opening with circular kernel", imgOut);
@@ -420,7 +440,7 @@ cv::Mat binarization(const cv::Mat& imgIn)
   
   threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
-#if FIGURE_1
+#if SPD_FIGURE_1
     /* Create a window for display.
     namedWindow("Binary image", WINDOW_NORMAL);
     imshow("Binary image", binImg);*/
@@ -447,7 +467,7 @@ cv::Mat binarization(const cv::Mat& imgIn, double level)
   double maxval = 255.0;    
   double res = threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     namedWindow("Binary image user threshold", cv::WINDOW_NORMAL);
     imshow("Binary image user threshold", imgOut);
 #endif
@@ -502,7 +522,7 @@ cv::Mat binarizationDiffTh(const cv::Mat& imgIn, int flag)
 
   /*da completare*/
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Binary image", cv::WINDOW_NORMAL);
     imshow("Binary image", imgOut);
@@ -536,7 +556,7 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double thresh)
   double alpha = 1, beta = 0;
   imgOut.convertTo(imgOut, CV_8U, alpha, beta);
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Convolution image", cv::WINDOW_NORMAL);
     imshow("Convolution image", imgOut);
@@ -595,7 +615,7 @@ void connectedComponents
     }
   }
   
-#if FIGURE_1
+#if SPD_FIGURE_1
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
     for (int i = 0; i < contoursP.size(); i++)
@@ -989,7 +1009,7 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     if (houghVal.size() == count) break;
   }
 
-#if FIGURE_1
+#if SPD_FIGURE_1
     cv::Mat color_dst;
     cvtColor( imgIn, color_dst, CV_GRAY2BGR );
     double minLineLength = 20;
@@ -1005,7 +1025,6 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     // Create a window for display.
     namedWindow("Hough transform", cv::WINDOW_NORMAL);
     imshow("Hough transform", color_dst);
-    cv::waitKey(0);
 #endif
   
   return countAngle;
@@ -1024,10 +1043,10 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
   clock_t stop = clock();
   double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
-#if STAMP_FILE_INFO
+#if SPD_STAMP_FILE_INFO
   stream << strName << " time: " << totalTime << std::endl;
 #endif
-#if STAMP_CONSOLE
+#if SPD_STAMP_CONSOLE
   printf("%s time: %f\n", strName, totalTime);
 #endif
 }
@@ -1076,10 +1095,10 @@ cv::Mat linearKernel(int dimLine, double teta)
 * ========================================================================== */
 void stamp(std::ostream& stream, const char* strName)
 {
-#if STAMP_FILE_INFO
+#if SPD_STAMP_FILE_INFO
   stream << strName << std::endl;
 #endif
-#if STAMP_CONSOLE
+#if SPD_STAMP_CONSOLE
   printf("%s\n", strName);
 #endif
 }
@@ -1104,7 +1123,7 @@ void writeResult
   stamp(stream, s_nP.c_str());
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
-    std::string cP = "Centroid points: " + std::to_string(POINTS.at(i)[0]) + " " + std::to_string(POINTS.at(i)[1]);
+    std::string cP = "Centroid points: (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")";
     stamp(stream, cP.c_str());
   }
 
@@ -1112,7 +1131,7 @@ void writeResult
   stamp(stream, s_nS.c_str());
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
-    std::string cS = "Centroid streaks: " + std::to_string(STREAKS.at(i)[0]) + " " + std::to_string(STREAKS.at(i)[1]);
+    std::string cS = "Centroid streaks: (" + std::to_string(STREAKS.at(i)[0]) + "," + std::to_string(STREAKS.at(i)[1]) + ")";
     stamp(stream, cS.c_str());
   }
 }

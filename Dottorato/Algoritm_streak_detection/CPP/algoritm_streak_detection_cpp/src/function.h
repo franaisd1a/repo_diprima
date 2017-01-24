@@ -56,7 +56,7 @@
 * @param nameFile Input file name
 * @return File extension
 */
-char* fileExt(const char* nameFile);
+std::vector<char*> fileExt(const char* strN);
 
 /**
 * readFit Read .fit file and copy in opencv Mat

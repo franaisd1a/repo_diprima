@@ -23,18 +23,22 @@
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
-#define FIGURE                 1U
-#define FIGURE_1               1U
-#define READ_FILE              1U
-#define TIME_STAMP             0U
-#define STAMP                  1U
-#define STAMP_FILE_INFO        1U
-#define STAMP_CONSOLE          1U
-#define FIT_HEADER             1U
-#define CLEAR                  0U
-#define BACKGROUND_SUBTRACTION 1U
-#define DIFFERENT_THRESHOLD    1U
-#define FIT                    1U
-#define DILATE                 1U
+
+#define SPD_FILE                   1U
+
+#define SPD_FIGURE                 1U
+#define SPD_FIGURE_1               0U
+        
+#define SPD_STAMP                  1U
+#define SPD_STAMP_FILE_RESULT      0U
+#define SPD_STAMP_FILE_INFO        0U
+#define SPD_STAMP_CONSOLE          1U
+#define SPD_STAMP_FIT_HEADER       1U
+        
+        
+#define SPD_CLEAR                  0U
+#define SPD_BACKGROUND_SUBTRACTION 1U
+#define SPD_DIFFERENT_THRESHOLD    1U
+#define SPD_DILATE                 1U
  
 #endif /* MACRO_H */
