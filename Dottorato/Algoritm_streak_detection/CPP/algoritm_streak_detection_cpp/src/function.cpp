@@ -198,26 +198,38 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   int color = 0;
 
   if (0 == type) {
-    color = static_cast<int>(::pow(2, 8)) - 1;
+    color = static_cast<int>(::pow(2, 8));
   } else if (2 == type) {
-    color = static_cast<int>(::pow(2, 16)) - 1;
+    color = static_cast<int>(::pow(2, 16));
   } else {
     printf("Error. Unsupported pixel type.\n");
   }
-  cv::Mat hist = cv::Mat::zeros(1, color, CV_16U);
+  cv::Mat hist = cv::Mat::zeros(1, color, CV_32F);
   cv::Mat LUT = cv::Mat::zeros(1, color, CV_32F);
 
-  int row = 0, col = 0;
-  for (row = 0; row < imgIn.rows; ++row)
+  for (int row = 0; row < imgIn.rows; ++row)
   {
     const ushort* pLine = imgIn.ptr<ushort>(row);
     for (int col = 0; col < imgIn.cols; ++col) {
       ushort value = pLine[col];
 
-      ushort* pLineH = hist.ptr<ushort>(0);
+      float* pLineH = hist.ptr<float>(0);
       pLineH[value] +=  1;
     }
   }
+
+#if SPD_DEBUG
+  //Print matrix value
+  for (int row = 0; row < hist.rows; ++row)
+  {
+    const float* pLine = hist.ptr<float>(row);
+    for (int col = 0; col < hist.cols; ++col) {
+      float value = pLine[col];
+      printf("%f ", value);      
+    }
+    printf("\n\n");
+  }
+#endif
 
   double maxHistValue = 0, minHistValue = 0;
   cv::Point minLocHistValue = 0, maxLocHistValue = 0;
@@ -236,7 +248,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   for (i = 0; i < peakMaxLoc.x; ++i)
   {
     k = peakMaxLoc.x - i;
-    double val = static_cast<double>(hist.at<ushort>(0, k));
+    double val = static_cast<double>(hist.at<float>(0, k));
     if (val < lowThresh) {
       minValue = k;
       break;
@@ -245,7 +257,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 
   for (i = peakMaxLoc.x; i < hist.cols; ++i)
   {
-    double val = static_cast<double>(hist.at<ushort>(0, i));
+    double val = static_cast<double>(hist.at<float>(0, i));
     if (val < highThresh) {
       maxValue = i;
       break;
@@ -270,7 +282,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 
   cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, CV_8U);
 
-  for (row = 0; row < imgIn.rows; ++row)
+  for (int row = 0; row < imgIn.rows; ++row)
   {
     const ushort* pLimgIn = imgIn.ptr<ushort>(row);
     const float* pLlut = LUT.ptr<float>(0);
@@ -286,6 +298,19 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 #if SPD_FIGURE_1
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
+#endif
+/* Differenza di 1 nel valore di alcuni pixel*/
+#if SPD_DEBUG
+  //Print matrix value
+  for (int row = 0; row < imgOut.rows; ++row)
+  {
+    const uchar* pLine = imgOut.ptr<uchar>(row);
+    for (int col = 0; col < imgOut.cols; ++col) {
+      uchar value = pLine[col];
+      printf("%u ", value);      
+    }
+    printf("\n\n");
+  }
 #endif
 
   return imgOut;
@@ -781,7 +806,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
   int max_streaks_minoraxis=0;
   int max_streaks_majoraxis = 0;
 
-  /* Initialize vector */  
+  /* Initialize vector */
   std::vector< int >        streaks(contoursS.size());
   std::vector< cv::Point >  centroid(contoursS.size());
   std::vector< int >        majorAxis(contoursS.size());
@@ -1009,7 +1034,7 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     if (houghVal.size() == count) break;
   }
 
-#if SPD_FIGURE_1
+#if !SPD_FIGURE_1
     cv::Mat color_dst;
     cvtColor( imgIn, color_dst, CV_GRAY2BGR );
     double minLineLength = 20;
@@ -1025,6 +1050,7 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     // Create a window for display.
     namedWindow("Hough transform", cv::WINDOW_NORMAL);
     imshow("Hough transform", color_dst);
+    cv::waitKey(0);
 #endif
   
   return countAngle;
@@ -1061,19 +1087,27 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
 * ========================================================================== */
 cv::Mat linearKernel(int dimLine, double teta)
 {
+#if 0
   int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
   if (0 == yDim) { yDim = 1; }
-  cv::Mat kernel = cv::Mat::zeros(yDim, dimLine, CV_8U);
+#else
+  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::sin((CV_PI/2)-teta))));
+  int xDim = static_cast<int>(::ceil(dimLine * ::abs(::cos((CV_PI/2)-teta))));
+#endif
+  //cv::Mat kernel = cv::Mat::zeros(yDim, dimLine, CV_8U);
+  cv::Mat kernel = cv::Mat::zeros(yDim, xDim, CV_8U);
 
   cv::Point pt1 = { 0, 0 };
   cv::Point pt2 = { 0, 0 };
   if (teta > 0) {
     pt1 = { 0, yDim };
-    pt2 = { dimLine, 0 };
+    //pt2 = { dimLine, 0 };
+    pt2 = { xDim, 0 };
   }
   else {
     pt1 = { 0, 0 };
-    pt2 = { dimLine, yDim };
+    //pt2 = { dimLine, yDim };
+    pt2 = { xDim, yDim };
   }
 
   const cv::Scalar color = cv::Scalar(255, 255, 255);

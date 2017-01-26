@@ -24,6 +24,8 @@
 * MACROS
 * ========================================================================== */
 
+#define SPD_DEBUG                  0U
+
 #define SPD_FILE                   1U
 
 #define SPD_FIGURE                 1U

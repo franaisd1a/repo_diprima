@@ -256,6 +256,17 @@ int main_simple(char* nameFile)
   Size dsize = { 0, 0 };
   resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
   
+#if SPD_DEBUG
+  cv::Point pt1 = { 10, 10 };
+  cv::Point pt2 = { 100, 100 };  
+
+  const cv::Scalar color = cv::Scalar(255, 255, 255);
+  int thickness = 10;
+  int lineType = 8;
+  int shift = 0;
+  line(resizeImg, pt1, pt2, color, thickness, lineType, shift);
+#endif
+
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
   resizeImg.release();
   
