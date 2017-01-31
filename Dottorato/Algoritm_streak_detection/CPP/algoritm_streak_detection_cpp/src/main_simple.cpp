@@ -158,23 +158,6 @@ int main_simple(char* nameFile)
 #endif
 
 
-/* ----------------------------------------------------------------------- *
- * Set image borders with zero                                             *
- * ----------------------------------------------------------------------- */
-#if 0
-  cv::Rect border(cv::Point(0, 0), Img_input.size());
-  cv::Scalar color(0, 0, 0);
-  int thickness = max(imgBorders[0], imgBorders[1]);
-
-  cv::rectangle(histStretch, border, color, thickness);  
-
-#if SPD_FIGURE_1
-    // Create a window for display.
-    namedWindow("img", cv::WINDOW_NORMAL);
-    imshow("img", histStretch);
-#endif
-#endif
-
 /* ======================================================================= *
  * Points detection                                                        *
  * ======================================================================= */
@@ -287,11 +270,12 @@ int main_simple(char* nameFile)
   printf("post crea matrice\n");
   for (int i = 0; i < angle.size(); ++i)
   {
+
 /* ----------------------------------------------------------------------- *
  * Morphology opening with linear kernel                                   *
  * ----------------------------------------------------------------------- */
     printf("ciclo %d\n\n",i);
-    int dimLine = 21;
+    int dimLine = 20;
 
     Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
 
@@ -303,6 +287,11 @@ int main_simple(char* nameFile)
     double threshConvL = 9;
 
     Mat convStreak = convolution(morpOpLin, kernelL, threshConvL);
+
+
+/* ----------------------------------------------------------------------- *
+ * Binary image with streaks                                               *
+ * ----------------------------------------------------------------------- */
 
     sumStrImg = sumStrImg + convStreak;
   }
@@ -383,7 +372,7 @@ int main_simple(char* nameFile)
     namedWindow("Algo simple", WINDOW_NORMAL);
     imshow("Algo simple", color_Img_input);
 #endif
-#if SPD_FILE
+#if SPD_SAVE_FIGURE
     char s_imgName[256];
     strcpy(s_imgName, vec.at(0));
     strcat(s_imgName, ".jpg");

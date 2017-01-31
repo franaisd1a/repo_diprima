@@ -26,15 +26,24 @@
 
 #define SPD_DEBUG                  0U
 
-#define SPD_FILE                   1U
-
-#define SPD_FIGURE                 1U
+//SPD_SAVE_FIGURE Abilita il salvataggio delle immagini su disco "nomeFile.jpg"
+#define SPD_SAVE_FIGURE            1U
+//SPD_FIGURE Abilita l'apertura delle immagini significative a video
+#define SPD_FIGURE                 0U
+//SPD_FIGURE_1 Abilita l'apertura delle immagini di debug a video
 #define SPD_FIGURE_1               0U
         
+//SPD_STAMP Abilita le stampe
 #define SPD_STAMP                  1U
-#define SPD_STAMP_FILE_RESULT      0U
+//SPD_STAMP_FILE_RESULT Abilita la stampa dei risultati su disco "nomeFile.txt"
+#define SPD_STAMP_FILE_RESULT      1U
+//SPD_STAMP_FILE_INFO Abilita la stampa di debug e di info su disco "nomeFile_info.txt"
 #define SPD_STAMP_FILE_INFO        0U
-#define SPD_STAMP_CONSOLE          1U
+//SPD_STAMP_CONSOLE Abilita la stampa su console
+#define SPD_STAMP_CONSOLE          0U
+//SPD_STAMP_FILE Abilita la stampa su disco
+#define SPD_STAMP_FILE             1U
+//SPD_STAMP_CONSOLE Abilita la stampa dell'header FIT su console
 #define SPD_STAMP_FIT_HEADER       1U
         
         

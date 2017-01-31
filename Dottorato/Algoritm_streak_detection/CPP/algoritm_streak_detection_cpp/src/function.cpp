@@ -127,8 +127,8 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
   fits_get_hdrspace(fptr, &nkeys, NULL, &status);
   for (ii = 1; ii <= nkeys; ii++) {
     fits_read_record(fptr, ii, card, &status); /* read keyword */
-#if SPD_STAMP_FIT_HEADER
-# if SPD_STAMP
+#if SPD_STAMP
+# if SPD_STAMP_FIT_HEADER
       stamp(stream, card);
 # endif
 #endif
@@ -1034,7 +1034,7 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     if (houghVal.size() == count) break;
   }
 
-#if !SPD_FIGURE_1
+#if SPD_FIGURE_1
     cv::Mat color_dst;
     cvtColor( imgIn, color_dst, CV_GRAY2BGR );
     double minLineLength = 20;
@@ -1069,7 +1069,7 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
   clock_t stop = clock();
   double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
   
-#if SPD_STAMP_FILE_INFO
+#if SPD_STAMP_FILE
   stream << strName << " time: " << totalTime << std::endl;
 #endif
 #if SPD_STAMP_CONSOLE
@@ -1129,7 +1129,7 @@ cv::Mat linearKernel(int dimLine, double teta)
 * ========================================================================== */
 void stamp(std::ostream& stream, const char* strName)
 {
-#if SPD_STAMP_FILE_INFO
+#if SPD_STAMP_FILE
   stream << strName << std::endl;
 #endif
 #if SPD_STAMP_CONSOLE
