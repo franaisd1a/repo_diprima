@@ -81,18 +81,16 @@ int main_simple(char* nameFile)
   const char* extFIT = "FIT";
   
   /* Open log file */
-#if SPD_STAMP
+
 # if SPD_STAMP_FILE_INFO
   char s_infoFileName[256];
   strcpy (s_infoFileName, vec.at(0));
   strcat ( s_infoFileName, "_info.txt" );
   std::ofstream infoFile(s_infoFileName);
 # else
-  std::ofstream infoFile(stdout);
+  std::ofstream infoFile(stdout);  
 # endif
-#else
-  std::ofstream infoFile(stderr);
-#endif
+
   
   /* Read image */
   Mat Img_input;
@@ -116,12 +114,11 @@ int main_simple(char* nameFile)
 
   int channels = Img_input.channels();
   int depth = Img_input.depth();
-#if SPD_STAMP
+
   std::string s_Ch = "Image channels: " + std::to_string(channels);
   stamp(infoFile, s_Ch.c_str());
   std::string s_Dp = "Image depth bit: " + std::to_string(depth);
   stamp(infoFile, s_Dp.c_str());
-#endif
 
   cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
   double bordersThick = 0.015;
@@ -130,10 +127,8 @@ int main_simple(char* nameFile)
                           , static_cast<int>(ceil( borders.x * I_input_size.y))
                           , static_cast<int>(floor(borders.y * I_input_size.x))
                           , static_cast<int>(floor(borders.y * I_input_size.y))};  
-    
-#if SPD_STAMP
+
   timeElapsed(infoFile, start, "Open and read file");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -153,9 +148,7 @@ int main_simple(char* nameFile)
   }
   Img_input.release();
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Histogram Stretching");
-#endif
 
 
 /* ======================================================================= *
@@ -172,9 +165,7 @@ int main_simple(char* nameFile)
   Mat medianImg = medianFilter(histStretch, kerlen);
   //backgroundSub.release();
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Median filter");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -187,9 +178,7 @@ int main_simple(char* nameFile)
   Mat binaryImg = binarization(medianImg, level);
   medianImg.release();
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Binarization");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -205,9 +194,7 @@ int main_simple(char* nameFile)
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   binaryImg.release();
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Convolution");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -219,9 +206,7 @@ int main_simple(char* nameFile)
   int radDisk = 6;  
   Mat openImg = morphologyOpen(convImg, radDisk);
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Morphology opening");
-#endif
   
 
 /* ======================================================================= *
@@ -253,11 +238,9 @@ int main_simple(char* nameFile)
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
   resizeImg.release();
   
-#if SPD_STAMP
   std::string s_nH = "Number of inclination angles: " + std::to_string(angle.size());
   stamp(infoFile, s_nH.c_str());
   timeElapsed(infoFile, start, "Hough transform");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -265,9 +248,9 @@ int main_simple(char* nameFile)
  * ----------------------------------------------------------------------- */
 
   start = clock();
-  printf("pre crea matrice\n");
+
   cv::Mat sumStrImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
-  printf("post crea matrice\n");
+
   for (int i = 0; i < angle.size(); ++i)
   {
 
@@ -301,9 +284,7 @@ int main_simple(char* nameFile)
   imshow("Final binary image", sumStrImg);
 #endif
   
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Sum streaks binary");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -319,17 +300,14 @@ int main_simple(char* nameFile)
   openImg.release();
   sumStrImg.release();
 
-#if SPD_STAMP
   timeElapsed(infoFile, start, "Connected components");
-#endif
 
 
 /* ----------------------------------------------------------------------- *
  * Write result                                                             *
  * ----------------------------------------------------------------------- */
 
-#if SPD_STAMP
-# if SPD_STAMP_FILE_RESULT
+#if SPD_STAMP_FILE_RESULT
   /* Open result file */
   char s_resFileName[256];
   strcpy (s_resFileName, vec.at(0));
@@ -338,8 +316,9 @@ int main_simple(char* nameFile)
 # else
   std::ofstream resFile(stdout);
 # endif
+
   writeResult(resFile, POINTS, STREAKS);
-#endif
+
   
 /* ----------------------------------------------------------------------- *
  * Plot result                                                             *
@@ -379,5 +358,13 @@ int main_simple(char* nameFile)
     imwrite( s_imgName, color_Img_input );
 #endif
   }
+
+  std::string astroScript = "..\\src\\astrometricReduction.bat ";
+  std::string command = astroScript + nameFile;
+  
+  int asd = system (command.c_str());
+
+  printf("fine astrometry \d\n", asd);
+
   return 0;
 }

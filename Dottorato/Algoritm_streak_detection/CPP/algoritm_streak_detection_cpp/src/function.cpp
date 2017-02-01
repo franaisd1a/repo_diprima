@@ -127,10 +127,8 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
   fits_get_hdrspace(fptr, &nkeys, NULL, &status);
   for (ii = 1; ii <= nkeys; ii++) {
     fits_read_record(fptr, ii, card, &status); /* read keyword */
-#if SPD_STAMP
-# if SPD_STAMP_FIT_HEADER
+#if SPD_STAMP_FIT_HEADER
       stamp(stream, card);
-# endif
 #endif
   }
   
@@ -170,7 +168,7 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
     namedWindow("Input .fit image", cv::WINDOW_NORMAL);
     imshow("Input .fit image", img);
 #endif
-#if SPD_STAMP
+#if SPD_STAMP_FIT_HEADER
   stamp(stream, "END .fit header\n");
 #endif
   fits_close_file(fptr, &status);
@@ -1068,13 +1066,10 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
 {
   clock_t stop = clock();
   double totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-  
-#if SPD_STAMP_FILE
-  stream << strName << " time: " << totalTime << std::endl;
-#endif
-#if SPD_STAMP_CONSOLE
-  printf("%s time: %f\n", strName, totalTime);
-#endif
+
+  std::string str = " time: ";
+  std::string s_t = strName + str + std::to_string(totalTime);
+  stamp(stream, s_t.c_str());
 }
 
 /* ==========================================================================
@@ -1129,11 +1124,8 @@ cv::Mat linearKernel(int dimLine, double teta)
 * ========================================================================== */
 void stamp(std::ostream& stream, const char* strName)
 {
-#if SPD_STAMP_FILE
+#if SPD_STAMP
   stream << strName << std::endl;
-#endif
-#if SPD_STAMP_CONSOLE
-  printf("%s\n", strName);
 #endif
 }
 
