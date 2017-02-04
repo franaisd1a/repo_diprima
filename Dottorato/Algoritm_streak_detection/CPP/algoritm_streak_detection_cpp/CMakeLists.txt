@@ -33,6 +33,8 @@ set(SRC_PATH "src")
 #### #add_executable
 #### CUDA_ADD_EXECUTABLE( algo_streak_detection ${CUDA_SRC})
 
+set(SOURCES_WIN ${SRC_PATH}/function_os_win.cpp)
+
 set(SOURCES  ${SRC_PATH}/main.cpp
 			 ${SRC_PATH}/main_simple.cpp
 			 #${SRC_PATH}/main_2.cpp
@@ -45,7 +47,7 @@ set(SOURCES  ${SRC_PATH}/main.cpp
 			 )
 
 #add_executable			 
-add_executable( ${MAINTGT} ${SOURCES})
+add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_WIN})
 	
 # Update the central variable containing all external libraries
 set(LIBS

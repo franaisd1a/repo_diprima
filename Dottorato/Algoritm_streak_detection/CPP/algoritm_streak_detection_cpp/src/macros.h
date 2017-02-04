@@ -26,6 +26,9 @@
 
 #define SPD_DEBUG                  0U
 
+//SPD_FOLDER Abilita la ricerca dei file da file system
+#define SPD_FOLDER                 1U
+
 //SPD_SAVE_FIGURE Abilita il salvataggio delle immagini su disco "nomeFile.jpg"
 #define SPD_SAVE_FIGURE            1U
 //SPD_FIGURE Abilita l'apertura delle immagini significative a video

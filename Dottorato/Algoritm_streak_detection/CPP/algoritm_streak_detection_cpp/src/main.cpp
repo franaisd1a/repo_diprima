@@ -24,6 +24,8 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+
+#include <windows.h>
 #include <time.h>
 
 //#include "main_GPU_cuda.cuh"
@@ -32,6 +34,12 @@
 #include "macros.h"
 //#include "main_2.h"
 #include "main_fits.h"
+
+#ifdef WIN32
+#include "function_os_win.h"
+#else
+//gestione file system di linux
+#endif
 
 
 /* ==========================================================================
@@ -70,9 +78,22 @@ int main(int argc, char** argv)
     return -1;
   }
 
+#if SPD_FOLDER
+  const char* pStrPrefix = " ";
+  const char* pStrExtension = " ";
+  bool file = spd_os::scan(argv[1], pStrPrefix, pStrExtension);
+
+  char* name_file = argv[1];
+#else
   // File name
   //char* name_file = "C:\\Users\\diprima\\Desktop\\scontoMOTO.PNG";
   char* name_file = argv[1];
+#endif
+
+
+
+
+
 
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;

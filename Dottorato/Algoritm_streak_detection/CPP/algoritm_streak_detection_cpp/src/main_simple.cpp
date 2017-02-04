@@ -72,7 +72,7 @@ int main_simple(char* nameFile)
   clock_t start = clock();
       
   /* Read file extension */
-  char* fileName[256];
+  //char* fileName[256];
   std::vector<char*> vec = fileExt(nameFile);
   char* ext = vec.at(1);
   const char* extjpg = "jpg";
