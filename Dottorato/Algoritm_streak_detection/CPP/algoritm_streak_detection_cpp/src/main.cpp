@@ -24,23 +24,8 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
-
-#include <windows.h>
-#include <time.h>
-
-//#include "main_GPU_cuda.cuh"
-#include "main_simple.h"
-//#include "main_GPU.h"
-#include "macros.h"
-//#include "main_2.h"
-#include "main_fits.h"
-
-#ifdef WIN32
-#include "function_os_win.h"
-#else
-//gestione file system di linux
-#endif
-
+#include <iostream>
+#include "main_algo.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -73,28 +58,35 @@
 int main(int argc, char** argv)
 {
   // Check for invalid input
-  if (argc != 2)  {
+  if (argc != 3)  {
     std::cout << "Error: insert input argument." << std::endl;
     return -1;
   }
 
-#if SPD_FOLDER
-  const char* pStrPrefix = " ";
-  const char* pStrExtension = " ";
-  bool file = spd_os::scan(argv[1], pStrPrefix, pStrExtension);
+  char* folder = "-D";
+  char* file = "-F";
+  bool folderMod = false;
 
-  char* name_file = argv[1];
-#else
-  // File name
-  //char* name_file = "C:\\Users\\diprima\\Desktop\\scontoMOTO.PNG";
-  char* name_file = argv[1];
-#endif
+  if (0 == strcmp(folder, argv[1])) {
+    folderMod = true;
+  }
+  else if (0 == strcmp(file, argv[1])) {
+
+  }
+  else {
+    std::cout << "Error. Select the modality -F for single file or -D for folder." << std::endl;
+    return -1;
+  }
+
+  bool res = main_algo(argv[2], folderMod);
 
 
 
 
 
 
+
+#if 0
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;
 
@@ -179,7 +171,7 @@ if (repeatCycle>1)
   std::cout << "End " << std::endl;
 }
   cv::waitKey(0);
-
+#endif
 
   return 1;
 }

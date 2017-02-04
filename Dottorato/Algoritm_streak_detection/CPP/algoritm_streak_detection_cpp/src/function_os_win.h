@@ -81,7 +81,7 @@ namespace spd_os
   bool directoryOpen(void* dhOut, const char* pStrName);
   bool directoryNextItem(void* dhIn, DirectoryItem& out);
   bool directoryClose(void* dhIn);
-  bool scan(const char* pStrPath, const char* pStrPrefix, const char* pStrExtension);
+  bool scan(void* hdir, char * nameFile);
   /**
   * fileExt Get file extension
   * @param nameFile Input file name

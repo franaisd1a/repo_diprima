@@ -63,13 +63,15 @@ std::vector<char*> fileExt(const char* strN)
   strcpy ( nameFile, strN );
   char* pch;
   char *path[32][256];
-  pch = strtok(nameFile,"\\");
+  const char* slash = "\\";
+
+  pch = strtok(nameFile,slash);
   size_t count = 0;
   while (pch != NULL)
   {
     //printf ("%s\n",pch);
     *path[count] = pch;
-    pch = strtok (NULL, "\\");
+    pch = strtok (NULL, slash);
     count++;
   }
   char *name = *path[count-1];
@@ -78,10 +80,10 @@ std::vector<char*> fileExt(const char* strN)
   strcpy (s_pathFileName, *path[0]);
   for (size_t i = 1; i < count - 1; ++i)
   {
-    strcat(s_pathFileName, "\\");
+    strcat(s_pathFileName, slash);
     strcat(s_pathFileName, *path[i]);
   }
-  strcat(s_pathFileName, "\\");
+  strcat(s_pathFileName, slash);
   
   char s_pathResFile[256];
   strcpy (s_pathResFile, s_pathFileName);

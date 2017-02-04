@@ -36,6 +36,7 @@ set(SRC_PATH "src")
 set(SOURCES_WIN ${SRC_PATH}/function_os_win.cpp)
 
 set(SOURCES  ${SRC_PATH}/main.cpp
+    ${SRC_PATH}/main_algo.cpp
 			 ${SRC_PATH}/main_simple.cpp
 			 #${SRC_PATH}/main_2.cpp
 			 ${SRC_PATH}/main_fits.cpp

@@ -25,7 +25,6 @@
 * INCLUDES
 * ========================================================================== */
 #include "function_os_win.h"
-#include "macros.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -332,63 +331,58 @@ bool spd_os::directoryClose( void* dhIn)
 }
 
 /* ==========================================================================
- *        FUNCTION NAME: scan
+ *        FUNCTION NAME: scan2
  * FUNCTION DESCRIPTION: scan a folder to search for algorithm
  *        CREATION DATE: 20170201
  *              AUTHORS: Francesco Diprima
  *           INTERFACES: None
  *         SUBORDINATES: None
  * ========================================================================== */
-bool spd_os::scan(const char* pStrPath, const char* pStrPrefix, const char* pStrExtension)
+bool spd_os::scan(void* hdir, char * nameFile)
 {
-  bool res = true;
-  if (nullptr == pStrPath) {
-    printf("Path string cannot be NULL");
-    res = false;
-  }
-
-  //pkcore::CCSOperatingSystem::DirHandle hdir;
-  void* hdir = ::malloc(512);
   bool bExit = false;
-  bool expOpen = directoryOpen(hdir,pStrPath);  
-  DirectoryItem ditm;
+  bool endExternalLoop = false;
+  bool lastLoop = true;
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
   const char* extFIT = "FIT";
+  DirectoryItem ditm;
 
   while (!bExit)
-  {
-    bool exp = directoryNextItem(hdir,ditm);
-    
-    if (exp) {
-      printf("SCAN out.strName=%s", ditm.strName);
-      std::string strFN { ditm.strName };
-      if ((strFN == ".") || (strFN == "..")) 
-      { 
-        printf("\n");
-        continue; 
+  {    
+    bool exp = directoryNextItem(hdir, ditm);
+
+    if (exp)
+    {
+      std::string strFN{ ditm.strName };
+
+      if ((strFN == ".") || (strFN == ".."))
+      {
+        continue;
       }
-      //if()
+
       std::vector<char*> vec = fileExt(ditm.strName);
       char* ext = vec.at(1);
 
-      if (!( (0==strcmp(ext, extJPG)) || (0==strcmp(ext, extjpg)) 
-         ||(0==strcmp(ext, extFIT)) || (0==strcmp(ext, extfit)) ))
-      { 
-        printf("\n");
-        continue; 
+      if (!((0 == strcmp(ext, extJPG)) || (0 == strcmp(ext, extjpg))
+        || (0 == strcmp(ext, extFIT)) || (0 == strcmp(ext, extfit))))
+      {
+        continue;
       }
-  
-      printf("    OK\n");
-      
-    } else {
       bExit = true;
     }
+    else
+    {
+      bExit = true;
+      endExternalLoop = true;
+      lastLoop = false;
+    }
   }
-  bool expClose = directoryClose(hdir);
-  
-  return true;
+  if (lastLoop) {
+    strncpy(nameFile, ditm.strName, strlen(ditm.strName));
+  }
+  return endExternalLoop;
 }
 
 /* ==========================================================================
@@ -407,13 +401,15 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   strcpy ( nameFile, strN );
   char* pch;
   char *path[32][256];
-  pch = strtok(nameFile,"\\");
+  const char* slash = "\\";
+
+  pch = strtok(nameFile,slash);
   size_t count = 0;
   while (pch != NULL)
   {
     //printf ("%s\n",pch);
     *path[count] = pch;
-    pch = strtok (NULL, "\\");
+    pch = strtok (NULL, slash);
     count++;
   }
   char *name = *path[count-1];
@@ -422,10 +418,10 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   strcpy (s_pathFileName, *path[0]);
   for (size_t i = 1; i < count - 1; ++i)
   {
-    strcat(s_pathFileName, "\\");
+    strcat(s_pathFileName, slash);
     strcat(s_pathFileName, *path[i]);
   }
-  strcat(s_pathFileName, "\\");
+  strcat(s_pathFileName, slash);
   
   char s_pathResFile[256];
   strcpy (s_pathResFile, s_pathFileName);
