@@ -96,14 +96,20 @@ bool main_algo(char* input, bool folderMod)
   void* hdir = ::malloc(512);
   bool exitLoop = false;
 
+  bool openDir = false;
   if (folderMod) {
-    bool expOpen = spd_os::directoryOpen(hdir,input);
+    openDir = spd_os::directoryOpen(hdir,input);
   }
 
   while (!exitLoop)
   {
     if (folderMod)
     {
+      if (!openDir)
+      {
+        exitLoop = true;
+        continue;
+      }
       char file[1024];
       ::memset(file,0,sizeof(file));
       ::memset(nameFile,0,sizeof(nameFile));
@@ -132,27 +138,31 @@ bool main_algo(char* input, bool folderMod)
         || (0 == strcmp(ext, extFIT)) || (0 == strcmp(ext, extfit)))
       {
         strncpy(nameFile, input, strlen(input));
-      }            
+      }
+      else
+      {
+        printf("Error. Not supported file extension. Only .fit and .jpg file.\n");
+        exitLoop = true;
+        continue;
+      }
       exitLoop = true;
     }    
 
     if ((strlen(nameFile) > strlen(input)+1) || !folderMod)
     {
-      //chiamata agli algoritmi
       std::cout << "File " << nameFile << std::endl;
+      //chiamata agli algoritmi
     }
 
     if (!exitLoop) { continue; }
   }
 
-  if (folderMod)
+  if (folderMod && openDir)
   {
     bool expClose = spd_os::directoryClose(hdir);
   }
 
   std::cout << "End." << std::endl;
-
-
 
 
   /*****************************************************************************/

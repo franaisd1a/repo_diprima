@@ -82,10 +82,6 @@ int main(int argc, char** argv)
 
 
 
-
-
-
-
 #if 0
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;

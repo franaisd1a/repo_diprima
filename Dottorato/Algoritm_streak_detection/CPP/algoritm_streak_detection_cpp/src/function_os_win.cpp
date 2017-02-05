@@ -65,11 +65,11 @@ bool spd_os::createDirectory(const char* pStrName)
 {
   bool res = true;
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }
   if (0 == CreateDirectory(pStrName, NULL)){
-    printf("Can't create directory");
+    printf("Can't create directory\n");
     res = false;
   }
   return res;
@@ -87,11 +87,11 @@ bool spd_os::removeEmptyDirectory(const char* pStrName)
 {
   bool res = true;
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }    
   if (0 != RemoveDirectory(pStrName)) {
-    printf("Could not remove directory");
+    printf("Could not remove directory\n");
     res = false;
   }  
   return res;
@@ -109,11 +109,11 @@ bool spd_os::removeFile(const char* pStrName)
 {
   bool res = true;
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }    
   if(0 == ::DeleteFile(pStrName)){
-    printf("Could not remove file");
+    printf("Could not remove file\n");
     res = false;
   }  
   return res;
@@ -131,12 +131,12 @@ bool spd_os::fileExists(const char* pStrName)
 {
   bool res = true;
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }
   DWORD ftyp = GetFileAttributes(pStrName);
   if (ftyp == INVALID_FILE_ATTRIBUTES) {
-    printf("Invalid file");
+    printf("Invalid file\n");
     res = false;
   }  
   return res;
@@ -154,16 +154,16 @@ bool spd_os::directoryExists(const char* pStrName)
 {
   bool res = true;
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }
   DWORD ftyp = GetFileAttributes(pStrName);
   if (ftyp == INVALID_FILE_ATTRIBUTES) {
-    printf("Invalid attributes");
+    printf("Invalid attributes\n");
     res = false;
   }
   if (0 == (ftyp & FILE_ATTRIBUTE_DIRECTORY)) {
-    printf("Not a directory");
+    printf("Not a directory\n");
     res = false;
   }
   return res;
@@ -185,11 +185,11 @@ bool spd_os::directoryOpen(void* dhOut, const char* pStrName)
   /*dhOut è creato con una malloc*/
   
   if (nullptr == pStrName) {
-    printf("NULL required parameter");
+    printf("NULL required parameter\n");
     res = false;
   }
   if (nullptr == dhOut) {
-    printf("Not NIL handle");
+    printf("Not NIL handle\n");
     res = false;
   }
 
@@ -203,9 +203,10 @@ bool spd_os::directoryOpen(void* dhOut, const char* pStrName)
 
   pDir->uMarker = MakeU32LE('J','D','I','R');
     
-  auto expExists = directoryExists(pStrName);
+  bool expExists = directoryExists(pStrName);
   if (!expExists) {
-    printf("Error, directory not exist.");
+    printf("Error, directory not exist.\n");
+    res = false;
   }
 
   std::string lastP = "/*";
@@ -214,8 +215,9 @@ bool spd_os::directoryOpen(void* dhOut, const char* pStrName)
   pDir->hFind = FindFirstFile(static_cast<const char*>(tf.c_str()), &pDir->ffd);
   
   /* Is first and no execute Next */
-  pDir->bIsFirst = true;  
-  return true;
+  pDir->bIsFirst = true;
+
+  return res;
 }
 
 /* ==========================================================================
@@ -231,18 +233,18 @@ bool spd_os::directoryNextItem( void* dhIn, DirectoryItem& out)
   bool res = true;
 
   if (nullptr == dhIn) {
-    printf("NIL handle");
+    printf("NIL handle\n");
     res = false;
   }
   
   PrivTDir* pDir = reinterpret_cast<PrivTDir*>(dhIn);
   
   if (nullptr == pDir) {
-    printf("NULL directory pointer");
+    printf("NULL directory pointer\n");
     res = false;
   }
   if (pDir->uMarker != MakeU32LE('J', 'D', 'I', 'R')) {
-    printf("Not a directory structure");
+    printf("Not a directory structure\n");
     res = false;
   }
 
@@ -259,7 +261,7 @@ bool spd_os::directoryNextItem( void* dhIn, DirectoryItem& out)
   else
   {
     if (INVALID_HANDLE_VALUE == pDir->hFind) {
-      printf("Invalid handle of directory Find");
+      printf("Invalid handle of directory Find\n");
       res = false;
     }
 
@@ -303,27 +305,27 @@ bool spd_os::directoryClose( void* dhIn)
   bool res = true;
 
   if (nullptr == dhIn) {
-    printf("NIL handle");
+    printf("NIL handle\n");
     res = false;
   }
   
   PrivTDir* pDir = reinterpret_cast<PrivTDir*>(dhIn);
   
   if (nullptr == pDir) {
-    printf("NULL directory pointer");
+    printf("NULL directory pointer\n");
     res = false;
   }
   if (pDir->uMarker != MakeU32LE('J', 'D', 'I', 'R')) {
-    printf("Not a directory structure");
+    printf("Not a directory structure\n");
     res = false;
   }
     
   if (INVALID_HANDLE_VALUE == pDir->hFind) {
-    printf("Directory not correctly opened");
+    printf("Directory not correctly opened\n");
     res = false;
   }
   if (0 == FindClose(pDir->hFind)) {
-    printf("Could not close directory");
+    printf("Could not close directory\n");
     res = false;
   }
 
@@ -425,7 +427,8 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   
   char s_pathResFile[256];
   strcpy (s_pathResFile, s_pathFileName);
-  strcat(s_pathResFile, "Result\\");
+  strcat(s_pathResFile, "Result");
+  strcat(s_pathResFile, slash);
   
   pch = strtok(name,".");
   while (pch != NULL)
