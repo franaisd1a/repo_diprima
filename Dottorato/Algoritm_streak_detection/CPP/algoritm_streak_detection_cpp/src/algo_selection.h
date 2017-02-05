@@ -4,8 +4,8 @@
 * ========================================================================== */
 
 /* ==========================================================================
-*   INCLUDE FILE NAME: file_selection.h
-* INCLUDE DESCRIPTION: File for selection of file to be process
+*   INCLUDE FILE NAME: algo_selection.h
+* INCLUDE DESCRIPTION: Selection of the algorithm
 *       CREATION DATE: 20160727
 *             AUTHORS: Francesco Diprima
 *        DESIGN ISSUE: None.
@@ -17,8 +17,8 @@
 *
 * ========================================================================== */
 
-#ifndef FILE_SELECTION_H
-#define FILE_SELECTION_H
+#ifndef ALGO_SELECTION_H
+#define ALGO_SELECTION_H
 
 /* ==========================================================================
 * INCLUDE
@@ -37,10 +37,10 @@
 * ========================================================================== */
 
 /**
-* file_selection File for selection of file to be process
+* algo_selection Selection of the algorithm
 * @param imgIn Input image
 * @return 
 */
-bool file_selection(char* input, bool folderMod);
+bool algo_selection(char* nameFile);
 
-#endif /* FILE_SELECTION_H */
+#endif /* ALGO_SELECTION_H */

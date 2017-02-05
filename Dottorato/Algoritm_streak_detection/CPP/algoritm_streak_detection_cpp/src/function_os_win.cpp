@@ -333,8 +333,8 @@ bool spd_os::directoryClose( void* dhIn)
 }
 
 /* ==========================================================================
- *        FUNCTION NAME: scan2
- * FUNCTION DESCRIPTION: scan a folder to search for algorithm
+ *        FUNCTION NAME: scan
+ * FUNCTION DESCRIPTION: Scan a folder to search files
  *        CREATION DATE: 20170201
  *              AUTHORS: Francesco Diprima
  *           INTERFACES: None
@@ -400,42 +400,42 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   std::vector<char*> vec;
 
   char nameFile[1024];
-  strcpy ( nameFile, strN );
+  ::strcpy ( nameFile, strN );
   char* pch;
   char *path[32][256];
   const char* slash = "\\";
 
-  pch = strtok(nameFile,slash);
+  pch = ::strtok(nameFile,slash);
   size_t count = 0;
   while (pch != NULL)
   {
     //printf ("%s\n",pch);
     *path[count] = pch;
-    pch = strtok (NULL, slash);
+    pch = ::strtok (NULL, slash);
     count++;
   }
   char *name = *path[count-1];
 
   char s_pathFileName[256];
-  strcpy (s_pathFileName, *path[0]);
+  ::strcpy (s_pathFileName, *path[0]);
   for (size_t i = 1; i < count - 1; ++i)
   {
-    strcat(s_pathFileName, slash);
-    strcat(s_pathFileName, *path[i]);
+    ::strcat(s_pathFileName, slash);
+    ::strcat(s_pathFileName, *path[i]);
   }
-  strcat(s_pathFileName, slash);
+  ::strcat(s_pathFileName, slash);
   
   char s_pathResFile[256];
-  strcpy (s_pathResFile, s_pathFileName);
-  strcat(s_pathResFile, "Result");
-  strcat(s_pathResFile, slash);
+  ::strcpy (s_pathResFile, s_pathFileName);
+  ::strcat(s_pathResFile, "Result");
+  ::strcat(s_pathResFile, slash);
   
   pch = strtok(name,".");
   while (pch != NULL)
   {    
     //printf ("%s\n",pch);
     *path[count] = pch;
-    pch = strtok (NULL, ".");
+    pch = ::strtok(NULL, ".");
     count++;
   }
   char* fileName = *path[count-2];

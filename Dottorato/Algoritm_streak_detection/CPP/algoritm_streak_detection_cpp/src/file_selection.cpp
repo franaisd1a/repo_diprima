@@ -24,25 +24,10 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
-#include "main_algo.h"
-
-
+#include "file_selection.h"
 #include <windows.h>
-
-#include <time.h>
-
-//#include "main_GPU_cuda.cuh"
-#include "main_simple.h"
-//#include "main_GPU.h"
-#include "macros.h"
-//#include "main_2.h"
-#include "main_fits.h"
-
-#ifdef WIN32
 #include "function_os_win.h"
-#else
-//gestione file system di linux
-#endif
+#include "algo_selection.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -73,71 +58,140 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-bool main_algo(char* input, bool folderMod)
+bool file_selection(char* input, bool folderMod)
 {
-  bool outputRes = true;
-
-/* ----------------------------------------------------------------------- *
- * Open and read file                                                      *
- * ----------------------------------------------------------------------- */
+  bool computation = true;
 
   /*
    * folderMod = true folder path
    * folderMod = false  file path
    */
   
+  const char slash = 92;
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
   const char* extFIT = "FIT";
-  char nameFile[1024];
-  //::memset(nameFile,0,sizeof(nameFile));
+
+  
+  char nameFile[1024]; //File name with path and extension
+  char onlyNameF[256]; //File name without path and extens
+  char fileExt[8]; //File extension
+  char namePath[1024]; //File path without name
+  char nameResFolder[1024]; //Result folder
+    
+  
+  ::memset(nameFile,0,sizeof(nameFile));
+  ::memset(onlyNameF, 0, sizeof(onlyNameF));
+  ::memset(fileExt,0,sizeof(fileExt));
+  ::memset(namePath,0,sizeof(namePath));
+  ::memset(nameResFolder,0,sizeof(nameResFolder));
 
   void* hdir = ::malloc(512);
+  
   bool exitLoop = false;
+  bool createResDir = true;
 
+  //Open input directory and create result folder
   bool openDir = false;
+  bool createResF = false;
+
   if (folderMod) {
     openDir = spd_os::directoryOpen(hdir,input);
+    if (openDir)
+    {
+      ::strcpy(namePath, input);
+      
+      //Control if last char in the path is slash
+      char lastC = namePath[strlen(namePath) - 1];
+      if (lastC!=slash) {
+        namePath[strlen(namePath)] = slash;
+      }
+
+      //Create result folder for directory mode
+      const char* resFolder = "Res_SPD";
+      ::strcpy(nameResFolder, namePath);
+      ::strcat(nameResFolder, resFolder);
+      nameResFolder[strlen(nameResFolder)] = slash;
+      bool dirEx = spd_os::directoryExists(nameResFolder);
+      if (!dirEx) {
+        createResF = spd_os::createDirectory(nameResFolder);
+      }
+    }
+    else
+    {
+      printf("Error in directory opening.");
+      exitLoop = false;
+    }
   }
 
   while (!exitLoop)
   {
     if (folderMod)
     {
-      if (!openDir)
+/* ----------------------------------------------------------------------- *
+ * Read files name from folder                                             *
+ * ----------------------------------------------------------------------- */
+      //Error in folder opening
+      /*if ((!openDir) || (!createResF))
       {
         exitLoop = true;
         continue;
-      }
+      }*/
       char file[1024];
-      ::memset(file,0,sizeof(file));
-      ::memset(nameFile,0,sizeof(nameFile));
+      ::memset(file, 0, sizeof(file));
+      ::memset(nameFile, 0, sizeof(nameFile));
+      ::memset(onlyNameF, 0, sizeof(onlyNameF));
+      ::memset(fileExt, 0, sizeof(fileExt));
 
       exitLoop = spd_os::scan(hdir, file);
 
+#if 0
+      //::memset(nameFile,0,sizeof(nameFile));
       strcpy(nameFile, input);
       
+      //Control if last char in the path is slash
       char lastC = nameFile[strlen(nameFile) - 1];
-      char slash = 92;
-
       if (lastC!=slash) {
         nameFile[strlen(nameFile)] = slash;
       }
+#endif
+      ::strcat(nameFile, namePath);
+      ::strcat(nameFile, file);
 
-      strcat(nameFile, file);
+      std::vector<char*> vec = spd_os::fileExt(file);
+      ::strcpy(onlyNameF, vec.at(0));
+      ::strcpy(fileExt, vec.at(1));
     }
     else
     {
+/* ----------------------------------------------------------------------- *
+ * Read file name                                                          *
+ * ----------------------------------------------------------------------- */
       ::memset(nameFile,0,sizeof(nameFile));
 
-      std::vector<char*> vec = fileExt(input);
+      //Control correct file extension
+      std::vector<char*> vec = spd_os::fileExt(input);
       char* ext = vec.at(1);
 
-      if ((0 == strcmp(ext, extJPG)) || (0 == strcmp(ext, extjpg))
-        || (0 == strcmp(ext, extFIT)) || (0 == strcmp(ext, extfit)))
+      ::strcpy(onlyNameF, vec.at(0));
+      ::strcpy(fileExt, vec.at(1));
+      ::strcpy( namePath, vec.at(2));
+
+      if ( (0 == ::strcmp(ext, extJPG)) || (0 == ::strcmp(ext, extjpg))
+        || (0 == ::strcmp(ext, extFIT)) || (0 == ::strcmp(ext, extfit)))
       {
-        strncpy(nameFile, input, strlen(input));
+        ::strncpy(nameFile, input, strlen(input));
+        //Create result folder for single input file mode
+        ::strcpy(nameResFolder, vec.at(2));
+        ::strcat(nameResFolder, vec.at(0));
+        ::strcat(nameResFolder, "_");
+        ::strcat(nameResFolder, "Res");
+        nameResFolder[strlen(nameResFolder)] = slash;
+        bool dirEx = spd_os::directoryExists(nameResFolder);
+        if (!dirEx) {
+          createResF = spd_os::createDirectory(nameResFolder);
+        }        
       }
       else
       {
@@ -147,13 +201,30 @@ bool main_algo(char* input, bool folderMod)
       }
       exitLoop = true;
     }    
+    //add method to monitor changes in a specific folder
+
 
     if ((strlen(nameFile) > strlen(input)+1) || !folderMod)
     {
-      std::cout << "File " << nameFile << std::endl;
-      //chiamata agli algoritmi
-    }
+/* ----------------------------------------------------------------------- *
+ * Algo execution                                                          *
+ * ----------------------------------------------------------------------- */
 
+      std::vector<char *> inputFileV(5);
+      inputFileV[0] = nameFile; //File name with path and extension
+      inputFileV[1] = onlyNameF; //File name without path and extension
+      inputFileV[2] = fileExt; //File extension
+      inputFileV[3] = namePath; //File path without name
+      inputFileV[4] = nameResFolder; //Result folder
+
+      std::cout << "nameFile " << nameFile << std::endl;
+      std::cout << "onlyNameF " << onlyNameF << std::endl;
+      std::cout << "fileExt " << fileExt << std::endl;
+      std::cout << "namePath " << namePath << std::endl;
+      std::cout << "nameResFolder " << nameResFolder << std::endl;
+      //computation = algo_selection(nameFile);
+    }
+    std::cout << std::endl << std::endl;
     if (!exitLoop) { continue; }
   }
 
@@ -162,93 +233,5 @@ bool main_algo(char* input, bool folderMod)
     bool expClose = spd_os::directoryClose(hdir);
   }
 
-  std::cout << "End." << std::endl;
-
-
-  /*****************************************************************************/
-#if 0
-
-
-  clock_t start, stop;
-  double totalTime, totalTimeCUDAkernel;
-
-  std::cout << "Start streaks points detection algorithms" << std::endl;
-
-  int repeatCycle = 1;
-
-  for (int u = 0; u < repeatCycle; ++u)
-  {
-/* ------------------------------- AlgoSimple ------------------------------- */
-#if 1
-    start = clock();
-
-    // Algo simple
-
-    int algoSimple = main_simple(nameFile);
-
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    //std::cout << "algoSimple time: " << totalTime << std::endl;
-    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
-#endif
-/* --------------------------------- Algo2 ---------------------------------- */
-#if 0  
-    start = clock();
-
-    // Algo 2
-
-    int algo2 = main_2(name_file);
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    std::cout << "algo2 time: " << totalTime << std::endl;
-#endif
-/* ----------------------------- AlgoCUDAkernel ----------------------------- */
-#if 0  
-    start = clock();
-
-    // AlgoCUDAkernel
-
-    int AlgoCUDAkernel = main_GPU_cuda(name_file);
-
-
-    stop = clock();
-    totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    //std::cout << "AlgoCUDAkernel time: " << totalTimeCUDAkernel << std::endl;
-    std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
-#endif
-/* -------------------------------- AlgoGPU --------------------------------- */
-#if 0
-    start = clock();
-
-    // Algo GPU
-
-
-    int algoGPU = main_GPU(name_file);
-
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    std::cout << "AlgoGPU time: " << totalTime << std::endl;
-#endif
-/* ------------------------------- TestFITS --------------------------------- */
-#if 0
-    int testFits = main_fits(name_file);
-#endif
-  }
-
-/* -------------------------------------------------------------------------- */
-
-  if (repeatCycle > 1)
-  {
-    //std::cout << "algoSimple: " << totalTime << " AlgoCUDAkernel: "<< totalTimeCUDAkernel << std::endl;
-    std::cout << "End " << std::endl;
-  }
-#endif
-  return outputRes;
+  return computation;
 }

@@ -35,8 +35,10 @@ set(SRC_PATH "src")
 
 set(SOURCES_WIN ${SRC_PATH}/function_os_win.cpp)
 
-set(SOURCES  ${SRC_PATH}/main.cpp
-    ${SRC_PATH}/main_algo.cpp
+set(SOURCES  
+    ${SRC_PATH}/main.cpp
+    ${SRC_PATH}/file_selection.cpp
+    ${SRC_PATH}/algo_selection.cpp
 			 ${SRC_PATH}/main_simple.cpp
 			 #${SRC_PATH}/main_2.cpp
 			 ${SRC_PATH}/main_fits.cpp
