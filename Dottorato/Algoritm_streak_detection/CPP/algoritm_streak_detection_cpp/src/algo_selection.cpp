@@ -24,9 +24,11 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+#include <time.h>
+#include <iostream>
+
 #include "algo_selection.h"
 #include "macros.h"
-#include <time.h>
 
 #include "main_simple.h"
 //#include "main_GPU_cuda.cuh"
@@ -62,14 +64,29 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-bool algo_selection(char* nameFile)
+bool algo_selection(const std::vector<char *>& input)
 {
   bool outputRes = true;
   
+  if (5 != input.size())
+  {
+    printf("Error in input parameters.");
+  }
+
+  std::cout << "Start streaks points detection algorithms" << std::endl;
+
+#if SPD_DEBUG
+  std::cout <<      "nameFile " << input.at(0) << std::endl;
+  std::cout <<     "onlyNameF " << input.at(1) << std::endl;
+  std::cout <<       "fileExt " << input.at(2) << std::endl;
+  std::cout <<      "namePath " << input.at(3) << std::endl;
+  std::cout << "nameResFolder " << input.at(4) << std::endl;
+#endif
+
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;
 
-  std::cout << "Start streaks points detection algorithms" << std::endl;
+  
 
   int repeatCycle = 1;
 
@@ -81,7 +98,7 @@ bool algo_selection(char* nameFile)
 
     // Algo simple
 
-    int algoSimple = main_simple(nameFile);
+    int algoSimple = main_simple(input);
 
 
     stop = clock();

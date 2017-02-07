@@ -28,6 +28,7 @@
 #include <windows.h>
 #include "function_os_win.h"
 #include "algo_selection.h"
+#include "macros.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -159,9 +160,11 @@ bool file_selection(char* input, bool folderMod)
       ::strcat(nameFile, namePath);
       ::strcat(nameFile, file);
 
-      std::vector<char*> vec = spd_os::fileExt(file);
-      ::strcpy(onlyNameF, vec.at(0));
-      ::strcpy(fileExt, vec.at(1));
+      if (strlen(file)>1) {
+        std::vector<char*> vec = spd_os::fileExt(file);
+        ::strcpy(onlyNameF, vec.at(0));
+        ::strcpy(fileExt, vec.at(1));
+      }
     }
     else
     {
@@ -217,12 +220,14 @@ bool file_selection(char* input, bool folderMod)
       inputFileV[3] = namePath; //File path without name
       inputFileV[4] = nameResFolder; //Result folder
 
+#if SPD_DEBUG
       std::cout << "nameFile " << nameFile << std::endl;
       std::cout << "onlyNameF " << onlyNameF << std::endl;
       std::cout << "fileExt " << fileExt << std::endl;
       std::cout << "namePath " << namePath << std::endl;
       std::cout << "nameResFolder " << nameResFolder << std::endl;
-      //computation = algo_selection(nameFile);
+#endif
+      computation = algo_selection(inputFileV);
     }
     std::cout << std::endl << std::endl;
     if (!exitLoop) { continue; }

@@ -23,7 +23,6 @@
 /* ==========================================================================
 * INCLUDE
 * ========================================================================== */
-#include "function.h"
 
 /* ==========================================================================
 * MACROS
@@ -42,6 +41,6 @@
 * @param imgIn Input image
 * @return 
 */
-int main_simple(char* name_file);
+int main_simple(const std::vector<char *>& input);
 
 #endif /* MAIN_SIMPLE_H */

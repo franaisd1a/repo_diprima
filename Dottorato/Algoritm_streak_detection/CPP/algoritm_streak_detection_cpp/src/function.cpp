@@ -680,10 +680,11 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
   float count = 0;
 
   /* Initialize vector */  
-  std::vector< int >        points(contours.size());
-  std::vector< cv::Point >  centroid(contours.size());
-  std::vector< float >      majorAxis(contours.size());
-  std::vector< float >      minorAxis(contours.size());
+  std::vector< int >       points(contours.size());
+  std::vector< cv::Point > centroid(contours.size());
+  std::vector< float >     majorAxis(contours.size());
+  std::vector< float >     minorAxis(contours.size());
+  std::vector< int >       falsePoints(contours.size());
   
   for (size_t i = 0; i < contours.size(); ++i)
   {
@@ -711,8 +712,9 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 
         if (0 == minorAxis.at(i))
         { 
-          contours.at(i).at(0).x = -1;
-          contours.at(i).at(0).y = -1;
+          /*contours.at(i).at(0).x = -1;
+          contours.at(i).at(0).y = -1;*/
+          falsePoints.at(i) = -1;
           continue;
         }
         
@@ -731,20 +733,23 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
         } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
         else
         {
-          contours.at(i).at(0).x = -1;
-          contours.at(i).at(0).y = -1;
+          /*contours.at(i).at(0).x = -1;
+          contours.at(i).at(0).y = -1;*/
+          falsePoints.at(i) = -1;
         }
       } //if(contours[i].size()>5)      
       else
       {
-        contours.at(i).at(0).x = -1;
-        contours.at(i).at(0).y = -1;
+        /*contours.at(i).at(0).x = -1;
+        contours.at(i).at(0).y = -1;*/
+        falsePoints.at(i) = -1;
       }
     }
     else
     {
-      contours.at(i).at(0).x = -1;
-      contours.at(i).at(0).y = -1;
+      /*contours.at(i).at(0).x = -1;
+      contours.at(i).at(0).y = -1;*/
+      falsePoints.at(i) = -1;
     }
   } //for (size_t i = 0; i < contours.size(); ++i)
 
@@ -760,8 +765,9 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
       if (majorAxis.at(j)<threshValue) //ceil(max_points_diameter/2)
       {
         points.at(j) = 0;
-        contours.at(j).at(0).x = -1;
-        contours.at(j).at(0).y = -1;
+        /*contours.at(j).at(0).x = -1;
+        contours.at(j).at(0).y = -1;*/
+        falsePoints.at(j) = -1;
       }
     }
   } //if (n_points)
@@ -774,7 +780,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
     int indx = 0;
     for (size_t k = 0; k < contours.size(); ++k)
     {
-      if ((1 == points.at(k)) && (-1 != contours.at(k).at(0).x) )
+      if ((1 == points.at(k)) && (-1 != falsePoints.at(k)))//(-1 != contours.at(k).at(0).x) )
       {
         outPOINTS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
         indx++;
@@ -846,7 +852,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
           {
             min_streaks_minoraxis = minorAxis.at(i);
           }
-          if (minorAxis.at(i) < max_streaks_minoraxis)
+          if (minorAxis.at(i) > max_streaks_minoraxis)
           {
             max_streaks_minoraxis = minorAxis.at(i);
           }
@@ -943,8 +949,9 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
         bool measureDist = false;
         cv::Point2f centerS = {static_cast<float>(outSTREAKS.at(j)[0])
           , static_cast<float>(outSTREAKS.at(j)[1])};//centro striscia
-        double insideP = cv::pointPolygonTest(contoursP, centerS, measureDist);
 
+        double insideP = cv::pointPolygonTest(contoursP, centerS, measureDist);
+        
         if (insideP>0)
         {
           outSTREAKS.at(j)[2] = -1;
@@ -954,6 +961,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
           cv::Point2f centerP = { static_cast<float>(POINTS.at(i)[0])
             , static_cast<float>(POINTS.at(i)[1]) };//centro striscia
           double insideS = cv::pointPolygonTest(contoursS, centerP, measureDist);
+          
           if (insideS>0)
           {
             POINTS.at(i)[2] = -1;
@@ -997,9 +1005,11 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
   // Loop for find lines with high thresoldh
   size_t maxNumAngles = 10;
   bool exitL = true;
+  size_t countC = 0;
 
   while (exitL)
   {
+    countC = countC + 1;
     if (houghVal.size() > maxNumAngles)
     {
       threshold = threshold * 1.5;
@@ -1013,6 +1023,9 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     {
       threshold = threshold / 1.05;
       HoughLines(imgIn, houghVal, rho, theta, threshold);
+    }
+    if (10 == countC) {
+      exitL = false;
     }
   }
 

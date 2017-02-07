@@ -61,7 +61,7 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-int main_simple(char* nameFile)
+int main_simple(const std::vector<char *>& input)
 {
   //cout << "CPU algorithms." << std::endl;
 
@@ -70,11 +70,18 @@ int main_simple(char* nameFile)
  * ----------------------------------------------------------------------- */
 
   clock_t start = clock();
-      
+
+#if !SPD_DEBUG
+  std::cout <<      "nameFile " << input.at(0) << std::endl;
+  std::cout <<     "onlyNameF " << input.at(1) << std::endl;
+  std::cout <<       "fileExt " << input.at(2) << std::endl;
+  std::cout <<      "namePath " << input.at(3) << std::endl;
+  std::cout << "nameResFolder " << input.at(4) << std::endl;
+#endif
+
   /* Read file extension */
-  //char* fileName[256];
-  std::vector<char*> vec = fileExt(nameFile);
-  char* ext = vec.at(1);
+  /*std::vector<char*> vec = fileExt(nameFile);
+  char* ext = vec.at(1);*/
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
@@ -83,9 +90,10 @@ int main_simple(char* nameFile)
   /* Open log file */
 
 # if SPD_STAMP_FILE_INFO
-  char s_infoFileName[256];
-  strcpy (s_infoFileName, vec.at(0));
-  strcat ( s_infoFileName, "_info.txt" );
+  char s_infoFileName[1024];
+  strcpy (s_infoFileName, input.at(4));
+  strcat (s_infoFileName, input.at(1));
+  strcat (s_infoFileName, "_info.txt" );
   std::ofstream infoFile(s_infoFileName);
 # else
   std::ofstream infoFile(stdout);  
@@ -95,9 +103,9 @@ int main_simple(char* nameFile)
   /* Read image */
   Mat Img_input;
 
-  if ( (0==strcmp(ext, extJPG)) || (0==strcmp(ext, extjpg)) ) {
+  if ( (0==strcmp(input.at(2), extJPG)) || (0==strcmp(input.at(2), extjpg)) ) {
     // Read file
-    Img_input = imread(nameFile, CV_LOAD_IMAGE_GRAYSCALE);
+    Img_input = imread(input.at(0), CV_LOAD_IMAGE_GRAYSCALE);
 
     // Check for invalid file
     if (!Img_input.data) {
@@ -105,8 +113,8 @@ int main_simple(char* nameFile)
       return -1;
     }
   }
-  else if ( (0==strcmp(ext, extFIT)) || (0==strcmp(ext, extfit)) ) {
-    readFit(nameFile, infoFile, Img_input);
+  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) ) {
+    readFit(input.at(0), infoFile, Img_input);
   } else {
     printf("Error in reading process.");
     return -1;
@@ -138,11 +146,11 @@ int main_simple(char* nameFile)
   start = clock();
 
   Mat histStretch;
-  if ( (0==strcmp(ext, extJPG)) || (0==strcmp(ext, extjpg)) )
+  if ( (0==strcmp(input.at(2), extJPG)) || (0==strcmp(input.at(2), extjpg)) )
   {
     histStretch = Img_input;
   }
-  else if ( (0==strcmp(ext, extFIT)) || (0==strcmp(ext, extfit)) )
+  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) )
   {
     histStretch = histogramStretching(Img_input);
   }
@@ -310,8 +318,9 @@ int main_simple(char* nameFile)
 #if SPD_STAMP_FILE_RESULT
   /* Open result file */
   char s_resFileName[256];
-  strcpy (s_resFileName, vec.at(0));
-  strcat ( s_resFileName, ".txt" );
+  strcpy (s_resFileName, input.at(4));
+  strcat (s_resFileName, input.at(1));
+  strcat (s_resFileName, ".txt" );
   std::ofstream resFile(s_resFileName);
 # else
   std::ofstream resFile(stdout);
@@ -353,14 +362,16 @@ int main_simple(char* nameFile)
 #endif
 #if SPD_SAVE_FIGURE
     char s_imgName[256];
-    strcpy(s_imgName, vec.at(0));
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
     strcat(s_imgName, ".jpg");
     imwrite( s_imgName, color_Img_input );
 #endif
+    destroyAllWindows();
   }
 
   std::string astroScript = "..\\src\\astrometricReduction.bat ";
-  std::string command = astroScript + nameFile;
+  std::string command = astroScript + input.at(0);
   
   int asd = system (command.c_str());
 
