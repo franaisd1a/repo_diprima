@@ -33,7 +33,14 @@ set(SRC_PATH "src")
 #### #add_executable
 #### CUDA_ADD_EXECUTABLE( algo_streak_detection ${CUDA_SRC})
 
-set(SOURCES_WIN ${SRC_PATH}/function_os_win.cpp)
+if (${WIN32})
+set(SOURCES_OS ${SRC_PATH}/function_os_win.cpp)
+elseif (${UNIX})
+set(SOURCES_OS ${SRC_PATH}/function_os_posix.cpp)
+else   ()
+  message("Building for unknown system.")
+endif  ()
+
 
 set(SOURCES  
     ${SRC_PATH}/main.cpp
@@ -50,7 +57,7 @@ set(SOURCES
 			 )
 
 #add_executable			 
-add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_WIN})
+add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_OS})
 	
 # Update the central variable containing all external libraries
 set(LIBS
