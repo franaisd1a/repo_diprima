@@ -63,7 +63,12 @@ std::vector<char*> fileExt(const char* strN)
   strcpy ( nameFile, strN );
   char* pch;
   char *path[32][256];
+
+#if _WIN32
   const char* slash = "\\";
+#else
+  const char* slash = "//";
+#endif
 
   pch = strtok(nameFile,slash);
   size_t count = 0;
@@ -232,11 +237,13 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 #endif
 
   double maxHistValue = 0, minHistValue = 0;
-  cv::Point minLocHistValue = 0, maxLocHistValue = 0;
+  cv::Point minLocHistValue = {0, 0};
+  cv::Point maxLocHistValue = {0, 0};
   cv::minMaxLoc(imgIn, &minHistValue, &maxHistValue, &minLocHistValue, &maxLocHistValue, cv::noArray());
 
   double peakMax = 0, peakMin = 0;
-  cv::Point peakMinLoc = 0, peakMaxLoc = 0;
+  cv::Point peakMinLoc = {0, 0};
+  cv::Point peakMaxLoc = {0, 0};
   cv::minMaxLoc(hist, &peakMin, &peakMax, &peakMinLoc, &peakMaxLoc, cv::noArray());
   
   const double percentile[2] = { 0.432506, (1 - 0.97725) };
@@ -294,7 +301,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
       pLimgOut[col] =  static_cast<uchar>(valueLUT);
     }
   }
-  
+   
 #if SPD_FIGURE_1
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);

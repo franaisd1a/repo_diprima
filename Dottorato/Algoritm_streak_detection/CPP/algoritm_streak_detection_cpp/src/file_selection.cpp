@@ -74,7 +74,12 @@ bool file_selection(char* input, bool folderMod)
    * folderMod = false  file path
    */
   
+#if _WIN32
   const char slash = 92;
+#else
+  const char slash = 47;
+#endif
+
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
@@ -226,14 +231,15 @@ bool file_selection(char* input, bool folderMod)
       inputFileV[3] = namePath; //File path without name
       inputFileV[4] = nameResFolder; //Result folder
 
-#if SPD_DEBUG
+#if !SPD_DEBUG
       std::cout << "nameFile " << nameFile << std::endl;
       std::cout << "onlyNameF " << onlyNameF << std::endl;
       std::cout << "fileExt " << fileExt << std::endl;
       std::cout << "namePath " << namePath << std::endl;
       std::cout << "nameResFolder " << nameResFolder << std::endl;
-#endif
+#else
       computation = algo_selection(inputFileV);
+#endif
     }
     std::cout << std::endl << std::endl;
     if (!exitLoop) { continue; }

@@ -1,2 +1,5 @@
 /builds/
 *.txt~
+.cproject
+.project
+/.settings/

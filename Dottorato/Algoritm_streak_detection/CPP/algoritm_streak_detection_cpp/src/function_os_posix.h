@@ -34,13 +34,13 @@
 #include <iostream>
 
 
-/*#include <stdlib.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <iostream>
 #include <cstring>
 #include <vector>
 
-#include <io.h>
+/*#include <io.h>
 #include <fcntl.h>*/
 
 /* ==========================================================================

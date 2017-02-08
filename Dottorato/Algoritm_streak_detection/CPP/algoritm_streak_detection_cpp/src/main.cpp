@@ -24,6 +24,8 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+#include <stdio.h>
+#include <string.h>
 #include <iostream>
 #include "file_selection.h"
 
@@ -58,7 +60,7 @@
 int main(int argc, char** argv)
 {
   // Check for invalid input
-  if (argc != 3)  {
+  if (argc < 3)  {
     std::cout << "Error: insert input argument." << std::endl;
     return -1;
   }
@@ -66,11 +68,11 @@ int main(int argc, char** argv)
   char* folder = "-D";
   char* file = "-F";
   bool folderMod = false;
-
-  if (0 == strcmp(folder, argv[1])) {
+ 
+  if (0 == ::strcmp(folder, argv[1])) {
     folderMod = true;
   }
-  else if (0 == strcmp(file, argv[1])) {
+  else if (0 == ::strcmp(file, argv[1])) {
 
   }
   else {

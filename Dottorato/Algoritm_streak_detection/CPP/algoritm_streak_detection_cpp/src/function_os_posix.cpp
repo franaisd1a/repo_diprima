@@ -177,7 +177,7 @@ bool spd_os::directoryOpen(void* dhOut, const char* pStrName)
   bool res = true;
 
   void* p_dhOut = dhOut;
-  /*dhOut è creato con una malloc*/
+  /*dhOut ï¿½ creato con una malloc*/
   
   if (nullptr == pStrName) {
     printf("NULL required parameter\n");
@@ -370,7 +370,8 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   ::strcpy ( nameFile, strN );
   char* pch;
   char *path[32][256];
-  const char* slash = "\\";
+  //const char* slash = "\\";
+  const char* slash = "//";
 
   pch = ::strtok(nameFile,slash);
   size_t count = 0;
