@@ -160,45 +160,15 @@ void connectedComponents
 );
 
 /**
-* connectedComponents Found connected components
-* @param imgPoints Input image for points detection
-* @param imgStreaks Input image for streaks detection
-* @param borders Image borders
-* @param POINTS Vector with points centroid
-* @param STREAKS Vector with streaks centroid
-*/
-void connectedComponents2
-(
-  const cv::Mat& imgPoints
-  , const cv::Mat& imgStreaks
-  , const cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
-);
-
-/**
-* connectedComponents Found centroid of circular connected components
-* @param imgIn Input image
+* connectedComponentsPoints Found centroid of circular connected components
+* @param max_img_sz Max image dimension
 * @param contours Contours found by findContours
 * @param borders Image borders
+* @param outContoursRes Correct contours
 * @return Vector with points centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 (
-  const cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point> >& contours
-  , const cv::Vec<int, 4>& borders
-);
-
-/**
-* connectedComponents Found centroid of circular connected components
-* @param imgIn Input image
-* @param contours Contours found by findContours
-* @param borders Image borders
-* @return Vector with points centroid
-*/
-std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
-(
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours
   , const cv::Vec<int, 4>& borders
@@ -207,39 +177,30 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
 
 /**
 * connectedComponentsStreaks Found centroid of Streaks
-* @param imgIn Input image
-* @param contoursS Streaks contours found by findContours
-* @param POINTS Vector with points centroid
-* @param contoursP Points contours found by findContours
+* @param max_img_sz Max image dimension
+* @param contours Contours found by findContours
 * @param borders Image borders
+* @param outContoursRes Correct contours
 * @return Vector with streaks centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 (
-  const cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point > >& contoursS
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector<std::vector<cv::Point > >& contoursP
-  , const cv::Vec<int, 4>& borders
-);
-
-/**
-* connectedComponentsStreaks Found centroid of Streaks
-* @param imgIn Input image
-* @param contoursS Streaks contours found by findContours
-* @param POINTS Vector with points centroid
-* @param contoursP Points contours found by findContours
-* @param borders Image borders
-* @return Vector with streaks centroid
-*/
-std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
-(
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours
   , const cv::Vec<int, 4>& borders
   , std::vector<std::vector<cv::Point > >& outContoursRes
 );
 
+/**
+* deleteOverlapping Delete overlapping objects
+* @param imgSz Image dimensions
+* @param inPOINTS Input vector with points centroid
+* @param inSTREAKS Input vector with streaks centroid
+* @param contoursP Input points contours
+* @param contoursS Input streaks contours
+* @param outPOINTS Output vector with points centroid
+* @param outSTREAKS Output vector with streaks centroid
+*/
 void deleteOverlapping
 (
   const cv::Point imgSz

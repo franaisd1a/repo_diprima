@@ -613,77 +613,6 @@ void connectedComponents
   , std::vector< cv::Vec<int, 3> >& STREAKS
 )
 {
-  std::vector<std::vector<cv::Point> > contoursP;
-  std::vector<std::vector<cv::Point> > contoursS;
-  std::vector<cv::Vec4i> hierarchyP;
-  std::vector<cv::Vec4i> hierarchyS;
-  cv::Point offset = cv::Point(0, 0);
-      
-  findContours( imgPoints, contoursP, hierarchyP, CV_RETR_EXTERNAL
-                , CV_CHAIN_APPROX_NONE , offset);
-  
-  std::vector< cv::Vec<int, 3> > outPOINTS;
-
-  if (contoursP.size() > 0)
-  {
-    outPOINTS = connectedComponentsPoints
-    (imgPoints, contoursP, borders);
-  }
-
-  findContours( imgStreaks, contoursS, hierarchyS, CV_RETR_EXTERNAL
-                , CV_CHAIN_APPROX_NONE , offset);
-
-  if (contoursS.size() > 0)
-  {
-    STREAKS = connectedComponentsStreaks
-    (imgStreaks, contoursS, outPOINTS, contoursP, borders);
-  }
-  
-  for (size_t j = 0; j < outPOINTS.size(); ++j)
-  {
-    if (-1 != outPOINTS.at(j)[2])
-    {
-      POINTS.push_back({ outPOINTS.at(j)[0], outPOINTS.at(j)[1], 0 });
-    }
-  }
-  
-#if SPD_FIGURE_1
-    /// Draw contours
-    cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
-    for (int i = 0; i < contoursP.size(); i++)
-    {
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contoursP, i, color, 2, 8, hierarchyP, 0, cv::Point());
-    }
-    for (int i = 0; i < contoursS.size(); i++)
-    {
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contoursS, i, color, 2, 8, hierarchyS, 0, cv::Point());
-    }
-    /// Show in a window
-    namedWindow("Contours", cv::WINDOW_NORMAL);
-    imshow("Contours", drawing);
-#endif
-}
-
-
-/* ==========================================================================
-*        FUNCTION NAME: connectedComponents2
-* FUNCTION DESCRIPTION: Found connected component
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-void connectedComponents2
-(
-  const cv::Mat& imgPoints
-  , const cv::Mat& imgStreaks
-  , const cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
-)
-{
   const cv::Point imgSz = {imgPoints.rows, imgPoints.cols};
   float max_img_sz = std::max(imgPoints.cols, imgPoints.rows);
 
@@ -702,7 +631,7 @@ void connectedComponents2
 
   if (contoursP.size() > 0)
   {
-    outPOINTS = connectedComponentsPoints2
+    outPOINTS = connectedComponentsPoints
     (max_img_sz, contoursP, borders, contoursResP);
     contoursP.clear();
   }
@@ -716,29 +645,27 @@ void connectedComponents2
 
   if (contoursS.size() > 0)
   {
-    outSTREAKS = connectedComponentsStreaks2
+    outSTREAKS = connectedComponentsStreaks
     (max_img_sz, contoursS, borders, contoursResS);
     contoursS.clear();
   }
   
-  /* Delete overlapping */
-
+  /* Delete overlapping objects */
   deleteOverlapping
   (imgSz, outPOINTS, outSTREAKS, contoursResP, contoursResS, POINTS, STREAKS);
   
 #if SPD_FIGURE_1
     /// Draw contours
-    cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
-    for (int i = 0; i < contoursP.size(); i++)
-    {
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contoursP, i, color, 2, 8, hierarchyP, 0, cv::Point());
-    }
-    for (int i = 0; i < contoursS.size(); i++)
-    {
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contoursS, i, color, 2, 8, hierarchyS, 0, cv::Point());
-    }
+    cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);    
+    int cIdx = -1;
+    cv::Scalar color = cv::Scalar(0, 255, 0);
+    cv::Scalar colorS = cv::Scalar(0, 0, 255);
+    int lineType = 8;
+    cv::InputArray hierarchy = cv::noArray();
+    int maxLevel = 0;
+    drawContours(drawing, contoursResP, cIdx, color, 1, 8, hierarchy, 0, offset);
+    drawContours(drawing, contoursResS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
+    
     /// Show in a window
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
@@ -754,138 +681,6 @@ void connectedComponents2
 *         SUBORDINATES: None
 * ========================================================================== */
 std::vector< cv::Vec<int, 3> > connectedComponentsPoints
-(
-  const cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point > >& contours
-  , const cv::Vec<int, 4>& borders
-)
-{
-  float max_points_diameter = 0; 
-  float min_points_diameter = std::max(imgIn.cols, imgIn.rows);
-  float cumulativeMajorAxis = 0;
-  float count = 0;
-
-  /* Initialize vector */  
-  std::vector< int >       points(contours.size());
-  std::vector< cv::Point > centroid(contours.size());
-  std::vector< float >     majorAxis(contours.size());
-  std::vector< float >     minorAxis(contours.size());
-  std::vector< int >       falsePoints(contours.size());
-  
-  for (size_t i = 0; i < contours.size(); ++i)
-  {
-    cv::Point2f center;
-    float radius;
-    minEnclosingCircle(contours[i], center, radius);
-
-    cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
-                            , static_cast<int>(round(center.y)) );
-
-    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
-       && (centerP.y>borders[1] && centerP.y<borders[3]))
-    {
-      centroid.at(i) = centerP;
-      
-      if(contours[i].size()>5)
-      {
-        cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
-        /*majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-        minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);*/
-        majorAxis.at(i) = rotatedRect.size.height;
-        minorAxis.at(i) = rotatedRect.size.width;
-        cumulativeMajorAxis += rotatedRect.size.height;
-        count = count + 1;
-
-        if (0 == minorAxis.at(i))
-        { 
-          /*contours.at(i).at(0).x = -1;
-          contours.at(i).at(0).y = -1;*/
-          falsePoints.at(i) = -1;
-          continue;
-        }
-        
-        /* Identify circular connect components */
-        if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
-        {
-          points.at(i) = 1;
-          if (majorAxis.at(i) > max_points_diameter)
-          {
-            max_points_diameter = majorAxis.at(i);
-          }
-          if (minorAxis.at(i) < min_points_diameter)
-          {
-            min_points_diameter = minorAxis.at(i);
-          }
-        } //if (majorAxis.at(i) / minorAxis.at(i) < 1.6)
-        else
-        {
-          /*contours.at(i).at(0).x = -1;
-          contours.at(i).at(0).y = -1;*/
-          falsePoints.at(i) = -1;
-        }
-      } //if(contours[i].size()>5)      
-      else
-      {
-        /*contours.at(i).at(0).x = -1;
-        contours.at(i).at(0).y = -1;*/
-        falsePoints.at(i) = -1;
-      }
-    }
-    else
-    {
-      /*contours.at(i).at(0).x = -1;
-      contours.at(i).at(0).y = -1;*/
-      falsePoints.at(i) = -1;
-    }
-  } //for (size_t i = 0; i < contours.size(); ++i)
-
-  int init = 0;
-  int n_points = std::accumulate(points.begin(), points.end(), init);
-  
-  if (n_points)
-  {
-    int threshValue=((max_points_diameter/4)+((cumulativeMajorAxis/count)/2))/2;
-    for (size_t j = 0; j < contours.size(); ++j)
-    {
-      /* Delete little circular connect components */
-      if (majorAxis.at(j)<threshValue) //ceil(max_points_diameter/2)
-      {
-        points.at(j) = 0;
-        /*contours.at(j).at(0).x = -1;
-        contours.at(j).at(0).y = -1;*/
-        falsePoints.at(j) = -1;
-      }
-    }
-  } //if (n_points)
-
-  n_points = std::accumulate(points.begin(), points.end(), init);
-  std::vector< cv::Vec<int, 3> >  outPOINTS(n_points);
-  
-  if (n_points)
-  {
-    int indx = 0;
-    for (size_t k = 0; k < contours.size(); ++k)
-    {
-      if ((1 == points.at(k)) && (-1 != falsePoints.at(k)))//(-1 != contours.at(k).at(0).x) )
-      {
-        outPOINTS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
-        indx++;
-      }
-    }
-  } //if (n_points)
-
-  return outPOINTS;
-}
-
-/* ==========================================================================
-*        FUNCTION NAME: connectedComponentsPoints2
-* FUNCTION DESCRIPTION: Found centroid of circular connected components
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
 (
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours
@@ -1020,200 +815,6 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
 *         SUBORDINATES: None
 * ========================================================================== */
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
-(
-  const cv::Mat& imgIn
-  , std::vector<std::vector<cv::Point > >& contoursS
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector<std::vector<cv::Point > >& contoursP
-  , const cv::Vec<int, 4>& borders
-)
-{
-  int min_streaks_minoraxis = std::max(imgIn.cols, imgIn.rows);
-  int max_streaks_minoraxis=0;
-  int max_streaks_majoraxis = 0;
-
-  /* Initialize vector */
-  std::vector< int >        streaks(contoursS.size());
-  std::vector< cv::Point >  centroid(contoursS.size());
-  std::vector< int >        majorAxis(contoursS.size());
-  std::vector< int >        minorAxis(contoursS.size());
-  
-  for (size_t i = 0; i < contoursS.size(); ++i)
-  {
-    cv::Point2f center;
-    float radius;
-    minEnclosingCircle(contoursS[i], center, radius);
-
-    cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
-                            , static_cast<int>(round(center.y)) );
-
-    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
-       && (centerP.y>borders[1] && centerP.y<borders[3]))
-    {
-      centroid.at(i) = centerP;
-      if(contoursS[i].size()>5)
-      {      
-        cv::RotatedRect rotatedRect = fitEllipse(contoursS[i]);
-        majorAxis.at(i) = static_cast<int>(rotatedRect.size.height);
-        minorAxis.at(i) = static_cast<int>(rotatedRect.size.width);
-        
-        if (0 == minorAxis.at(i))
-        {
-          contoursS.at(i).at(0).x = -1;
-          contoursS.at(i).at(0).y = -1;
-          continue;
-        }
-        
-        /* Identify linear connect components */
-        if (majorAxis.at(i) / minorAxis.at(i) > 4)//6
-        {
-          streaks.at(i) = 1;
-          if (minorAxis.at(i) < min_streaks_minoraxis)
-          {
-            min_streaks_minoraxis = minorAxis.at(i);
-          }
-          if (minorAxis.at(i) > max_streaks_minoraxis)
-          {
-            max_streaks_minoraxis = minorAxis.at(i);
-          }
-          if (majorAxis.at(i) > max_streaks_majoraxis)
-          {
-            max_streaks_majoraxis = majorAxis.at(i);
-          }          
-        } //if (majorAxis.at(i) / minorAxis.at(i) > 6)
-        else
-        {
-          contoursS.at(i).at(0).x = -1;
-          contoursS.at(i).at(0).y = -1;
-        }
-      } //if(contoursS[i].size()>5)
-      else
-      {
-        contoursS.at(i).at(0).x = -1;
-        contoursS.at(i).at(0).y = -1;
-      }
-    }
-    else
-    {
-      contoursS.at(i).at(0).x = -1;
-      contoursS.at(i).at(0).y = -1;
-    }
-  } //for (size_t i = 0; i < contoursS.size(); ++i)
-
-  int init = 0;
-  int n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  
-  if (n_streaks)
-  {
-    if (n_streaks < 2)
-    {
-      min_streaks_minoraxis=2;
-    }
-    for (size_t j = 0; j < contoursS.size(); ++j)
-    {
-      /* Delete short linear connect components */
-      if (minorAxis.at(j) < ceil(min_streaks_minoraxis))
-      {
-        streaks.at(j) = 0;
-        contoursS.at(j).at(0).x = -1;
-        contoursS.at(j).at(0).y = -1;
-      }
-    }
-  } //if (n_streaks)
-  
-  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  
-  if (n_streaks)
-  {
-    for (size_t j = 0; j < contoursS.size(); ++j)
-    {
-      /* Delete short linear connect components */
-      if (majorAxis.at(j)<ceil(max_streaks_majoraxis*0.75))// /2
-      {
-        streaks.at(j) = 0;
-        contoursS.at(j).at(0).x = -1;
-        contoursS.at(j).at(0).y = -1;
-      }
-    }
-  } //if (n_streaks)
-
-  n_streaks = std::accumulate(streaks.begin(), streaks.end(), init);
-  std::vector< cv::Vec<int, 3> >  outSTREAKS(n_streaks);
-
-  int indx = 0;
-  if (n_streaks)
-  {    
-    for (size_t k = 0; k < contoursS.size(); ++k)
-    {
-      if ((1 == streaks.at(k)) && (-1 != contoursS.at(k).at(0).x) )
-      {
-        outSTREAKS.at(indx) = { centroid.at(k).x, centroid.at(k).y, 0};
-        indx++;
-      }
-    }
-  } //if (n_streaks)
-
-  /* Delete points on streak */
-
-  size_t nP = POINTS.size();
-  if (1 == nP) {
-    if (-1 == POINTS.at(0)[0]) { nP = 0; }
-  }
-
-  if((0!=nP) && (0!=indx))
-  {
-    for (size_t j = 0; j < outSTREAKS.size(); ++j)
-    {
-      for (size_t i = 0; i < POINTS.size(); ++i)
-      {
-        bool measureDist = false;
-        cv::Point2f centerS = {static_cast<float>(outSTREAKS.at(j)[0])
-          , static_cast<float>(outSTREAKS.at(j)[1])};//centro striscia
-
-        double insideP = cv::pointPolygonTest(contoursP, centerS, measureDist);
-        
-        if (insideP>0)
-        {
-          outSTREAKS.at(j)[2] = -1;
-        }
-        else
-        {
-          cv::Point2f centerP = { static_cast<float>(POINTS.at(i)[0])
-            , static_cast<float>(POINTS.at(i)[1]) };//centro striscia
-          double insideS = cv::pointPolygonTest(contoursS, centerP, measureDist);
-          
-          if (insideS>0)
-          {
-            POINTS.at(i)[2] = -1;
-          }
-        }
-      }
-    }
-  }
-
-  std::vector< cv::Vec<int, 3> >  STREAKS;
-  int ind = 0;
-  for (size_t j = 0; j < outSTREAKS.size(); ++j)
-  {
-    if (-1 != outSTREAKS.at(j)[2])
-    {
-      STREAKS.push_back({ outSTREAKS.at(j)[0], outSTREAKS.at(j)[1], 0 });
-      ind++;
-    }
-  }
-
-  return STREAKS;
-}
-
-/* ==========================================================================
-*        FUNCTION NAME: connectedComponentsStreaks2
-* FUNCTION DESCRIPTION: Found centroid of linear connected components
-*        CREATION DATE: 20160727
-*              AUTHORS: Francesco Diprima
-*           INTERFACES: None
-*         SUBORDINATES: None
-* ========================================================================== */
-std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
 (
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours
@@ -1355,6 +956,14 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
   return STREAKS;
 }
 
+/* ==========================================================================
+*        FUNCTION NAME: deleteOverlapping
+* FUNCTION DESCRIPTION: Delete overlapping objects
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 void deleteOverlapping
 (
   const cv::Point imgSz
@@ -1389,8 +998,7 @@ void deleteOverlapping
     }
     n_streaks = n_streaks + inSTREAKS.at(i)[2];
   }
-  
-  //Cancellare immagine imgP
+  imgP.release();
 
   std::vector<std::vector<cv::Point > > contoursResS;
 
@@ -1424,7 +1032,7 @@ void deleteOverlapping
     n_points = n_points + inPOINTS.at(i)[2];
   }
 
-  //Cancellare immagine imgS
+  imgS.release();
 
   std::vector<std::vector<cv::Point > > contoursResP;
 

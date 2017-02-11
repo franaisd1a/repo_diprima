@@ -304,8 +304,7 @@ int main_simple(const std::vector<char *>& input)
   std::vector< cv::Vec<int, 3> > POINTS;
   std::vector< cv::Vec<int, 3> > STREAKS;
   
-  //connectedComponents(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
-  connectedComponents2(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
+  connectedComponents(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
   openImg.release();
   sumStrImg.release();
 
