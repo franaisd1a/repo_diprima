@@ -71,24 +71,13 @@ int main_simple(const std::vector<char *>& input)
 
   clock_t start = clock();
 
-#if !SPD_DEBUG
-  std::cout <<      "nameFile " << input.at(0) << std::endl;
-  std::cout <<     "onlyNameF " << input.at(1) << std::endl;
-  std::cout <<       "fileExt " << input.at(2) << std::endl;
-  std::cout <<      "namePath " << input.at(3) << std::endl;
-  std::cout << "nameResFolder " << input.at(4) << std::endl;
-#endif
-
   /* Read file extension */
-  /*std::vector<char*> vec = fileExt(nameFile);
-  char* ext = vec.at(1);*/
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
   const char* extFIT = "FIT";
   
   /* Open log file */
-
 # if SPD_STAMP_FILE_INFO
   char s_infoFileName[1024];
   strcpy (s_infoFileName, input.at(4));
@@ -99,7 +88,18 @@ int main_simple(const std::vector<char *>& input)
   std::ofstream infoFile(stdout);  
 # endif
 
-  
+  {
+    std::string s_Ch = "File name: ";
+    s_Ch += input.at(0);
+    stamp(infoFile, s_Ch.c_str());
+  }  
+  {
+    std::string s_Ch = "Result folder path: ";
+    s_Ch += input.at(4);
+    stamp(infoFile, s_Ch.c_str());
+    stamp(infoFile, "\n");
+  }
+
   /* Read image */
   Mat Img_input;
 
@@ -265,7 +265,7 @@ int main_simple(const std::vector<char *>& input)
 /* ----------------------------------------------------------------------- *
  * Morphology opening with linear kernel                                   *
  * ----------------------------------------------------------------------- */
-    printf("ciclo %d\n\n",i);
+    
     int dimLine = 20;
 
     Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
@@ -304,7 +304,8 @@ int main_simple(const std::vector<char *>& input)
   std::vector< cv::Vec<int, 3> > POINTS;
   std::vector< cv::Vec<int, 3> > STREAKS;
   
-  connectedComponents(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
+  //connectedComponents(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
+  connectedComponents2(openImg, sumStrImg, imgBorders, POINTS, STREAKS);
   openImg.release();
   sumStrImg.release();
 

@@ -160,6 +160,23 @@ void connectedComponents
 );
 
 /**
+* connectedComponents Found connected components
+* @param imgPoints Input image for points detection
+* @param imgStreaks Input image for streaks detection
+* @param borders Image borders
+* @param POINTS Vector with points centroid
+* @param STREAKS Vector with streaks centroid
+*/
+void connectedComponents2
+(
+  const cv::Mat& imgPoints
+  , const cv::Mat& imgStreaks
+  , const cv::Vec<int, 4>& borders
+  , std::vector< cv::Vec<int, 3> >& POINTS
+  , std::vector< cv::Vec<int, 3> >& STREAKS
+);
+
+/**
 * connectedComponents Found centroid of circular connected components
 * @param imgIn Input image
 * @param contours Contours found by findContours
@@ -171,6 +188,21 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
   const cv::Mat& imgIn
   , std::vector<std::vector<cv::Point> >& contours
   , const cv::Vec<int, 4>& borders
+);
+
+/**
+* connectedComponents Found centroid of circular connected components
+* @param imgIn Input image
+* @param contours Contours found by findContours
+* @param borders Image borders
+* @return Vector with points centroid
+*/
+std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
 );
 
 /**
@@ -189,6 +221,34 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
   , std::vector< cv::Vec<int, 3> >& POINTS
   , std::vector<std::vector<cv::Point > >& contoursP
   , const cv::Vec<int, 4>& borders
+);
+
+/**
+* connectedComponentsStreaks Found centroid of Streaks
+* @param imgIn Input image
+* @param contoursS Streaks contours found by findContours
+* @param POINTS Vector with points centroid
+* @param contoursP Points contours found by findContours
+* @param borders Image borders
+* @return Vector with streaks centroid
+*/
+std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
+);
+
+void deleteOverlapping
+(
+  const cv::Point imgSz
+  , std::vector< cv::Vec<int, 3> >& inPOINTS
+  , std::vector< cv::Vec<int, 3> >& inSTREAKS
+  , const std::vector<std::vector<cv::Point > >& contoursP
+  , const std::vector<std::vector<cv::Point > >& contoursS
+  , std::vector< cv::Vec<int, 3> >& outPOINTS
+  , std::vector< cv::Vec<int, 3> >& outSTREAKS
 );
 
 /**

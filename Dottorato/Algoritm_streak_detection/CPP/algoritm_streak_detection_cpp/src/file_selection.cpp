@@ -231,7 +231,7 @@ bool file_selection(char* input, bool folderMod)
       inputFileV[3] = namePath; //File path without name
       inputFileV[4] = nameResFolder; //Result folder
 
-#if !SPD_DEBUG
+#if SPD_DEBUG
       std::cout << "nameFile " << nameFile << std::endl;
       std::cout << "onlyNameF " << onlyNameF << std::endl;
       std::cout << "fileExt " << fileExt << std::endl;
