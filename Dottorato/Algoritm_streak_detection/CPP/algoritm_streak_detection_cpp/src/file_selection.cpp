@@ -144,12 +144,7 @@ bool file_selection(char* input, bool folderMod)
 /* ----------------------------------------------------------------------- *
  * Read files name from folder                                             *
  * ----------------------------------------------------------------------- */
-      //Error in folder opening
-      /*if ((!openDir) || (!createResF))
-      {
-        exitLoop = true;
-        continue;
-      }*/
+      
       char file[1024];
       ::memset(file, 0, sizeof(file));
       ::memset(nameFile, 0, sizeof(nameFile));
@@ -158,16 +153,6 @@ bool file_selection(char* input, bool folderMod)
 
       exitLoop = spd_os::scan(hdir, file);
 
-#if 0
-      //::memset(nameFile,0,sizeof(nameFile));
-      strcpy(nameFile, input);
-      
-      //Control if last char in the path is slash
-      char lastC = nameFile[strlen(nameFile) - 1];
-      if (lastC!=slash) {
-        nameFile[strlen(nameFile)] = slash;
-      }
-#endif
       ::strcat(nameFile, namePath);
       ::strcat(nameFile, file);
 

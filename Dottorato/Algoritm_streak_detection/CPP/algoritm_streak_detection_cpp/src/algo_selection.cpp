@@ -73,7 +73,7 @@ bool algo_selection(const std::vector<char *>& input)
     printf("Error in input parameters.");
   }
 
-  std::cout << "Start streaks points detection algorithms" << std::endl;
+  std::cout << input.at(1) << "." << input.at(2) << std::endl;
 
 #if SPD_DEBUG
   std::cout <<      "nameFile " << input.at(0) << std::endl;
@@ -85,8 +85,6 @@ bool algo_selection(const std::vector<char *>& input)
 
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;
-
-  
 
   int repeatCycle = 1;
 
@@ -104,7 +102,6 @@ bool algo_selection(const std::vector<char *>& input)
     stop = clock();
     totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-    //std::cout << "algoSimple time: " << totalTime << std::endl;
     std::cout << "CPU time: " << totalTime << " sec" << std::endl;
 #endif
 /* ----------------------------- AlgoCUDAkernel ----------------------------- */
@@ -119,7 +116,6 @@ bool algo_selection(const std::vector<char *>& input)
     stop = clock();
     totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-    //std::cout << "AlgoCUDAkernel time: " << totalTimeCUDAkernel << std::endl;
     std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
 #endif
 /* -------------------------------- AlgoGPU --------------------------------- */
@@ -127,7 +123,6 @@ bool algo_selection(const std::vector<char *>& input)
     start = clock();
 
     // Algo GPU
-
 
     int algoGPU = main_GPU(name_file);
 

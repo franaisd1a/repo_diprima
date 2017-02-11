@@ -666,7 +666,7 @@ void connectedComponents
     drawContours(drawing, contoursResP, cIdx, color, 1, 8, hierarchy, 0, offset);
     drawContours(drawing, contoursResS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
     
-    /// Show in a window
+    // Show in a window
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
 #endif
@@ -983,8 +983,11 @@ void deleteOverlapping
   cv::InputArray hierarchy = cv::noArray();
   int maxLevel = 0;
   cv::Point offset = {0,0};
-  drawContours(imgP, contoursP, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
-    
+  for (size_t l = 0; l < contoursP.size(); ++l) {
+    drawContours(imgP, contoursP, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  }
+  //drawContours(imgP, contoursP, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+
   int n_streaks = 0;
 
   for (size_t i = 0; i < inSTREAKS.size(); ++i)
@@ -998,6 +1001,12 @@ void deleteOverlapping
     }
     n_streaks = n_streaks + inSTREAKS.at(i)[2];
   }
+#if SPD_DEBUG
+  // Show in a window
+  namedWindow("ContoursP", cv::WINDOW_NORMAL);
+  imshow("ContoursP", imgP);
+  cv::waitKey(0);
+#endif
   imgP.release();
 
   std::vector<std::vector<cv::Point > > contoursResS;
@@ -1016,7 +1025,10 @@ void deleteOverlapping
 
   /* Delete points on streak */
   cv::Mat imgS = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
-  drawContours(imgS, contoursResS, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  for (size_t l = 0; l < contoursResS.size(); ++l) {
+    drawContours(imgS, contoursResS, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  }
+  //drawContours(imgS, contoursResS, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
   
   int n_points = 0;
 
@@ -1031,7 +1043,12 @@ void deleteOverlapping
     }
     n_points = n_points + inPOINTS.at(i)[2];
   }
-
+#if SPD_DEBUG
+  // Show in a window
+  namedWindow("ContoursS", cv::WINDOW_NORMAL);
+  imshow("ContoursS", imgS);
+  cv::waitKey(0);
+#endif
   imgS.release();
 
   std::vector<std::vector<cv::Point > > contoursResP;

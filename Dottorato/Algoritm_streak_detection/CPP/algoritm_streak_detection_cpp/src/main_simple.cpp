@@ -63,8 +63,7 @@ using namespace std;
 * ========================================================================== */
 int main_simple(const std::vector<char *>& input)
 {
-  //cout << "CPU algorithms." << std::endl;
-
+  
 /* ----------------------------------------------------------------------- *
  * Open and read file                                                      *
  * ----------------------------------------------------------------------- */
@@ -171,7 +170,6 @@ int main_simple(const std::vector<char *>& input)
   
   int kerlen = 3;
   Mat medianImg = medianFilter(histStretch, kerlen);
-  //backgroundSub.release();
 
   timeElapsed(infoFile, start, "Median filter");
 
@@ -201,6 +199,7 @@ int main_simple(const std::vector<char *>& input)
   
   Mat convImg = convolution(binaryImg, kernel, threshConv);
   binaryImg.release();
+  kernel.release();
 
   timeElapsed(infoFile, start, "Convolution");
 
@@ -270,6 +269,7 @@ int main_simple(const std::vector<char *>& input)
 
     Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
 
+
 /* ----------------------------------------------------------------------- *
  * Convolution with linear kernel                                          *
  * ----------------------------------------------------------------------- */
@@ -287,6 +287,8 @@ int main_simple(const std::vector<char *>& input)
     sumStrImg = sumStrImg + convStreak;
   }
 
+  convImg.release();
+  
 #if SPD_FIGURE_1
   namedWindow("Final binary image", cv::WINDOW_NORMAL);
   imshow("Final binary image", sumStrImg);
@@ -337,9 +339,7 @@ int main_simple(const std::vector<char *>& input)
   {
     Mat color_Img_input;
     cvtColor( histStretch, color_Img_input, CV_GRAY2BGR );//histStretch
-
-    Img_input.release();
-
+        
     int radius = 11;
     Scalar colorP = {0,255,0};
     Scalar colorS = {0,0,255};

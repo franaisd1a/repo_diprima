@@ -81,96 +81,11 @@ int main(int argc, char** argv)
     return -1;
   }
 
+  std::cout << "Start streaks points detection algorithm" << std::endl;
+
   bool res = file_selection(argv[2], folderMod);
 
-  std::cout << "End " << std::endl;
-
-#if 0
-  clock_t start, stop;
-  double totalTime, totalTimeCUDAkernel;
-
-  std::cout << "Start streaks points detection algorithms" << std::endl;
-
-  int repeatCycle = 1;
-
-for (int u=0; u<repeatCycle;++u)
-{
-/* ------------------------------- AlgoSimple ------------------------------- */
-#if 1
-  start = clock();
-  
-  // Algo simple
-
-  int algoSimple = main_simple(name_file);
-
-
-  stop = clock();
-  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-  
-  //std::cout << "algoSimple time: " << totalTime << std::endl;
-  std::cout << "CPU time: " << totalTime << " sec" << std::endl;
-#endif
-/* --------------------------------- Algo2 ---------------------------------- */
-#if 0  
-  start = clock();
-
-  // Algo 2
-
-  int algo2 = main_2(name_file);
-
-  stop = clock();
-  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-  std::cout << "algo2 time: " << totalTime << std::endl;
-#endif
-/* ----------------------------- AlgoCUDAkernel ----------------------------- */
-#if 0  
-  start = clock();
-
-  // AlgoCUDAkernel
-
-  int AlgoCUDAkernel = main_GPU_cuda(name_file);
-
-
-  stop = clock();
-  totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-  //std::cout << "AlgoCUDAkernel time: " << totalTimeCUDAkernel << std::endl;
-  std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
-#endif
-/* -------------------------------- AlgoGPU --------------------------------- */
-#if 0
-  start = clock();
-  
-  // Algo GPU
-
-
-  int algoGPU = main_GPU(name_file);
-
-
-  stop = clock();
-  totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-  std::cout << "AlgoGPU time: " << totalTime << std::endl;
-#endif
-
-/* ------------------------------- TestFITS --------------------------------- */
-  // Test fits
-#if 0
-  int testFits = main_fits(name_file);
-#endif
-}
-
-
-/* -------------------------------------------------------------------------- */
-
-if (repeatCycle>1)
-{
-  //std::cout << "algoSimple: " << totalTime << " AlgoCUDAkernel: "<< totalTimeCUDAkernel << std::endl;
-  std::cout << "End " << std::endl;
-}
-  cv::waitKey(0);
-#endif
+  std::cout << "End streaks points detection algorithm" << std::endl;
 
   return 1;
 }
