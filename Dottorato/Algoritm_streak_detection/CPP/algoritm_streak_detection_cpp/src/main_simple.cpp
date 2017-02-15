@@ -64,6 +64,15 @@ using namespace std;
 int main_simple(const std::vector<char *>& input)
 {
   
+	int as0d = system ("pwd");
+
+	std::string astroScript = "./astrometricReduction.sh ";
+	std::string command = astroScript + input.at(0) + " " + input.at(4) + " " + input.at(1);
+	printf("\n%s\n", command.c_str());
+	int asd = system (command.c_str());
+
+	printf("fine astrometry \d\n", asd);
+
 /* ----------------------------------------------------------------------- *
  * Open and read file                                                      *
  * ----------------------------------------------------------------------- */
@@ -370,12 +379,7 @@ int main_simple(const std::vector<char *>& input)
     destroyAllWindows();
   }
 
-  std::string astroScript = "..\\src\\astrometricReduction.bat ";
-  std::string command = astroScript + input.at(0);
   
-  int asd = system (command.c_str());
-
-  printf("fine astrometry \d\n", asd);
 
   return 0;
 }
