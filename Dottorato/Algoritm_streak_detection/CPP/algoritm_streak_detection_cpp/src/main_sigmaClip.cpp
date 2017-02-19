@@ -3,7 +3,7 @@
 * ========================================================================== */
 
 /* ==========================================================================
-* MODULE FILE NAME: main.cpp
+* MODULE FILE NAME: main_sigmaClip.cpp
 *      MODULE TYPE:
 *
 *         FUNCTION: Detect streaks and points.
@@ -54,14 +54,14 @@ using namespace cv;
 using namespace std;
 
 /* ==========================================================================
-*        FUNCTION NAME: main_simple
+*        FUNCTION NAME: main_sigmaClip
 * FUNCTION DESCRIPTION:
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-int main_simple(const std::vector<char *>& input)
+int main_sigmaClip(const std::vector<char *>& input)
 {
 #if 0
 	int as0d = system ("pwd");
@@ -190,14 +190,71 @@ int main_simple(const std::vector<char *>& input)
 
 
 /* ----------------------------------------------------------------------- *
+ * Background estimation                                                   *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  int backCnt = 5;
+  cv::Mat meanBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
+  cv::Mat  stdBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
+
+  cv::Mat backgroungImg = 
+    backgroundEstimation(medianImg, backCnt, meanBg, stdBg);
+
+  timeElapsed(infoFile, start, "Background estimation");
+
+  
+/* ----------------------------------------------------------------------- *
+ * Background subtraction                                                  *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  int typeMed = medianImg.type();
+  int typeBgasd = backgroungImg.type();
+  
+  //cv::Mat bgSubtracImg = medianImg - backgroungImg;
+  cv::Mat bgSubtracImg = subtraction(medianImg, backgroungImg);
+
+  //subtract(medianImg, backgroungImg, bgSubtracImg, cv::noArray(), -1);
+
+  medianImg.release();
+  backgroungImg.release();
+
+  timeElapsed(infoFile, start, "Background subtraction");
+
+#if SPD_FIGURE_1
+    namedWindow("Background subtraction", cv::WINDOW_NORMAL);
+    imshow("Background subtraction", bgSubtracImg);
+#endif
+
+  
+/* ----------------------------------------------------------------------- *
+ * Median filter                                                           *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+  
+  kerlen = 3;
+  Mat medianBgSubImg = medianFilter(bgSubtracImg, kerlen);
+  bgSubtracImg.release();
+
+  timeElapsed(infoFile, start, "Median filter");
+
+  
+/* ----------------------------------------------------------------------- *
  * Binarization                                                            *
  * ----------------------------------------------------------------------- */
 
   start = clock();
 
-  double level = 150;
-  Mat binaryImg = binarization(medianImg, level);
-  medianImg.release();
+  cv::Mat level = cv::Mat::zeros(backCnt, backCnt, CV_64F);;
+  level = meanBg + 3*stdBg;
+  //printf("mean(%d,%d)=%f\n", i, j, meanBg.at<double>(i,j));
+
+  Mat binaryImg = binarizationZone(medianBgSubImg, backCnt, level);
+  medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization");
 
@@ -218,7 +275,7 @@ int main_simple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Convolution");
 
-
+  
 /* ----------------------------------------------------------------------- *
  * Morphology opening                                                      *
  * ----------------------------------------------------------------------- */
@@ -230,7 +287,7 @@ int main_simple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Morphology opening");
   
-
+  cv::waitKey(0);
 /* ======================================================================= *
  * Streaks detection                                                       *
  * ======================================================================= */
@@ -264,7 +321,7 @@ int main_simple(const std::vector<char *>& input)
   stamp(infoFile, s_nH.c_str());
   timeElapsed(infoFile, start, "Hough transform");
 
-
+  
 /* ----------------------------------------------------------------------- *
  * Sum streaks binary image                                                *
  * ----------------------------------------------------------------------- */
@@ -272,9 +329,18 @@ int main_simple(const std::vector<char *>& input)
   start = clock();
 
   cv::Mat sumStrImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
+  cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
   for (int i = 0; i < angle.size(); ++i)
   {
+
+/* ----------------------------------------------------------------------- *
+ * Morphology opening with linear kernel for remove streaks                *
+ * ----------------------------------------------------------------------- */
+    
+    int dimLineRem = 40;
+
+    Mat morpOpLinRem = morphologyOpen(openImg, dimLineRem, angle.at(i).first);
 
 /* ----------------------------------------------------------------------- *
  * Morphology opening with linear kernel                                   *
@@ -300,18 +366,45 @@ int main_simple(const std::vector<char *>& input)
  * ----------------------------------------------------------------------- */
 
     sumStrImg = sumStrImg + convStreak;
+    sumStrRemImg = sumStrRemImg + morpOpLinRem;
   }
 
   convImg.release();
+
+/* ----------------------------------------------------------------------- *
+ * Binary image without streaks                                            *
+ * ----------------------------------------------------------------------- */
   
+  cv::Mat onlyPoints = openImg - sumStrRemImg;
+  sumStrRemImg.release();
+  openImg.release();
+
+
+/* ----------------------------------------------------------------------- *
+ * Convolution kernel remove streaks                                       *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  Mat kernelRm = Mat::ones(szKernel, szKernel, CV_8U);
+  double threshConvRm = 8;
+  
+  Mat convImgRms = convolution(onlyPoints, kernelRm, threshConvRm);
+  onlyPoints.release();
+  kernelRm.release();
+
+  timeElapsed(infoFile, start, "Convolution");
 #if SPD_FIGURE_1
-  namedWindow("Final binary image", cv::WINDOW_NORMAL);
-  imshow("Final binary image", sumStrImg);
+  namedWindow("sumStrImg", cv::WINDOW_NORMAL);
+  imshow("sumStrImg", sumStrImg);
+  namedWindow("onlyPoints", cv::WINDOW_NORMAL);
+  imshow("onlyPoints", onlyPoints);
+  cv::waitKey(0);
 #endif
   
   timeElapsed(infoFile, start, "Sum streaks binary");
 
-
+  
 /* ----------------------------------------------------------------------- *
  * Connected components                                                    *
  * ----------------------------------------------------------------------- */
@@ -321,7 +414,16 @@ int main_simple(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
   
-  connectedComponents(openImg, sumStrImg, Img_input, imgBorders, POINTS, STREAKS);
+#if 0
+  namedWindow("openImg", cv::WINDOW_NORMAL);
+  imshow("openImg", openImg);
+  namedWindow("sumStrImg", cv::WINDOW_NORMAL);
+  imshow("sumStrImg", sumStrImg);
+  cv::waitKey(0);
+#endif
+
+
+  connectedComponents(convImgRms, sumStrImg, Img_input, imgBorders, POINTS, STREAKS);//1°param openImg
   openImg.release();
   sumStrImg.release();
 

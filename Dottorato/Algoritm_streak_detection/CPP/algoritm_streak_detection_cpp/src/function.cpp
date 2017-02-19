@@ -323,6 +323,23 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   return imgOut;
 }
 
+cv::Mat subtraction(const cv::Mat& imgA, const cv::Mat& imgB)
+{
+  cv::Mat imgOut = cv::Mat::zeros(imgA.rows, imgA.cols, CV_8U);
+
+  for (int row = 0; row < imgA.rows; ++row)
+  {
+    const uchar* pLimgA = imgA.ptr<uchar>(row);
+    const uchar* pLimgB = imgB.ptr<uchar>(row);
+    uchar* pLimgOut = imgOut.ptr<uchar>(row);
+
+    for (int col = 0; col < imgA.cols; ++col) {      
+      pLimgOut[col] =  pLimgA[col]>pLimgB[col] ? pLimgA[col]-pLimgB[col] : 0;
+    }
+  }
+  return imgOut;
+}
+
 /* ==========================================================================
 *        FUNCTION NAME: gaussianFilter
 * FUNCTION DESCRIPTION: Gaussian lowpass filter
@@ -452,6 +469,80 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
 }
 
 /* ==========================================================================
+*        FUNCTION NAME: backgroundEstimation
+* FUNCTION DESCRIPTION: 
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const int backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
+{
+  cv::Mat imgIn = imgInOr.clone();
+  size_t backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt));
+  size_t backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt));
+  
+  std::vector<int> vBackSrow;
+  std::vector<int> vBackScol;
+
+  for (size_t o = 0; o < backCnt; ++o)
+  {
+    vBackSrow.push_back(backSzR*o);
+    vBackScol.push_back(backSzC*o);
+  }
+  vBackSrow.push_back(imgIn.rows);
+  vBackScol.push_back(imgIn.cols);
+    
+  cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
+  
+  for (size_t i = 0; i < backCnt; ++i)
+  {
+    for (size_t j = 0; j < backCnt; ++j)
+    {
+      const cv::Point ptTL = {vBackScol.at(j), vBackSrow.at(i)};
+      const cv::Point ptBR = {vBackScol.at(j+1), vBackSrow.at(i+1)};
+
+      cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
+      cv::Mat imgPart = imgIn(region_of_interest);
+      cv::Mat imgPartTh = cv::Mat::zeros(imgPart.rows, imgPart.cols, imgPart.type());
+
+      float oldStd=0;
+      float diffPercStd = 1;
+
+      meanBg.at<double>(i,j) = *(cv::mean(imgPart, cv::noArray()).val);
+      
+      while (diffPercStd>0.2f)
+      {
+        cv::Scalar meanBGmod = 0;
+        cv::Scalar stdBGs = 0;
+        meanStdDev(imgPart, meanBGmod, stdBGs, cv::noArray());
+        stdBg.at<double>(i,j) = *(stdBGs.val);
+
+        double threshH = meanBg.at<double>(i,j)+3*stdBg.at<double>(i,j);
+        
+        double maxval = 1.0;
+        double asdf = cv::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_BINARY_INV);
+
+        imgPart = imgPart.mul(imgPartTh);
+
+        diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
+        oldStd=stdBg.at<double>(i,j);        
+      }
+
+      imgPart.copyTo(outImg(region_of_interest));
+    }
+  }
+
+#if SPD_FIGURE_1
+    // Create a window for display.
+    namedWindow("Background estimationl", cv::WINDOW_NORMAL);
+    imshow("Background estimationl", outImg);
+#endif
+
+  return outImg;
+}
+
+/* ==========================================================================
 *        FUNCTION NAME: binarization
 * FUNCTION DESCRIPTION: Image binarization using Otsu method
 *        CREATION DATE: 20160727
@@ -483,6 +574,58 @@ cv::Mat binarization(const cv::Mat& imgIn)
 #endif
 
   return imgOut;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: binarizationZone
+* FUNCTION DESCRIPTION: Image binarization using user threshold
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat binarizationZone(const cv::Mat& imgIn, const int zoneCnt, const cv::Mat& level)
+{
+  //cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
+  size_t zoneSzR = static_cast<size_t>(::round(imgIn.rows / zoneCnt));
+  size_t zoneSzC = static_cast<size_t>(::round(imgIn.cols / zoneCnt));
+  
+  std::vector<int> vBackSrow;
+  std::vector<int> vBackScol;
+
+  for (size_t o = 0; o < zoneCnt; ++o)
+  {
+    vBackSrow.push_back(zoneSzR*o);
+    vBackScol.push_back(zoneSzC*o);
+  }
+  vBackSrow.push_back(imgIn.rows);
+  vBackScol.push_back(imgIn.cols);
+    
+  cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
+  
+  for (size_t i = 0; i < zoneCnt; ++i)
+  {
+    for (size_t j = 0; j < zoneCnt; ++j)
+    {
+      const cv::Point ptTL = { vBackScol.at(j), vBackSrow.at(i) };
+      const cv::Point ptBR = { vBackScol.at(j + 1), vBackSrow.at(i + 1) };
+
+      cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
+      cv::Mat imgPart = imgIn(region_of_interest);
+      cv::Mat imgPartTh = cv::Mat::zeros(imgPart.rows, imgPart.cols, imgPart.type());
+
+      double maxval = 255.0;
+      double asdf = cv::threshold(imgPart, imgPartTh, level.at<double>(i,j), maxval, cv::THRESH_BINARY);
+      imgPart.copyTo(outImg(region_of_interest));
+    }
+  }
+  
+#if SPD_FIGURE_1
+    namedWindow("Binary image user thresholdZones", cv::WINDOW_NORMAL);
+    imshow("Binary image user thresholdZones", outImg);
+#endif
+
+  return outImg;
 }
 
 /* ==========================================================================
@@ -608,9 +751,10 @@ void connectedComponents
 (
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
+  , const cv::Mat& imgInput
   , const cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
   const cv::Point imgSz = {imgPoints.rows, imgPoints.cols};
@@ -626,13 +770,13 @@ void connectedComponents
   findContours( imgPoints, contoursP, hierarchyP, CV_RETR_EXTERNAL
                 , CV_CHAIN_APPROX_NONE , offset);
   
-  std::vector< cv::Vec<int, 3> > outPOINTS;
-  std::vector<std::vector<cv::Point > > contoursResP;
+  std::vector< cv::Vec<int, 3> > firstPOINTS;
+  std::vector<std::vector<cv::Point > > firstContoursP;
 
   if (contoursP.size() > 0)
   {
-    outPOINTS = connectedComponentsPoints
-    (max_img_sz, contoursP, borders, contoursResP);
+    firstPOINTS = connectedComponentsPoints
+    (max_img_sz, contoursP, borders, firstContoursP);
     contoursP.clear();
   }
 
@@ -640,20 +784,33 @@ void connectedComponents
   findContours( imgStreaks, contoursS, hierarchyS, CV_RETR_EXTERNAL
                 , CV_CHAIN_APPROX_NONE , offset);
 
-  std::vector< cv::Vec<int, 3> > outSTREAKS;
-  std::vector<std::vector<cv::Point > > contoursResS;
+  std::vector< cv::Vec<int, 3> > firstSTREAKS;
+  std::vector<std::vector<cv::Point > > firstContoursS;
 
   if (contoursS.size() > 0)
   {
-    outSTREAKS = connectedComponentsStreaks
-    (max_img_sz, contoursS, borders, contoursResS);
+    firstSTREAKS = connectedComponentsStreaks
+    (max_img_sz, contoursS, borders, firstContoursS);
     contoursS.clear();
   }
   
   /* Delete overlapping objects */
+  std::vector<std::vector<cv::Point > > outContoursP;
+  std::vector<std::vector<cv::Point > > outContoursS;
+  std::vector< cv::Vec<int, 3> > delOverlapPOINTS;
+  std::vector< cv::Vec<int, 3> > delOverlapSTREAKS;
+
   deleteOverlapping
-  (imgSz, outPOINTS, outSTREAKS, contoursResP, contoursResS, POINTS, STREAKS);
-  
+  (imgSz, firstPOINTS, firstSTREAKS, firstContoursP, firstContoursS
+    , delOverlapPOINTS, delOverlapPOINTS, outContoursP, outContoursS);
+  firstPOINTS.clear();
+  firstSTREAKS.clear();
+  firstContoursP.clear();
+  firstContoursS.clear();
+
+  preciseCentroid(imgInput, outContoursP, POINTS);
+  preciseCentroid(imgInput, outContoursS, STREAKS);
+
 #if SPD_FIGURE_1
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);    
@@ -663,13 +820,16 @@ void connectedComponents
     int lineType = 8;
     cv::InputArray hierarchy = cv::noArray();
     int maxLevel = 0;
-    drawContours(drawing, contoursResP, cIdx, color, 1, 8, hierarchy, 0, offset);
-    drawContours(drawing, contoursResS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
+    drawContours(drawing, outContoursP, cIdx, color, 1, 8, hierarchy, 0, offset);
+    drawContours(drawing, outContoursS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
     
     // Show in a window
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
 #endif
+
+  outContoursP.clear();
+  outContoursS.clear();
 }
 
 /* ==========================================================================
@@ -969,10 +1129,12 @@ void deleteOverlapping
   const cv::Point imgSz
   , std::vector< cv::Vec<int, 3> >& inPOINTS
   , std::vector< cv::Vec<int, 3> >& inSTREAKS
-  , const std::vector<std::vector<cv::Point > >& contoursP
-  , const std::vector<std::vector<cv::Point > >& contoursS
+  , const std::vector<std::vector<cv::Point > >& incontoursP
+  , const std::vector<std::vector<cv::Point > >& incontoursS
   , std::vector< cv::Vec<int, 3> >& outPOINTS
   , std::vector< cv::Vec<int, 3> >& outSTREAKS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point > >& outContoursS
 )
 {
   /* Delete streaks on points */
@@ -983,11 +1145,10 @@ void deleteOverlapping
   cv::InputArray hierarchy = cv::noArray();
   int maxLevel = 0;
   cv::Point offset = {0,0};
-  for (size_t l = 0; l < contoursP.size(); ++l) {
-    drawContours(imgP, contoursP, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  for (size_t l = 0; l < incontoursP.size(); ++l) {
+    drawContours(imgP, incontoursP, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
   }
-  //drawContours(imgP, contoursP, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
-
+  
   int n_streaks = 0;
 
   for (size_t i = 0; i < inSTREAKS.size(); ++i)
@@ -1008,9 +1169,7 @@ void deleteOverlapping
   cv::waitKey(0);
 #endif
   imgP.release();
-
-  std::vector<std::vector<cv::Point > > contoursResS;
-
+    
   if (n_streaks)
   {    
     for (size_t k = 0; k < inSTREAKS.size(); ++k)
@@ -1018,18 +1177,17 @@ void deleteOverlapping
       if (1 == inSTREAKS.at(k)[2])
       {
         outSTREAKS.push_back({ inSTREAKS.at(k)[0], inSTREAKS.at(k)[1], 0});
-        contoursResS.push_back(contoursS[k]);
+        outContoursS.push_back(incontoursS[k]);
       }
     }
   }
 
   /* Delete points on streak */
   cv::Mat imgS = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
-  for (size_t l = 0; l < contoursResS.size(); ++l) {
-    drawContours(imgS, contoursResS, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  for (size_t l = 0; l < outContoursS.size(); ++l) {
+    drawContours(imgS, outContoursS, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
   }
-  //drawContours(imgS, contoursResS, cIdx, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
-  
+    
   int n_points = 0;
 
   for (size_t i = 0; i < inPOINTS.size(); ++i)
@@ -1050,9 +1208,7 @@ void deleteOverlapping
   cv::waitKey(0);
 #endif
   imgS.release();
-
-  std::vector<std::vector<cv::Point > > contoursResP;
-
+    
   if (n_points)
   {    
     for (size_t k = 0; k < inPOINTS.size(); ++k)
@@ -1060,10 +1216,177 @@ void deleteOverlapping
       if (1 == inPOINTS.at(k)[2])
       {
         outPOINTS.push_back({ inPOINTS.at(k)[0], inPOINTS.at(k)[1], 0});
-        contoursResP.push_back(contoursP[k]);
+        outContoursP.push_back(incontoursP[k]);
       }
     }
   }    
+}
+
+void preciseCentroid
+(
+  const cv::Mat& img
+  , const std::vector<std::vector<cv::Point > >& contours
+  , std::vector< cv::Vec<float, 3> >& center
+)
+{
+  std::vector<cv::Point> pixelIdList;
+  int epsB = 1;
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    cv::Rect br = boundingRect(contours.at(i));
+    int minX = br.x;
+    int maxX = br.x + br.width -1;
+    int minY = br.y;
+    int maxY = br.y + br.height -1;
+    
+    for (size_t y = 0; y < br.height + 2*epsB; ++y)
+    {
+      int row = static_cast<int>(minY +y - epsB);
+      for (size_t x=0; x< br.width + 2*epsB; ++x)
+      {        
+        int col = static_cast<int>(minX + x - epsB);
+        cv::Point pIn = { col, row };
+        bool insideP = rayCasting(contours.at(i), pIn);
+        if (insideP)
+        {
+          pixelIdList.push_back(pIn);
+        }
+      } //for col       
+    } //for row
+    /* Mancano alcuni punti del contorno */
+   
+    /* Compute object's barycentre */
+    cv::Point2f p = { 0.0f, 0.0f };
+    barycentre(img, pixelIdList, p);
+
+    center.push_back({p.x, p.y, 0.0f});
+
+    pixelIdList.clear();
+  }
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: barycentre
+* FUNCTION DESCRIPTION: Compute baricentre position
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void barycentre
+(
+  const cv::Mat& img
+  , const std::vector<cv::Point> pixelIdList
+  , cv::Point2f& p
+)
+{
+  int type = img.type();
+  int col = 0;
+  int row = 0;
+  const ushort* pLine = nullptr;
+  ushort valueI = 0;
+
+  float sumValue = 0;
+  float sumProdValPosX = 0;
+  float sumProdValPosY = 0;
+
+  for (size_t i = 0; i < pixelIdList.size(); ++i)
+  {
+    col = pixelIdList[i].x;
+    row = pixelIdList[i].y;
+
+    pLine = img.ptr<ushort>(row);
+    valueI = pLine[col];
+    
+    sumValue = sumValue + valueI;
+    sumProdValPosX = sumProdValPosX + valueI*col;
+    sumProdValPosY = sumProdValPosY + valueI*row;
+
+  }
+
+  p = {sumProdValPosX/sumValue, sumProdValPosY/sumValue};
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: rayCasting
+* FUNCTION DESCRIPTION: Ray Casting algorithm
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+bool rayCasting
+(
+  const std::vector<cv::Point > & poly
+  , const cv::Point& p
+)
+{
+  bool inside = false;
+  cv::Point2f pnt = { static_cast<float>(p.x), static_cast<float>(p.y) };
+  
+  const std::numeric_limits<float> FLOAT;
+  float eps = 0.001;// FLOAT.epsilon();
+  float huge = FLOAT.max();
+
+  for (size_t e = 0; e < poly.size(); ++e)
+  {    
+    /* Selezione punti */
+    cv::Point2f Aa = {static_cast<float>(poly.at(e).x), static_cast<float>(poly.at(e).y)};
+    size_t q = (e+1) % poly.size();
+    cv::Point2f Bb = {static_cast<float>(poly.at(q).x), static_cast<float>(poly.at(q).y)};
+
+    /* Ordina punti con A.y<B.y */
+    cv::Point2f A = Aa;
+    cv::Point2f B = Bb;
+    if (Aa.y > Bb.y)
+    {
+      A = Bb;
+      B = Aa;
+    }
+    
+    /* Verifica che il punto non è alla stessa altezza dei vertici */
+    if ((pnt.y == B.y) || (pnt.y == A.y))
+    {
+      pnt.y += eps;
+    }
+
+    /* Verifica se il punto è sopra (1) o sotto al segmento (2) */
+    /* Verifica se il punto è alla destra del segmento (3) */
+    if ((pnt.y > B.y) || (pnt.y < A.y) || (pnt.x > std::max(A.x, B.x)))
+    {
+      continue;
+    }
+
+    /* Il punto è all'estrema sinistra del segmento quindi lo interseca */
+    if ( pnt.x < std::min(A.x, B.x) )
+    {
+      inside = !inside;
+      continue;
+    }
+
+    /* Verifica se il punto è alla sinistra o destra del segmento */
+    float m_edge;
+    /*if (0.0f == B.x - A.x)
+    {m_edge = huge;}
+    else
+    {m_edge = (B.y-A.y) / (B.x-A.x);}*/
+    m_edge = B.x - A.x > FLOAT.epsilon() ? (B.y-A.y) / (B.x-A.x) : huge;
+    
+    float m_pnt;
+    /*if (0.0f == pnt.x - A.x)
+    {m_pnt = huge;}
+    else
+    {m_pnt = (pnt.y-A.y) / (pnt.x-A.x);}*/
+
+    m_pnt = pnt.x - A.x > FLOAT.epsilon() ? (pnt.y-A.y) / (pnt.x-A.x) : huge;
+    
+    if (m_pnt >= m_edge)
+    {
+      inside = !inside;
+      continue;
+    }
+  }
+  return inside;
 }
 
 /* ==========================================================================
@@ -1245,8 +1568,8 @@ void stamp(std::ostream& stream, const char* strName)
 void writeResult
 (
   std::ostream& stream
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
   std::string s_nP = "Detected points: " + std::to_string(POINTS.size());

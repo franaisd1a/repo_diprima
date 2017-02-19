@@ -31,6 +31,7 @@
 #include <string.h>
 #include <numeric>
 #include <time.h>
+#include <limits>
 
 #include <opencv2/opencv.hpp>
 //#include <opencv\highgui.h>
@@ -72,6 +73,8 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img);
 * @return Output stretched image
 */
 cv::Mat histogramStretching(const cv::Mat& imgIn);
+
+cv::Mat subtraction(const cv::Mat& imgA, const cv::Mat& imgB);
 
 /**
 * gaussianFilter Filter an image using Gaussian lowpass filter
@@ -118,6 +121,27 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta);
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad);
 
 /**
+* backgroundEstimation 
+* @param imgIn Input image
+* @param backSz 
+* @return outImage 
+*/
+cv::Mat backgroundEstimation
+(
+  const cv::Mat& imgIn
+  , const int backSz
+  , cv::Mat& meanBg
+  , cv::Mat& stdBg
+);
+
+cv::Mat binarizationZone
+(
+  const cv::Mat& imgIn
+  , const int zoneCnt
+  , const cv::Mat& level
+);
+
+/**
 * binarization Image binarization using Otsu method
 * @param imgIn Input image
 * @return Binary image
@@ -146,6 +170,7 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double threshol
 * connectedComponents Found connected components
 * @param imgPoints Input image for points detection
 * @param imgStreaks Input image for streaks detection
+* @param Img_input Original image
 * @param borders Image borders
 * @param POINTS Vector with points centroid
 * @param STREAKS Vector with streaks centroid
@@ -154,9 +179,10 @@ void connectedComponents
 (
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
-  , const cv::Vec<int, 4>& borders
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
+  , const cv::Mat& Img_input
+  , const cv::Vec<int, 4>& borders  
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
 );
 
 /**
@@ -206,10 +232,44 @@ void deleteOverlapping
   const cv::Point imgSz
   , std::vector< cv::Vec<int, 3> >& inPOINTS
   , std::vector< cv::Vec<int, 3> >& inSTREAKS
-  , const std::vector<std::vector<cv::Point > >& contoursP
-  , const std::vector<std::vector<cv::Point > >& contoursS
+  , const std::vector<std::vector<cv::Point > >& inContoursP
+  , const std::vector<std::vector<cv::Point > >& inContoursS
   , std::vector< cv::Vec<int, 3> >& outPOINTS
   , std::vector< cv::Vec<int, 3> >& outSTREAKS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point> >& outContoursS
+);
+
+
+void preciseCentroid
+(
+  const cv::Mat& img
+  , const std::vector<std::vector<cv::Point > >& contours
+  , std::vector< cv::Vec<float, 3> >& center
+);
+
+/**
+* rayCasting Ray Casting algorithm
+* @param poly Input polygon
+* @param poly Input point
+* @return Boolean value true if the point is inside the polygon
+*/
+bool rayCasting
+(
+  const std::vector<cv::Point> & poly
+  , const cv::Point& p
+);
+
+/**
+* barycentre Compute baricentre position
+* @param pixelIdList Object's pixel list
+* @param p Object's baricentre
+*/
+void barycentre
+(
+  const cv::Mat& img
+  , const std::vector<cv::Point> pixelIdList
+  , cv::Point2f& p
 );
 
 /**
@@ -251,8 +311,8 @@ void stamp(std::ostream& stream, const char* strName);
 void writeResult
 (
   std::ostream& stream
-  , std::vector< cv::Vec<int, 3> >& POINTS
-  , std::vector< cv::Vec<int, 3> >& STREAKS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
+  , std::vector< cv::Vec<float, 3> >& POINTS
 );
 
 #endif /* FUNCTION_H */
