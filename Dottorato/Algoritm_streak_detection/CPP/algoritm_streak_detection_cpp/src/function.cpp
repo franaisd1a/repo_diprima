@@ -94,18 +94,27 @@ std::vector<char*> fileExt(const char* strN)
   strcpy (s_pathResFile, s_pathFileName);
   strcat(s_pathResFile, "Result\\");
   
+  char *nameL[32][256];
   pch = strtok(name,".");
+  count = 0;
   while (pch != NULL)
   {    
     //printf ("%s\n",pch);
-    *path[count] = pch;
+    *nameL[count] = pch;
     pch = strtok (NULL, ".");
     count++;
   }
-  char* fileName = *path[count-2];
-  char* ext = *path[count-1];
-  
-  vec.push_back(fileName);
+  char* ext = *nameL[count-1];
+  //char* fileName = *path[count-2];
+  char s_fileName[256];
+  strcpy (s_fileName, *nameL[0]);
+  for (size_t i = 1; i < count - 1; ++i)
+  {
+    strcat(s_fileName, ".");
+    strcat(s_fileName, *nameL[i]);
+  }
+
+  vec.push_back(s_fileName);
   vec.push_back(ext);
   vec.push_back(s_pathFileName);
   vec.push_back(s_pathResFile);
@@ -623,6 +632,7 @@ cv::Mat binarizationZone(const cv::Mat& imgIn, const int zoneCnt, const cv::Mat&
 #if SPD_FIGURE_1
     namedWindow("Binary image user thresholdZones", cv::WINDOW_NORMAL);
     imshow("Binary image user thresholdZones", outImg);
+    cv::waitKey(0);
 #endif
 
   return outImg;
@@ -1432,15 +1442,15 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
       exitL = false;
     }
   }
-
-  
+    
   // Select the inclination angles
   std::vector<float> angle;
   for (size_t i = 0; i < houghVal.size(); ++i)
   {
     angle.push_back(houghVal.at(i)[1]);
   }
-
+  angle.push_back(CV_PI / 2); //Force research at 0°
+  
   int count = 0;
   std::vector<std::pair<float, int>> countAngle;
   for (size_t i = 0; i < houghVal.size(); ++i)
@@ -1572,19 +1582,19 @@ void writeResult
   , std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
-  std::string s_nP = "Detected points: " + std::to_string(POINTS.size());
-  stamp(stream, s_nP.c_str());
-  for (size_t i = 0; i < POINTS.size(); ++i)
-  {
-    std::string cP = "Centroid points: (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")";
-    stamp(stream, cP.c_str());
-  }
-
   std::string s_nS = "Detected streaks: " + std::to_string(STREAKS.size());
   stamp(stream, s_nS.c_str());
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
     std::string cS = "Centroid streaks: (" + std::to_string(STREAKS.at(i)[0]) + "," + std::to_string(STREAKS.at(i)[1]) + ")";
     stamp(stream, cS.c_str());
+  }
+
+  std::string s_nP = "Detected points: " + std::to_string(POINTS.size());
+  stamp(stream, s_nP.c_str());
+  for (size_t i = 0; i < POINTS.size(); ++i)
+  {
+    std::string cP = "Centroid points: (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")";
+    stamp(stream, cP.c_str());
   }
 }

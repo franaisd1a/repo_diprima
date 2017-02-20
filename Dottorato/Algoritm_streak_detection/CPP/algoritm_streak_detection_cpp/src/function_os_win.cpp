@@ -400,7 +400,7 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   std::vector<char*> vec;
 
   char nameFile[1024];
-  ::strcpy ( nameFile, strN );
+  ::strcpy( nameFile, strN );
   char* pch;
   char *path[32][256];
   const char* slash = "\\";
@@ -417,7 +417,7 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   char *name = *path[count-1];
 
   char s_pathFileName[256];
-  ::strcpy (s_pathFileName, *path[0]);
+  ::strcpy(s_pathFileName, *path[0]);
   for (size_t i = 1; i < count - 1; ++i)
   {
     ::strcat(s_pathFileName, slash);
@@ -430,18 +430,27 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   ::strcat(s_pathResFile, "Result");
   ::strcat(s_pathResFile, slash);
   
-  pch = strtok(name,".");
+  char *nameL[32][256];
+  pch = ::strtok(name,".");
+  count = 0;
   while (pch != NULL)
   {    
     //printf ("%s\n",pch);
-    *path[count] = pch;
-    pch = ::strtok(NULL, ".");
+    *nameL[count] = pch;
+    pch = ::strtok (NULL, ".");
     count++;
   }
-  char* fileName = *path[count-2];
-  char* ext = *path[count-1];
-  
-  vec.push_back(fileName);
+  char* ext = *nameL[count-1];
+  //char* fileName = *path[count-2];
+  char s_fileName[256];
+  ::strcpy (s_fileName, *nameL[0]);
+  for (size_t i = 1; i < count - 1; ++i)
+  {
+    ::strcat(s_fileName, ".");
+    ::strcat(s_fileName, *nameL[i]);
+  }
+
+  vec.push_back(s_fileName);
   vec.push_back(ext);
   vec.push_back(s_pathFileName);
   vec.push_back(s_pathResFile);
