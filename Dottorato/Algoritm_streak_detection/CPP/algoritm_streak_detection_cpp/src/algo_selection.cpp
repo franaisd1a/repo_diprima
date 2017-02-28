@@ -32,6 +32,7 @@
 
 #include "main_simple.h"
 #include "main_sigmaClip.h"
+#include "main_sigmaClipSimple.h"
 
 //#include "main_GPU_cuda.cuh"
 //#include "main_GPU.h"
@@ -107,12 +108,26 @@ bool algo_selection(const std::vector<char *>& input)
     std::cout << "CPU time: " << totalTime << " sec" << std::endl;
 #endif
 /* ---------------------------- AlgoSigmaClipping --------------------------- */
-#if 1
+#if 0
     start = clock();
 
     // Algo simple
 
     int sigmaClip = main_sigmaClip(input);
+
+
+    stop = clock();
+    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
+#endif
+/* ------------------------- AlgoSigmaClippingSimple ------------------------ */
+#if 1
+    start = clock();
+
+    // Algo simple
+
+    int sigmaClip = main_sigmaClipSimple(input);
 
 
     stop = clock();

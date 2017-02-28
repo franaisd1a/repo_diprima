@@ -61,7 +61,7 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-int main_sigmaClip(const std::vector<char *>& input)
+int main_sigmaClipSimple(const std::vector<char *>& input)
 {
 #if 0
 	int as0d = system ("pwd");
@@ -212,7 +212,6 @@ int main_sigmaClip(const std::vector<char *>& input)
 
   start = clock();
 
-  //cv::Mat bgSubtracImg = medianImg - backgroungImg;
   cv::Mat bgSubtracImg = subtraction(medianImg, backgroungImg);
     
   medianImg.release();
@@ -287,24 +286,6 @@ int main_sigmaClip(const std::vector<char *>& input)
   
 
 /* ----------------------------------------------------------------------- *
- * Convolution kernel for streaks detection                                *
- * ----------------------------------------------------------------------- */
-#if 0
-  start = clock();
-
-  double threshConvStr = 5;
-  
-  Mat convImg = convolution(binaryImgStk, kernel, threshConvStr);
-  binaryImgStk.release();
-  kernel.release();
-
-  timeElapsed(infoFile, start, "Convolution for streaks detection");
-  cv::waitKey(0);
-#else
-  Mat convImg = binaryImgStk;
-#endif
-
-/* ----------------------------------------------------------------------- *
  * Morphology opening                                                      *
  * ----------------------------------------------------------------------- */
 
@@ -326,24 +307,12 @@ int main_sigmaClip(const std::vector<char *>& input)
  * Hough transform                                                         *
  * ----------------------------------------------------------------------- */
 
-#if 1
   start = clock();
 
   Mat resizeImg;
   double f = 0.5;
   Size dsize = { 0, 0 };
-  resize(convImg, resizeImg, dsize, f, f, INTER_LINEAR);
-  
-#if SPD_DEBUG
-  cv::Point pt1 = { 10, 10 };
-  cv::Point pt2 = { 100, 100 };  
-
-  const cv::Scalar color = cv::Scalar(255, 255, 255);
-  int thickness = 10;
-  int lineType = 8;
-  int shift = 0;
-  line(resizeImg, pt1, pt2, color, thickness, lineType, shift);
-#endif
+  resize(binaryImgStk, resizeImg, dsize, f, f, INTER_LINEAR);
 
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
   resizeImg.release();
@@ -360,17 +329,14 @@ int main_sigmaClip(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Hough transform");
   cv::waitKey(0);
-#else
-  std::vector<std::pair<float, int>> angle;
-  angle.push_back({ CV_PI / 2,0 });
-#endif
+
+
 /* ----------------------------------------------------------------------- *
  * Sum streaks binary image                                                *
  * ----------------------------------------------------------------------- */
 
   start = clock();
 
-  cv::Mat sumStrImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
   cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
   for (int i = 0; i < angle.size(); ++i)
@@ -385,36 +351,14 @@ int main_sigmaClip(const std::vector<char *>& input)
     Mat morpOpLinRem = morphologyOpen(openImg, dimLineRem, angle.at(i).first);
     cv::waitKey(0);
 
-/* ----------------------------------------------------------------------- *
- * Morphology opening with linear kernel                                   *
- * ----------------------------------------------------------------------- */
-    
-    int dimLine = 40;
-
-    Mat morpOpLin = morphologyOpen(convImg, dimLine, angle.at(i).first);
-    cv::waitKey(0);
-
-/* ----------------------------------------------------------------------- *
- * Convolution with linear kernel                                          *
- * ----------------------------------------------------------------------- */
-
-    Mat kernelL = linearKernel(dimLine, angle.at(i).first);
-    double threshConvL = 9;
-
-    Mat convStreak = convolution(morpOpLin, kernelL, threshConvL);
-    morpOpLin.release();
-    cv::waitKey(0);
 
 /* ----------------------------------------------------------------------- *
  * Binary image with streaks                                               *
  * ----------------------------------------------------------------------- */
 
-    sumStrImg = sumStrImg + convStreak;
-
     sumStrRemImg = sumStrRemImg + morpOpLinRem;
     morpOpLinRem.release();
-
-    convStreak.release();
+        
 #if SPD_FIGURE_1
     namedWindow("sumStrImg", cv::WINDOW_NORMAL);
     imshow("sumStrImg", sumStrImg);
@@ -423,28 +367,8 @@ int main_sigmaClip(const std::vector<char *>& input)
     cv::waitKey(0);
     int asdfgg = 2;
 #endif
-#if 1
-    char s_imgNamePnt[256];
-    strcpy(s_imgNamePnt, input.at(4));
-    strcat(s_imgNamePnt, input.at(1));
-    char str[5];
-    sprintf(str, "%d", i);
-    strcat(s_imgNamePnt, str);
-    strcat(s_imgNamePnt, "sumStrImg.jpg");
-    imwrite( s_imgNamePnt, sumStrImg );
- #if 0
-    char s_imgNameStk[256];
-    strcpy(s_imgNameStk, input.at(4));
-    strcat(s_imgNameStk, input.at(1));
-    strcat(s_imgNameStk, str);
-    strcat(s_imgNameStk, "sumStrRemImg.jpg");
-    imwrite( s_imgNameStk, sumStrRemImg );
-    #endif
-#endif
-
   }
-  convImg.release();
-
+  
 
 /* ----------------------------------------------------------------------- *
  * Binary image without streaks                                            *
@@ -452,7 +376,7 @@ int main_sigmaClip(const std::vector<char *>& input)
   
   cv::Mat onlyPoints = openImg - sumStrRemImg;
   sumStrRemImg.release();
-  //openImg.release();
+  openImg.release();
   cv::waitKey(0);
 
 /* ----------------------------------------------------------------------- *
@@ -488,8 +412,7 @@ int main_sigmaClip(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
   
-  sumStrImg = sumStrImg - convImgRms;
-
+  
 #if SPD_FIGURE_1
   namedWindow("convImgRms", cv::WINDOW_NORMAL);
   imshow("convImgRms", convImgRms);
@@ -498,23 +421,17 @@ int main_sigmaClip(const std::vector<char *>& input)
   cv::waitKey(0);
 #endif
 
-#if 1
+#if 0
     char s_imgNamePnt[256];
     strcpy(s_imgNamePnt, input.at(4));
     strcat(s_imgNamePnt, input.at(1));
     strcat(s_imgNamePnt, "Pnt.jpg");
-    imwrite( s_imgNamePnt, convImgRms );
-    char s_imgNameStk[256];
-    strcpy(s_imgNameStk, input.at(4));
-    strcat(s_imgNameStk, input.at(1));
-    strcat(s_imgNameStk, "Stk.jpg");
-    imwrite( s_imgNameStk, sumStrImg );
+    imwrite( s_imgNamePnt, convImgRms );    
 #endif
 
-  connectedComponents(convImgRms, binaryImgStk, Img_input, imgBorders, POINTS, STREAKS);//1°param openImg
-  //connectedComponents(convImgRms, sumStrImg, Img_input, imgBorders, POINTS, STREAKS);
-  sumStrImg.release();
+  connectedComponents(convImgRms, binaryImgStk, Img_input, imgBorders, POINTS, STREAKS);
   convImgRms.release();
+  binaryImgStk.release();
   Img_input.release();
 
   timeElapsed(infoFile, start, "Connected components");

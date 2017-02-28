@@ -111,6 +111,7 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen);
 * @return outImage Morphology opening image
 */
 cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta);
+cv::Mat morphologyOpen2(const cv::Mat& imgIn, int dimLine, double teta);
 
 /**
 * morphologyOpen Morphology opening on image with a circular kernel. 
@@ -210,6 +211,13 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
 * @return Vector with streaks centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
+);
+std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
 (
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours

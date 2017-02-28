@@ -332,6 +332,14 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   return imgOut;
 }
 
+/* ==========================================================================
+*        FUNCTION NAME: subtraction
+* FUNCTION DESCRIPTION: Image subtraction
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 cv::Mat subtraction(const cv::Mat& imgA, const cv::Mat& imgB)
 {
   cv::Mat imgOut = cv::Mat::zeros(imgA.rows, imgA.cols, CV_8U);
@@ -442,6 +450,46 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int dimLine, double teta)
     // Create a window for display.
     namedWindow("Morphology opening with rectangular kernel", cv::WINDOW_NORMAL);
     imshow("Morphology opening with rectangular kernel", imgOut);
+#endif
+
+  return imgOut;
+}
+
+cv::Mat morphologyOpen2(const cv::Mat& imgIn, int dimLine, double teta)
+{
+  cv::Mat imgOut;
+
+#if 0
+  int bord = 2*dimLine+1;
+  const cv::Scalar value = cv::Scalar(0);
+  copyMakeBorder(imgIn, imgOut, bord, bord, bord, bord, cv::BORDER_CONSTANT, value);
+  namedWindow("Mor00", cv::WINDOW_NORMAL);
+  imshow("Mor00", imgOut);
+  cv::Mat structEl = cv::Mat::ones(5, 7, CV_8U);
+#endif
+
+  cv::Mat structEl = linearKernel(dimLine, teta);
+  
+  int iter = 1;
+  cv::Point anchor = cv::Point(-1, -1);
+  morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structEl, anchor, iter
+    , cv::BORDER_CONSTANT, cv::Scalar(0.0));
+
+#if 0
+  cv::Point ptTL = { bord, bord };
+  cv::Point ptBR = { imgOut.cols - bord, imgOut.rows - bord };
+  cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
+  cv::Mat imgPart = imgOut(region_of_interest);
+  namedWindow("Mor", cv::WINDOW_NORMAL);
+    imshow("Mor", imgPart);
+#endif
+
+#if SPD_FIGURE_1
+    // Create a window for display.
+    namedWindow("Morphology opening", cv::WINDOW_NORMAL);
+    imshow("Morphology opening", imgOut);
+    
+    cv::waitKey(0);
 #endif
 
   return imgOut;
@@ -799,7 +847,7 @@ void connectedComponents
 
   if (contoursS.size() > 0)
   {
-    firstSTREAKS = connectedComponentsStreaks
+    firstSTREAKS = connectedComponentsStreaks2
     (max_img_sz, contoursS, borders, firstContoursS);
     contoursS.clear();
   }
@@ -1021,19 +1069,19 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
     if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
        && (centerP.y>borders[1] && centerP.y<borders[3]))
     {
-      if(contours[i].size()>5)
+      if(contours[i].size()>20)//5
       {
         cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
         majorAxis = rotatedRect.size.height;
         minorAxis = rotatedRect.size.width;
         
-        if (0 == minorAxis)
+        if (minorAxis<1.9 || majorAxis<5)
         {
           continue;
         }
         
         /* Identify linear connect components */
-        if (majorAxis / minorAxis > 4)//6
+        if (majorAxis / minorAxis > 6)//4
         {
           if (minorAxis < min_streaks_minoraxis)
           {
@@ -1120,6 +1168,116 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
         outContoursRes.push_back(contResStreakFV[k]);
         indx++;
       }
+    }
+  }
+
+  return STREAKS;
+}
+
+std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
+)
+{
+  int min_streaks_minoraxis = max_img_sz;
+  int max_streaks_minoraxis=0;
+  int max_streaks_majoraxis = 0;
+
+  /* Initialize vector */
+  std::vector< cv::Point > centroidV;
+  std::vector< float >     majorAxisV;
+  std::vector< float >     minorAxisV;
+  std::vector<std::vector<cv::Point > > contResStreakFV;
+    
+  cv::Point2f center = {0.0f, 0.0f};
+  float radius = 0.0f;
+  float majorAxis = 0.0f;
+  float minorAxis = 0.0f;
+
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    center = {0.0f, 0.0f};
+    majorAxis = 0.0f;
+    minorAxis = 0.0f;
+    
+    minEnclosingCircle(contours[i], center, radius);
+
+    cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
+                            , static_cast<int>(round(center.y)) );
+
+    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
+       && (centerP.y>borders[1] && centerP.y<borders[3]))
+    {
+      if(contours[i].size()>20)//5
+      {
+        cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+        majorAxis = rotatedRect.size.height;
+        minorAxis = rotatedRect.size.width;
+        
+        if (minorAxis<1.9 || majorAxis<5)
+        {
+          continue;
+        }
+        
+        /* Identify linear connect components */
+        if (majorAxis / minorAxis > 6)//4
+        {
+          if (minorAxis < min_streaks_minoraxis)
+          {
+            min_streaks_minoraxis = minorAxis;
+          }
+          if (minorAxis > max_streaks_minoraxis)
+          {
+            max_streaks_minoraxis = minorAxis;
+          }
+          if (majorAxis > max_streaks_majoraxis)
+          {
+            max_streaks_majoraxis = majorAxis;
+          }
+
+          centroidV.push_back(centerP);
+          majorAxisV.push_back(majorAxis);
+          minorAxisV.push_back(minorAxis);
+          contResStreakFV.push_back(contours[i]);
+
+        } //if (majorAxis / minorAxis > 6)
+        else {
+          continue;
+        }
+      } //if(contoursS[i].size()>5)
+      else {
+        continue;
+      }
+    } //if inside borders
+    else {
+      continue;
+    }
+  } //for (size_t i = 0; i < contoursS.size(); ++i)
+
+  std::vector< char > streaks(contResStreakFV.size());
+  int init = 0;
+  
+  if (contResStreakFV.size())
+  {
+    for (size_t j = 0; j < contResStreakFV.size(); ++j)
+    {
+      streaks.at(j) = 1;      
+    }
+  }
+  
+  std::vector< cv::Vec<int, 3> > STREAKS(contResStreakFV.size());
+
+  int indx = 0;
+  for (size_t k = 0; k < contResStreakFV.size(); ++k)
+  {
+    if (1 == streaks.at(k))
+    {
+      STREAKS.at(indx) = { centroidV.at(k).x, centroidV.at(k).y, 0 };
+      outContoursRes.push_back(contResStreakFV[k]);
+      indx++;
     }
   }
 
@@ -1232,6 +1390,14 @@ void deleteOverlapping
   }    
 }
 
+/* ==========================================================================
+*        FUNCTION NAME: preciseCentroid
+* FUNCTION DESCRIPTION: Compute precise centroid position
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 void preciseCentroid
 (
   const cv::Mat& img
@@ -1511,42 +1677,53 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
 * ========================================================================== */
 cv::Mat linearKernel(int dimLine, double teta)
 {
-#if 0
-  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::tan(teta))));
-  if (0 == yDim) { yDim = 1; }
-#else
-  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::sin((CV_PI/2)-teta))));
+  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::sin((CV_PI/2)-teta))));  
   int xDim = static_cast<int>(::ceil(dimLine * ::abs(::cos((CV_PI/2)-teta))));
-#endif
 
-  if (0 == yDim) {
-    yDim = 1;
+  /* Minimum dimensions */
+  if(yDim<3){
+    yDim = 3;
   }
-  if (0 == xDim) {
-    xDim = 1;
+  if(xDim<3){
+    xDim = 3;
   }
 
-  //cv::Mat kernel = cv::Mat::zeros(yDim, dimLine, CV_8U);
+  /* Odd dimensions */
+  if (0 == yDim % 2) {
+    yDim = yDim + 1;
+  }
+  if (0 == xDim % 2) {
+    xDim = xDim + 1;
+  }
+    
   cv::Mat kernel = cv::Mat::zeros(yDim, xDim, CV_8U);
 
   cv::Point pt1 = { 0, 0 };
   cv::Point pt2 = { 0, 0 };
   if (teta > 0) {
     pt1 = { 0, yDim };
-    //pt2 = { dimLine, 0 };
     pt2 = { xDim, 0 };
   }
   else {
     pt1 = { 0, 0 };
-    //pt2 = { dimLine, yDim };
     pt2 = { xDim, yDim };
   }
-
+  
+  //printf("xDim=%d  yDim=%d ", xDim, yDim);
+  
   const cv::Scalar color = cv::Scalar(255, 255, 255);
   int thickness = 1;
   int lineType = 8;
   int shift = 0;
   line(kernel, pt1, pt2, color, thickness, lineType, shift);
+
+#if SPD_FIGURE_1
+    // Create a window for display.
+    namedWindow("Kernel", cv::WINDOW_NORMAL);
+    imshow("Kernel", kernel);
+    
+    cv::waitKey(0);
+#endif
 
   return kernel;
 }
