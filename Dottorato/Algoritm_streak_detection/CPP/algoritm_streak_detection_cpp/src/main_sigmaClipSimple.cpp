@@ -152,7 +152,10 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Open and read file");
 
-
+/***************************************************************************/
+/*                           Pre-Processing                                */
+/***************************************************************************/
+  
 /* ----------------------------------------------------------------------- *
  * Histogram Stretching                                                    *
  * ----------------------------------------------------------------------- */
@@ -172,6 +175,11 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Histogram Stretching");
   cv::waitKey(0);
+
+
+/***************************************************************************/
+/*                               Processing                                */
+/***************************************************************************/
 
 /* ======================================================================= *
  * Points detection                                                        *
@@ -505,43 +513,9 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
  * Plot result                                                             *
  * ----------------------------------------------------------------------- */
 
-  if (SPD_FIGURE)
-  {
-    Mat color_Img_input;
-    cvtColor( histStretch, color_Img_input, CV_GRAY2BGR );
-    histStretch.release();
-
-    int radius = 9;
-    int radiusS = 11;
-    Scalar colorP = {0,255,0};
-    Scalar colorS = {0,0,255};
-    int thickness = 2;
-    int thicknessS = 3;
-    int lineType = 8;
-    int shift = 0;
-
-    for (size_t i = 0; i < POINTS.size(); ++i) {
-      Point center = { static_cast<int>(POINTS.at(i)[0]), static_cast<int>(POINTS.at(i)[1]) };
-      circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
-    }
-    for (size_t i = 0; i < STREAKS.size(); ++i) {
-      Point center = { static_cast<int>(STREAKS.at(i)[0]), static_cast<int>(STREAKS.at(i)[1]) };
-      circle(color_Img_input, center, radiusS, colorS, thicknessS, lineType, shift);
-    }
-
-#if SPD_FIGURE
-    namedWindow("Algo simple", WINDOW_NORMAL);
-    imshow("Algo simple", color_Img_input);
-#endif
-#if SPD_SAVE_FIGURE
-    char s_imgName[256];
-    strcpy(s_imgName, input.at(4));
-    strcat(s_imgName, input.at(1));
-    strcat(s_imgName, ".jpg");
-    imwrite( s_imgName, color_Img_input );
-#endif
-    destroyAllWindows();
-  }
-
+  plotResult(histStretch, POINTS, STREAKS, input);
+    
+  destroyAllWindows();
+  
   return 0;
 }

@@ -797,6 +797,14 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double thresh)
   return imgOut;
 }
 
+/* ==========================================================================
+*        FUNCTION NAME: distTransform
+* FUNCTION DESCRIPTION: Distance transformation
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 cv::Mat distTransform(const cv::Mat& imgIn)
 {
   // Perform the distance transform algorithm
@@ -1835,8 +1843,8 @@ void stamp(std::ostream& stream, const char* strName)
 void writeResult
 (
   std::ostream& stream
-  , std::vector< cv::Vec<float, 3> >& POINTS
-  , std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
   std::string s_nS = "Detected streaks: " + std::to_string(STREAKS.size());
@@ -1854,4 +1862,56 @@ void writeResult
     std::string cP = "Centroid points: (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")";
     stamp(stream, cP.c_str());
   }
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: plotResult
+* FUNCTION DESCRIPTION: Plot result points and streaks centroid
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void plotResult
+(
+  const cv::Mat& imgIn
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector<char *>& input
+)
+{
+  cv::Mat color_Img_input;
+  cvtColor(imgIn, color_Img_input, CV_GRAY2BGR);
+
+  int radius = 9;
+  int radiusS = 11;
+  cv::Scalar colorP = { 0,255,0 };
+  cv::Scalar colorS = { 0,0,255 };
+  int thickness = 2;
+  int thicknessS = 3;
+  int lineType = 8;
+  int shift = 0;
+
+  for (size_t i = 0; i < POINTS.size(); ++i) {
+    cv::Point center = { static_cast<int>(POINTS.at(i)[0]), static_cast<int>(POINTS.at(i)[1]) };
+    circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
+  }
+  for (size_t i = 0; i < STREAKS.size(); ++i) {
+    cv::Point center = { static_cast<int>(STREAKS.at(i)[0]), static_cast<int>(STREAKS.at(i)[1]) };
+    circle(color_Img_input, center, radiusS, colorS, thicknessS, lineType, shift);
+  }
+
+#if SPD_FIGURE
+  namedWindow("Algo simple", cv::WINDOW_NORMAL);
+  imshow("Algo simple", color_Img_input);
+#endif
+
+#if SPD_SAVE_FIGURE
+  char s_imgName[256];
+  strcpy(s_imgName, input.at(4));
+  strcat(s_imgName, input.at(1));
+  strcat(s_imgName, ".jpg");
+  imwrite(s_imgName, color_Img_input);
+#endif
+
 }

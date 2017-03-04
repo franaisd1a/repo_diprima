@@ -330,8 +330,16 @@ void stamp(std::ostream& stream, const char* strName);
 void writeResult
 (
   std::ostream& stream
-  , std::vector< cv::Vec<float, 3> >& STREAKS
-  , std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+);
+
+void plotResult
+(
+  const cv::Mat& imgIn
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector<char *>& input
 );
 
 #endif /* FUNCTION_H */
