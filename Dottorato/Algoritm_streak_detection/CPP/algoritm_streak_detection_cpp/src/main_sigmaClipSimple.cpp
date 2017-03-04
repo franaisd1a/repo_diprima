@@ -114,7 +114,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
     stamp(infoFile, "\n");
   }
 
-  /* Read image */
+  /* Read raw image */
   Mat Img_input;
 
   if ( (0==strcmp(input.at(2), extJPG)) || (0==strcmp(input.at(2), extjpg)) ) {
@@ -152,10 +152,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Open and read file");
 
-/***************************************************************************/
-/*                           Pre-Processing                                */
-/***************************************************************************/
-  
+
 /* ----------------------------------------------------------------------- *
  * Histogram Stretching                                                    *
  * ----------------------------------------------------------------------- */
@@ -171,8 +168,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   {
     histStretch = histogramStretching(Img_input);
   }
-  //Img_input.release();
-
+  
   timeElapsed(infoFile, start, "Histogram Stretching");
   cv::waitKey(0);
 
@@ -180,6 +176,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 /***************************************************************************/
 /*                               Processing                                */
 /***************************************************************************/
+    
 
 /* ======================================================================= *
  * Points detection                                                        *
@@ -205,11 +202,12 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   start = clock();
 
   int backCnt = 5;
+  const cv::Point vBackCnt = {backCnt, backCnt};
   cv::Mat meanBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   cv::Mat  stdBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
 
   cv::Mat backgroungImg = 
-    backgroundEstimation(medianImg, backCnt, meanBg, stdBg);
+    backgroundEstimation(medianImg, vBackCnt, meanBg, stdBg);
 
   timeElapsed(infoFile, start, "Background estimation");
   cv::waitKey(0);
@@ -266,7 +264,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   cv::Mat level = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   level = meanBg + 3.5*stdBg;
   
-  Mat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
+  Mat binaryImgPnt = binarizationZone(medianBgSubImg, vBackCnt, level);
   
   timeElapsed(infoFile, start, "Binarization");
   cv::waitKey(0);
@@ -281,7 +279,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   cv::Mat levelStk = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   levelStk = meanBg + 1*stdBg;//2.8
   
-  cv::Mat binaryImgStk = binarizationZone(medianBgSubImg, backCnt, levelStk);
+  cv::Mat binaryImgStk = binarizationZone(medianBgSubImg, vBackCnt, levelStk);
   medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization for streaks detection");

@@ -533,28 +533,32 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const int backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
+cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
 {
   cv::Mat imgIn = imgInOr.clone();
-  size_t backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt));
-  size_t backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt));
+  size_t backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt.y));
+  size_t backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt.x));
   
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
 
-  for (size_t o = 0; o < backCnt; ++o)
+  for (size_t o = 0; o < backCnt.y; ++o)
   {
     vBackSrow.push_back(backSzR*o);
-    vBackScol.push_back(backSzC*o);
   }
   vBackSrow.push_back(imgIn.rows);
+
+  for (size_t o = 0; o < backCnt.x; ++o)
+  {
+    vBackScol.push_back(backSzC*o);
+  }
   vBackScol.push_back(imgIn.cols);
     
   cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
   
-  for (size_t i = 0; i < backCnt; ++i)
+  for (size_t i = 0; i < backCnt.y; ++i)
   {
-    for (size_t j = 0; j < backCnt; ++j)
+    for (size_t j = 0; j < backCnt.x; ++j)
     {
       const cv::Point ptTL = {vBackScol.at(j), vBackSrow.at(i)};
       const cv::Point ptBR = {vBackScol.at(j+1), vBackSrow.at(i+1)};
@@ -641,28 +645,31 @@ cv::Mat binarization(const cv::Mat& imgIn)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat binarizationZone(const cv::Mat& imgIn, const int zoneCnt, const cv::Mat& level)
+cv::Mat binarizationZone(const cv::Mat& imgIn, const cv::Point zoneCnt, const cv::Mat& level)
 {
-  //cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
-  size_t zoneSzR = static_cast<size_t>(::round(imgIn.rows / zoneCnt));
-  size_t zoneSzC = static_cast<size_t>(::round(imgIn.cols / zoneCnt));
+  size_t zoneSzR = static_cast<size_t>(::round(imgIn.rows / zoneCnt.y));
+  size_t zoneSzC = static_cast<size_t>(::round(imgIn.cols / zoneCnt.x));
   
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
 
-  for (size_t o = 0; o < zoneCnt; ++o)
+  for (size_t o = 0; o < zoneCnt.y; ++o)
   {
     vBackSrow.push_back(zoneSzR*o);
-    vBackScol.push_back(zoneSzC*o);
   }
   vBackSrow.push_back(imgIn.rows);
+
+  for (size_t o = 0; o < zoneCnt.x; ++o)
+  {
+    vBackScol.push_back(zoneSzC*o);
+  }
   vBackScol.push_back(imgIn.cols);
     
   cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
   
-  for (size_t i = 0; i < zoneCnt; ++i)
+  for (size_t i = 0; i < zoneCnt.y; ++i)
   {
-    for (size_t j = 0; j < zoneCnt; ++j)
+    for (size_t j = 0; j < zoneCnt.x; ++j)
     {
       const cv::Point ptTL = { vBackScol.at(j), vBackSrow.at(i) };
       const cv::Point ptBR = { vBackScol.at(j + 1), vBackSrow.at(i + 1) };
@@ -965,7 +972,7 @@ void connectedComponents2
 
   if (contoursP.size() > 0)
   {
-    firstPOINTS = connectedComponentsPoints
+    firstPOINTS = connectedComponentsPoints2
     (max_img_sz, contoursP, borders, firstContoursP);
     contoursP.clear();
   }
@@ -1002,6 +1009,7 @@ void connectedComponents2
   preciseCentroid(imgInput, outContoursP, POINTS);
   preciseCentroid(imgInput, outContoursS, STREAKS);
 
+  
 #if SPD_FIGURE_1
     /// Draw contours
     cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);    
@@ -1066,6 +1074,132 @@ std::vector< cv::Vec<int, 3> > connectedComponentsPoints
     cv::Point_<int> centerP ( static_cast<int>(round(center.x)) 
                             , static_cast<int>(round(center.y)) );
 
+    if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
+       && (centerP.y>borders[1] && centerP.y<borders[3]))
+    {
+      if(contours[i].size()>5)
+      {
+        cv::RotatedRect rotatedRect = fitEllipse(contours[i]);
+        majorAxis = rotatedRect.size.height;
+        minorAxis = rotatedRect.size.width;
+
+        if (0 == minorAxis) {           
+          continue;
+        }
+        
+        /* Identify circular connect components */
+        if (majorAxis / minorAxis < 1.6)
+        {
+          if (majorAxis > max_points_diameter)
+          {
+            max_points_diameter = majorAxis;
+          }
+          if (minorAxis < min_points_diameter)
+          {
+            min_points_diameter = minorAxis;
+          }
+
+          centroidV.push_back(centerP);
+          majorAxisV.push_back(majorAxis);
+          minorAxisV.push_back(minorAxis);
+          contoursResFV.push_back(contours[i]);
+
+          cumulativeMajorAxis += rotatedRect.size.height;
+          count = count + 1;
+
+        } //if (majorAxis / minorAxis < 1.6)
+        else {
+          continue;
+        }
+      } //if(contours[i].size()>5)      
+      else {
+        continue;
+      }
+    } //if inside borders
+    else {
+      continue;
+    }
+  } //for (size_t i = 0; i < contours.size(); ++i)
+
+
+  /**/
+  std::vector< char > points(contoursResFV.size());
+  int init = 0;
+  int n_points = 0;
+
+  if (contoursResFV.size())
+  {
+    int threshValue=((max_points_diameter/4)+((cumulativeMajorAxis/count)/2))/2;
+    for (size_t j = 0; j < contoursResFV.size(); ++j)
+    {
+      /* Delete little circular connect components */
+      if (majorAxisV.at(j)<threshValue) //ceil(max_points_diameter/2)
+      {
+        points.at(j) = 0;
+      }
+      else
+      {
+        points.at(j) = 1;
+      }
+    }
+  }
+
+  n_points = std::accumulate(points.begin(), points.end(), init);
+  
+  std::vector< cv::Vec<int, 3> >  POINTS(n_points);
+      
+  if (n_points)
+  {
+    int indx = 0;
+    for (size_t k = 0; k < contoursResFV.size(); ++k)
+    {
+      if (1 == points.at(k))
+      {
+        POINTS.at(indx) = { centroidV.at(k).x, centroidV.at(k).y, 0};
+        outContoursRes.push_back(contoursResFV[k]);
+        indx++;
+      }
+    }
+  } //if (n_points)
+
+  return POINTS;
+}
+
+std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
+)
+{
+  float max_points_diameter = 0; 
+  float min_points_diameter = max_img_sz;
+  float cumulativeMajorAxis = 0;
+  float count = 0;
+
+  /* Initialize vector */  
+  std::vector< cv::Point > centroidV;
+  std::vector< float >     majorAxisV;
+  std::vector< float >     minorAxisV;
+  std::vector<std::vector<cv::Point > > contoursResFV;
+
+  cv::Point2f center = {0.0f, 0.0f};
+  float radius = 0.0f;
+  float majorAxis = 0.0f;
+  float minorAxis = 0.0f;
+
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    center = {0.0f, 0.0f};
+    majorAxis = 0.0f;
+    minorAxis = 0.0f;
+
+    minEnclosingCircle(contours[i], center, radius);
+
+    cv::Point centerP ( static_cast<int>(round(center.x)) 
+                      , static_cast<int>(round(center.y)) );
+    
     if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
        && (centerP.y>borders[1] && centerP.y<borders[3]))
     {
@@ -1315,17 +1449,23 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
   , std::vector< cv::RotatedRect >& rotRectV
 )
 {
+  std::vector< cv::Vec<int, 3> > STREAKS;
+
   for (size_t i = 0; i < contours.size(); ++i)
   {
-    cv::RotatedRect rotRec = fitEllipse(contours[i]);
-    cv::Point_<int> centerP ( static_cast<int>(round(rotRec.center.x)) 
-                            , static_cast<int>(round(rotRec.center.y)) );
+    cv::Point2f center = {0.0f, 0.0f};
+    float radius = 0.0f;
+    minEnclosingCircle(contours[i], center, radius);
 
+    cv::Point centerP ( static_cast<int>(round(center.x)) 
+                      , static_cast<int>(round(center.y)) );
+        
     if(   (centerP.x>borders[0] && centerP.x<borders[2]) 
        && (centerP.y>borders[1] && centerP.y<borders[3]))
     {
       if(contours[i].size()>20)//5
-      {        
+      {
+        cv::RotatedRect rotRec = fitEllipse(contours[i]);
         float majorAxis = rotRec.size.height;
         float minorAxis = rotRec.size.width;
         
@@ -1344,6 +1484,9 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
         {
           rotRectV.push_back(rotRec);
           outContoursRes.push_back(contours[i]);
+          STREAKS.push_back(
+          { static_cast<int>(rotRec.center.x)
+            , static_cast<int>(rotRec.center.y), 0 });
         }
         else {
           continue;
@@ -1357,18 +1500,7 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
       continue;
     }
   } //for (size_t i = 0; i < contoursS.size(); ++i)
-
-  std::vector< cv::Vec<int, 3> > STREAKS(outContoursRes.size());
-
-  int indx = 0;
-  for (size_t k = 0; k < outContoursRes.size(); ++k)
-  {
-    STREAKS.at(indx) = 
-    { static_cast<int>(rotRectV.at(k).center.x)
-      , static_cast<int>(rotRectV.at(k).center.y), 0 };
-    indx++;
-  }
-
+  
   return STREAKS;
 }
 
@@ -1914,4 +2046,333 @@ void plotResult
   imwrite(s_imgName, color_Img_input);
 #endif
 
+}
+
+void sigmaClipProcessing
+(
+  const cv::Mat& histStretch
+  , const cv::Mat& Img_input
+  , std::ostream& infoFile
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
+)
+{
+  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows };
+  double bordersThick = 0.015;
+  cv::Point_<double> borders = { bordersThick, 1 - bordersThick };
+  cv::Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * I_input_size.x))
+                          , static_cast<int>(ceil(borders.x * I_input_size.y))
+                          , static_cast<int>(floor(borders.y * I_input_size.x))
+                          , static_cast<int>(floor(borders.y * I_input_size.y)) };
+
+/* ======================================================================= *
+ * Points detection                                                        *
+ * ======================================================================= */
+  
+/* ----------------------------------------------------------------------- *
+ * Median filter                                                           *
+ * ----------------------------------------------------------------------- */
+
+  clock_t start = clock();
+  
+  int kerlenSz = 3;
+  cv::Mat medianImg = medianFilter(histStretch, kerlenSz);
+
+  timeElapsed(infoFile, start, "Median filter");
+  cv::waitKey(0);
+
+
+/* ----------------------------------------------------------------------- *
+ * Background estimation                                                   *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  size_t maxColdim = 512;
+  size_t maxRowdim = 512;
+
+  int regionNumR = static_cast<int>(::round(histStretch.rows / maxRowdim));
+  int regionNumC = static_cast<int>(::round(histStretch.cols / maxColdim));
+
+  cv::Point backCnt = {regionNumC, regionNumR};
+  cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
+  cv::Mat  stdBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
+
+  cv::Mat backgroungImg = 
+    backgroundEstimation(medianImg, backCnt, meanBg, stdBg);
+
+  timeElapsed(infoFile, start, "Background estimation");
+  cv::waitKey(0);
+  
+/* ----------------------------------------------------------------------- *
+ * Background subtraction                                                  *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat bgSubtracImg = subtraction(medianImg, backgroungImg);
+    
+  medianImg.release();
+  backgroungImg.release();
+  
+  timeElapsed(infoFile, start, "Background subtraction");
+
+#if SPD_FIGURE_1
+    namedWindow("Background subtraction", cv::WINDOW_NORMAL);
+    imshow("Background subtraction", bgSubtracImg);
+    cv::waitKey(0);
+#endif
+  
+  
+/* ----------------------------------------------------------------------- *
+ * Median filter                                                           *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+  
+  cv::Mat medianBgSubImg = medianFilter(bgSubtracImg, kerlenSz);
+  bgSubtracImg.release();
+
+  timeElapsed(infoFile, start, "Median filter");
+  cv::waitKey(0);
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "medianBgSubImg");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, medianBgSubImg);
+  }
+#endif
+
+
+/* ----------------------------------------------------------------------- *
+ * Binarization for points detection                                       *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat level = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
+  level = meanBg + 3.5*stdBg;
+  
+  cv::Mat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
+  
+  timeElapsed(infoFile, start, "Binarization");
+  cv::waitKey(0);
+
+
+/* ----------------------------------------------------------------------- *
+ * Binarization for streaks detection                                      *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat levelStk = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
+  levelStk = meanBg + 1*stdBg;//2.8
+  
+  cv::Mat binaryImgStk = binarizationZone(medianBgSubImg, backCnt, levelStk);
+  medianBgSubImg.release();
+
+  timeElapsed(infoFile, start, "Binarization for streaks detection");
+  cv::waitKey(0);
+  
+
+/* ----------------------------------------------------------------------- *
+ * Distance transformation for streaks detection                           *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+    
+  cv::Mat distStk = distTransform(binaryImgStk);
+  binaryImgStk.release();
+
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "distStk");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, distStk);
+  }
+#endif 
+
+
+/* ----------------------------------------------------------------------- *
+ * Convolution kernel for points detection                                 *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  int szKernel = 3;
+  cv::Mat kernel = cv::Mat::ones(szKernel, szKernel, CV_8U);
+  double threshConv = 7;//6
+  
+  cv::Mat convImgPnt = convolution(binaryImgPnt, kernel, threshConv);
+  binaryImgPnt.release();
+  timeElapsed(infoFile, start, "Convolution for points detection");
+  cv::waitKey(0);
+  
+
+/* ----------------------------------------------------------------------- *
+ * Morphology opening                                                      *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  int radDisk = 6;  
+  cv::Mat openImg = morphologyOpen(convImgPnt, radDisk);
+
+  timeElapsed(infoFile, start, "Morphology opening");
+  
+  cv::waitKey(0);
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "openImg");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, openImg);
+  }
+#endif
+
+/* ======================================================================= *
+ * Streaks detection                                                       *
+ * ======================================================================= */
+  
+/* ----------------------------------------------------------------------- *
+ * Hough transform                                                         *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat resizeImg;
+  double f = 0.5;
+  cv::Size dsize = { 0, 0 };
+  resize(distStk, resizeImg, dsize, f, f, cv::INTER_LINEAR);
+
+  std::vector<std::pair<float, int>> angle = hough(resizeImg);
+  resizeImg.release();
+  
+  std::string s_nH = "Number of inclination angles: " + std::to_string(angle.size());
+  stamp(infoFile, s_nH.c_str());
+
+  for (size_t a = 0; a < angle.size(); ++a)
+  {
+    std::string s_vA = "Angle: " + std::to_string(angle.at(a).first) 
+      + " " + std::to_string(angle.at(a).second);
+    stamp(infoFile, s_vA.c_str());
+  }
+
+  timeElapsed(infoFile, start, "Hough transform");
+  cv::waitKey(0);
+
+
+/* ----------------------------------------------------------------------- *
+ * Sum streaks binary image                                                *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
+
+  for (int i = 0; i < angle.size(); ++i)
+  {
+
+/* ----------------------------------------------------------------------- *
+ * Morphology opening with linear kernel for remove streaks                *
+ * ----------------------------------------------------------------------- */
+    
+    int dimLineRem = 60;
+
+    cv::Mat morpOpLinRem = morphologyOpen(openImg, dimLineRem, angle.at(i).first);
+    cv::waitKey(0);
+
+
+/* ----------------------------------------------------------------------- *
+ * Binary image with streaks                                               *
+ * ----------------------------------------------------------------------- */
+
+    sumStrRemImg = sumStrRemImg + morpOpLinRem;
+    morpOpLinRem.release();
+        
+#if SPD_FIGURE_1
+    namedWindow("sumStrRemImg", cv::WINDOW_NORMAL);
+    imshow("sumStrRemImg", sumStrRemImg);
+    cv::waitKey(0);
+#endif
+  }
+  
+  timeElapsed(infoFile, start, "Sum remove streaks binary");
+
+/* ----------------------------------------------------------------------- *
+ * Binary image without streaks                                            *
+ * ----------------------------------------------------------------------- */
+  
+  cv::Mat onlyPoints = openImg - sumStrRemImg;
+  sumStrRemImg.release();
+  openImg.release();
+
+#if SPD_FIGURE_1
+  namedWindow("onlyPoints", cv::WINDOW_NORMAL);
+  imshow("onlyPoints", onlyPoints);
+  cv::waitKey(0);
+#endif
+  
+
+/* ----------------------------------------------------------------------- *
+ * Convolution kernel remove streaks                                       *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+
+  cv::Mat kernelRm = cv::Mat::ones(szKernel, szKernel, CV_8U);
+  double threshConvRm = 8;
+  
+  cv::Mat convImgRms = convolution(onlyPoints, kernelRm, threshConvRm);
+  kernelRm.release();
+  onlyPoints.release();
+  cv::waitKey(0);
+
+  timeElapsed(infoFile, start, "Convolution");
+    
+  
+/* ----------------------------------------------------------------------- *
+ * Connected components                                                    *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+    
+#if 0
+    char s_imgNamePnt[256];
+    strcpy(s_imgNamePnt, input.at(4));
+    strcat(s_imgNamePnt, input.at(1));
+    strcat(s_imgNamePnt, "Pnt.jpg");
+    imwrite( s_imgNamePnt, convImgRms );    
+#endif
+
+  connectedComponents2(convImgRms, distStk, Img_input, imgBorders, POINTS, STREAKS);
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "convImgRms");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, convImgRms);
+  }
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "distStk");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, distStk);
+  }
+#endif
+  convImgRms.release();
+
+  timeElapsed(infoFile, start, "Connected components");
 }

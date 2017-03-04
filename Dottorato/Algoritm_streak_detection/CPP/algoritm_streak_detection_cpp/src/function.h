@@ -130,7 +130,7 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad);
 cv::Mat backgroundEstimation
 (
   const cv::Mat& imgIn
-  , const int backSz
+  , const cv::Point backCnt
   , cv::Mat& meanBg
   , cv::Mat& stdBg
 );
@@ -138,7 +138,7 @@ cv::Mat backgroundEstimation
 cv::Mat binarizationZone
 (
   const cv::Mat& imgIn
-  , const int zoneCnt
+  , const cv::Point zoneCnt
   , const cv::Mat& level
 );
 
@@ -192,7 +192,7 @@ void connectedComponents2
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
   , const cv::Mat& Img_input
-  , const cv::Vec<int, 4>& borders  
+  , const cv::Vec<int, 4>& borders
   , std::vector< cv::Vec<float, 3> >& POINTS
   , std::vector< cv::Vec<float, 3> >& STREAKS
 );
@@ -206,6 +206,13 @@ void connectedComponents2
 * @return Vector with points centroid
 */
 std::vector< cv::Vec<int, 3> > connectedComponentsPoints
+(
+  const float max_img_sz
+  , const std::vector<std::vector<cv::Point > >& contours
+  , const cv::Vec<int, 4>& borders
+  , std::vector<std::vector<cv::Point > >& outContoursRes
+);
+std::vector< cv::Vec<int, 3> > connectedComponentsPoints2
 (
   const float max_img_sz
   , const std::vector<std::vector<cv::Point > >& contours
@@ -341,5 +348,16 @@ void plotResult
   , const std::vector< cv::Vec<float, 3> >& STREAKS
   , const std::vector<char *>& input
 );
+
+void sigmaClipProcessing
+(
+  const cv::Mat& histStretch
+  , const cv::Mat& Img_input
+  , std::ostream& infoFile
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
+);
+
+
 
 #endif /* FUNCTION_H */

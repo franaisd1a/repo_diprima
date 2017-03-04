@@ -197,11 +197,12 @@ int main_sigmaClip(const std::vector<char *>& input)
   start = clock();
 
   int backCnt = 5;
+  const cv::Point vBackCnt = {backCnt, backCnt};
   cv::Mat meanBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   cv::Mat  stdBg = cv::Mat::zeros(backCnt, backCnt, CV_64F);
 
   cv::Mat backgroungImg = 
-    backgroundEstimation(medianImg, backCnt, meanBg, stdBg);
+    backgroundEstimation(medianImg, vBackCnt, meanBg, stdBg);
 
   timeElapsed(infoFile, start, "Background estimation");
   cv::waitKey(0);
@@ -248,7 +249,7 @@ int main_sigmaClip(const std::vector<char *>& input)
   cv::Mat level = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   level = meanBg + 3.5*stdBg;
   
-  Mat binaryImg = binarizationZone(medianBgSubImg, backCnt, level);
+  Mat binaryImg = binarizationZone(medianBgSubImg, vBackCnt, level);
   
   timeElapsed(infoFile, start, "Binarization");
   cv::waitKey(0);
@@ -263,7 +264,7 @@ int main_sigmaClip(const std::vector<char *>& input)
   cv::Mat levelStk = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   levelStk = meanBg + 1*stdBg;//2.8
   
-  Mat binaryImgStk = binarizationZone(medianBgSubImg, backCnt, levelStk);
+  Mat binaryImgStk = binarizationZone(medianBgSubImg, vBackCnt, levelStk);
   medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization for streaks detection");
