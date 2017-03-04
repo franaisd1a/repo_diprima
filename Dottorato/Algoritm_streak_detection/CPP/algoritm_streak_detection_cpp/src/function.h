@@ -167,6 +167,8 @@ cv::Mat binarizationDiffTh(const cv::Mat& imgIn, int flag);
 */
 cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double threshold);
 
+cv::Mat distTransform(const cv::Mat& imgIn);
+
 /**
 * connectedComponents Found connected components
 * @param imgPoints Input image for points detection
@@ -177,6 +179,15 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double threshol
 * @param STREAKS Vector with streaks centroid
 */
 void connectedComponents
+(
+  const cv::Mat& imgPoints
+  , const cv::Mat& imgStreaks
+  , const cv::Mat& Img_input
+  , const cv::Vec<int, 4>& borders  
+  , std::vector< cv::Vec<float, 3> >& POINTS
+  , std::vector< cv::Vec<float, 3> >& STREAKS
+);
+void connectedComponents2
 (
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
@@ -219,10 +230,10 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks
 );
 std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
 (
-  const float max_img_sz
-  , const std::vector<std::vector<cv::Point > >& contours
+  const std::vector<std::vector<cv::Point > >& contours
   , const cv::Vec<int, 4>& borders
   , std::vector<std::vector<cv::Point > >& outContoursRes
+  , std::vector< cv::RotatedRect >& rotRectV
 );
 
 /**

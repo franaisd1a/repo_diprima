@@ -237,7 +237,18 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   timeElapsed(infoFile, start, "Median filter");
   cv::waitKey(0);
-  
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "medianBgSubImg");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, medianBgSubImg);
+  }
+#endif
+
+
 /* ----------------------------------------------------------------------- *
  * Binarization for points detection                                       *
  * ----------------------------------------------------------------------- */
@@ -247,7 +258,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   cv::Mat level = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   level = meanBg + 3.5*stdBg;
   
-  Mat binaryImg = binarizationZone(medianBgSubImg, backCnt, level);
+  Mat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
   
   timeElapsed(infoFile, start, "Binarization");
   cv::waitKey(0);
@@ -262,11 +273,32 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   cv::Mat levelStk = cv::Mat::zeros(backCnt, backCnt, CV_64F);
   levelStk = meanBg + 1*stdBg;//2.8
   
-  Mat binaryImgStk = binarizationZone(medianBgSubImg, backCnt, levelStk);
+  cv::Mat binaryImgStk = binarizationZone(medianBgSubImg, backCnt, levelStk);
   medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization for streaks detection");
   cv::waitKey(0);
+  
+
+/* ----------------------------------------------------------------------- *
+ * Distance transformation for streaks detection                           *
+ * ----------------------------------------------------------------------- */
+
+  start = clock();
+    
+  cv::Mat distStk = distTransform(binaryImgStk);
+  binaryImgStk.release();
+
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "distStk");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, distStk);
+  }
+#endif 
 
 
 /* ----------------------------------------------------------------------- *
@@ -279,8 +311,8 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   Mat kernel = Mat::ones(szKernel, szKernel, CV_8U);
   double threshConv = 7;//6
   
-  Mat convImgPnt = convolution(binaryImg, kernel, threshConv);
-  binaryImg.release();
+  Mat convImgPnt = convolution(binaryImgPnt, kernel, threshConv);
+  binaryImgPnt.release();
   timeElapsed(infoFile, start, "Convolution for points detection");
   cv::waitKey(0);
   
@@ -297,7 +329,16 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   timeElapsed(infoFile, start, "Morphology opening");
   
   cv::waitKey(0);
-
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "openImg");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, openImg);
+  }
+#endif
 
 /* ======================================================================= *
  * Streaks detection                                                       *
@@ -312,7 +353,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   Mat resizeImg;
   double f = 0.5;
   Size dsize = { 0, 0 };
-  resize(binaryImgStk, resizeImg, dsize, f, f, INTER_LINEAR);
+  resize(distStk, resizeImg, dsize, f, f, INTER_LINEAR);
 
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
   resizeImg.release();
@@ -360,15 +401,13 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
     morpOpLinRem.release();
         
 #if SPD_FIGURE_1
-    namedWindow("sumStrImg", cv::WINDOW_NORMAL);
-    imshow("sumStrImg", sumStrImg);
     namedWindow("sumStrRemImg", cv::WINDOW_NORMAL);
     imshow("sumStrRemImg", sumStrRemImg);
     cv::waitKey(0);
-    int asdfgg = 2;
 #endif
   }
   
+  timeElapsed(infoFile, start, "Sum remove streaks binary");
 
 /* ----------------------------------------------------------------------- *
  * Binary image without streaks                                            *
@@ -377,7 +416,13 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   cv::Mat onlyPoints = openImg - sumStrRemImg;
   sumStrRemImg.release();
   openImg.release();
+
+#if SPD_FIGURE_1
+  namedWindow("onlyPoints", cv::WINDOW_NORMAL);
+  imshow("onlyPoints", onlyPoints);
   cv::waitKey(0);
+#endif
+  
 
 /* ----------------------------------------------------------------------- *
  * Convolution kernel remove streaks                                       *
@@ -390,18 +435,11 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   
   Mat convImgRms = convolution(onlyPoints, kernelRm, threshConvRm);
   kernelRm.release();
-  
-  timeElapsed(infoFile, start, "Convolution");
-
-#if SPD_FIGURE_1
-  namedWindow("onlyPoints", cv::WINDOW_NORMAL);
-  imshow("onlyPoints", onlyPoints);
-  cv::waitKey(0);
-#endif
   onlyPoints.release();
-  
-  timeElapsed(infoFile, start, "Sum streaks binary");
+  cv::waitKey(0);
 
+  timeElapsed(infoFile, start, "Convolution");
+    
   
 /* ----------------------------------------------------------------------- *
  * Connected components                                                    *
@@ -411,15 +449,6 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
-  
-  
-#if SPD_FIGURE_1
-  namedWindow("convImgRms", cv::WINDOW_NORMAL);
-  imshow("convImgRms", convImgRms);
-  namedWindow("sumStrImg", cv::WINDOW_NORMAL);
-  imshow("sumStrImg", sumStrImg);
-  cv::waitKey(0);
-#endif
 
 #if 0
     char s_imgNamePnt[256];
@@ -429,9 +458,26 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
     imwrite( s_imgNamePnt, convImgRms );    
 #endif
 
-  connectedComponents(convImgRms, binaryImgStk, Img_input, imgBorders, POINTS, STREAKS);
-  convImgRms.release();
-  binaryImgStk.release();
+  connectedComponents2(convImgRms, distStk, Img_input, imgBorders, POINTS, STREAKS);
+#if 0
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "convImgRms");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, convImgRms);
+  }
+  {
+    char s_imgName[256];
+    strcpy(s_imgName, input.at(4));
+    strcat(s_imgName, input.at(1));
+    strcat(s_imgName, "distStk");
+    strcat(s_imgName, ".jpg");
+    imwrite(s_imgName, distStk);
+  }
+#endif
+  convImgRms.release();  
   Img_input.release();
 
   timeElapsed(infoFile, start, "Connected components");
