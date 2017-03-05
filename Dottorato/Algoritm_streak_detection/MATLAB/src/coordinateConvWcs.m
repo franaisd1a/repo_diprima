@@ -23,6 +23,22 @@ for i=1:length(wcs{1,1})
         imagew = str2double(wcs{1,2}{i,1});
     elseif (strcmp(wcs{1,1}{i,1},'imageh'))
         imageh = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'cd11'))
+        cd11 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'cd12'))
+        cd12 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'cd21'))
+        cd21 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'cd22'))
+        cd22 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'crpix0'))
+        crpix0 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'crpix1'))
+        crpix1 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'crval0'))
+        crval0 = str2double(wcs{1,2}{i,1});
+    elseif (strcmp(wcs{1,1}{i,1},'crval1'))
+        crval1 = str2double(wcs{1,2}{i,1});
     end    
 end
 
@@ -35,28 +51,56 @@ end
 
 stkPimg = [1669.546875,2122.958008];
 
-imgC = [imagew/2 , imageh/2];
-
-
-stkCs = pixscale*(imgC - stkPimg);
-
-
-
+% imgC = [imagew/2 , imageh/2];
+% stkCs = pixscale*(imgC - stkPimg);
+% 
 % ra = ra_center + (stkCs(2)*cosd(orientation) + stkCs(1)*sind(orientation))/(3600);
 % dec = dec_center + (-stkCs(2)*sind(orientation) + stkCs(1)*cosd(orientation))/(3600);
+% 
+% % ra = ra_center + (stkCs(1)*cosd(orientation) + stkCs(2)*sind(orientation))/(3600);
+% % dec = dec_center + (-stkCs(1)*sind(orientation) + stkCs(2)*cosd(orientation))/(3600);
+% 
+% decHMS = degrees2dms(dec)
+% 
+% raArcSec = ra*3600;
+% raSec = raArcSec/15;
+% t=raSec;
+% hours = floor(t / 3600)
+% t = t - hours * 3600;
+% mins = floor(t / 60)
+% secs = t - mins * 60
 
-ra = ra_center + (stkCs(1)*cosd(orientation) + stkCs(2)*sind(orientation))/(3600);
-dec = dec_center + (-stkCs(1)*sind(orientation) + stkCs(2)*cosd(orientation))/(3600);
 
-decHMS = degrees2dms(dec)
+%% Gnomonic (Tangent Plane) Projection
 
-raArcSec = ra*3600;
+u=-crpix0+stkPimg(1);
+v=-crpix1+stkPimg(2);
+
+A_ORDER =                    2;
+A_0_2   =   -6.41784648205E-08;
+A_1_1   =    2.64025876332E-08;
+A_2_0   =    1.80569466722E-07;
+B_ORDER =                    2;
+B_0_2   =   -7.05225042001E-08;
+B_1_1   =    5.77274145963E-07;
+B_2_0   =   -1.40391055853E-07;
+
+f = A_0_2 * v^2 + A_1_1 * u*v + A_2_0 * u^2;
+g = B_0_2 * v^2 + B_1_1 * u*v + B_2_0 * u^2;
+
+GM = [cd11, cd12; cd21, cd22];
+
+cc = GM * [u+f;v+g];
+
+x=crval0+cc(1)
+y=crval1+cc(2)
+
+decHMS = degrees2dms(y)
+
+raArcSec = x*3600;
 raSec = raArcSec/15;
 t=raSec;
 hours = floor(t / 3600)
 t = t - hours * 3600;
 mins = floor(t / 60)
 secs = t - mins * 60
-
-
-
