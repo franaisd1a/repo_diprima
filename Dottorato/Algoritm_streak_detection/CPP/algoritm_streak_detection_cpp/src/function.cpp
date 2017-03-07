@@ -2048,6 +2048,162 @@ void plotResult
 
 }
 
+/* ==========================================================================
+*        FUNCTION NAME: parseWCS
+* FUNCTION DESCRIPTION: Parse Wordl Coordinate System
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void parseWCS(const char* file, wcsPar& par)
+{ 
+  std::ifstream myfile;
+  std::string line;
+
+  myfile.open(file, std::ifstream::in);
+    
+  if (myfile.is_open()) {
+    while (getline(myfile, line)) {
+      //std::cout << line << '\n';
+    }
+    myfile.close();
+  }
+  else std::cout << "Unable to open file";
+  int len = 80;
+
+  char buf[81];
+  char name[81];
+  char strN[81];
+  char strValue[81];
+
+  for (int p = 0; p < line.size(); p += 80) 
+  {
+    ::memset(buf,0,sizeof(buf));
+    snprintf(buf, 81, "%s", line.c_str() + p);
+    
+    ::memset(name,0,sizeof(name));
+    ::memset(strN,0,sizeof(strN));
+    ::memset(strValue,0,sizeof(strValue));
+    
+    sscanf(buf, "%s %s %s %*s", name, strN, strValue);
+
+    if (0 == strcmp(name, "CRVAL1")){
+      par.CRVAL1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CRVAL2")){
+      par.CRVAL2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CRPIX1")){
+      par.CRPIX1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CRPIX2")){
+      par.CRPIX2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CD1_1")){
+      par.CD1_1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CD1_2")){      
+      par.CD1_2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CD2_1")){
+      par.CD2_1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "CD2_2")){
+      par.CD2_2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "A_0_2")){
+      par.A_0_2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "A_1_1")){
+      par.A_1_1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "A_2_0")){
+      par.A_2_0 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "B_0_2")){
+      par.B_0_2 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "B_1_1")){
+      par.B_1_1 = atof(strValue);
+    }
+    else if (0 == strcmp(name, "B_2_0")){
+      par.B_2_0 = atof(strValue);
+    }
+    else
+    {      
+    }
+  }
+  ::memset(name, 0, sizeof(name));
+  ::memset(strN, 0, sizeof(strN));
+  ::memset(strValue, 0, sizeof(strValue));
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: coordConv
+* FUNCTION DESCRIPTION: Coordinate Converter
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void coordConv
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<float, 3> >& radec
+)
+{
+#if 0
+  u = -crpix0 + stkPimg(1);
+  v = -crpix1 + stkPimg(2);
+
+  f = A_0_2 * v ^ 2 + A_1_1 * u*v + A_2_0 * u ^ 2;
+  g = B_0_2 * v ^ 2 + B_1_1 * u*v + B_2_0 * u ^ 2;
+
+  GM = [cd11, cd12; cd21, cd22];
+
+  cc = GM *[u + f; v + g];
+
+  x = crval0 + cc(1);
+  y = crval1 + cc(2);
+#endif
+
+  for (size_t i = 0; i<pixel.size(); ++i)
+  {
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1;
+    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2;
+
+    double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+    double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+    cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+    GM.at<double>(0,0) = par.CD1_1;
+    GM.at<double>(0,1) = par.CD1_2;
+    GM.at<double>(1,0) = par.CD2_1;
+    GM.at<double>(1,1) = par.CD2_2;
+    //std::cout << "M = "<< std::endl << " "  << GM << std::endl << std::endl;
+
+    cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+    inV.at<double>(0,0) = u + f;
+    inV.at<double>(1,0) = v + g;
+    
+    cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+    outV = GM * inV;
+
+    radec.push_back({ static_cast<float>(outV.at<double>(0, 0))
+    , static_cast<float>(outV.at<double>(1, 0)), 0 });
+  }
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: sigmaClipProcessing
+* FUNCTION DESCRIPTION: 
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 void sigmaClipProcessing
 (
   const cv::Mat& histStretch

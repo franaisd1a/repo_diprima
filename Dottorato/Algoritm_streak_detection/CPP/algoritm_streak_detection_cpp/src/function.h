@@ -27,6 +27,7 @@
 //#include <cstdint>
 #include <stdint.h>
 #include <iostream>
+#include <fstream>
 #include <math.h>
 #include <string.h>
 #include <numeric>
@@ -347,6 +348,33 @@ void plotResult
   , const std::vector< cv::Vec<float, 3> >& POINTS
   , const std::vector< cv::Vec<float, 3> >& STREAKS
   , const std::vector<char *>& input
+);
+
+struct wcsPar {
+  double CRVAL1 = 0;
+  double CRVAL2 = 0;
+  double CRPIX1 = 0;
+  double CRPIX2 = 0;
+  double  CD1_1 = 0;
+  double  CD1_2 = 0;
+  double  CD2_1 = 0;
+  double  CD2_2 = 0;
+  double  A_0_2 = 0;
+  double  A_1_1 = 0;
+  double  A_2_0 = 0;
+  double  B_0_2 = 0;
+  double  B_1_1 = 0;
+  double  B_2_0 = 0;
+};
+
+
+void parseWCS(const char*, wcsPar&);
+
+void coordConv
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<float, 3> >& radec
 );
 
 void sigmaClipProcessing

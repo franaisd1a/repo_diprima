@@ -48,7 +48,8 @@ set(SOURCES
     ${SRC_PATH}/algo_selection.cpp
 			 ${SRC_PATH}/main_simple.cpp
     ${SRC_PATH}/main_sigmaClip.cpp
-	${SRC_PATH}/main_sigmaClipSimple.cpp
+	   ${SRC_PATH}/main_sigmaClipSimple.cpp
+    ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
 			 #${SRC_PATH}/main_2.cpp
 			 ${SRC_PATH}/main_fits.cpp
 			 #${SRC_PATH}/main_GPU.cpp
