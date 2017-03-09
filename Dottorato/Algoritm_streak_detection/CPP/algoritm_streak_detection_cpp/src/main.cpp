@@ -60,7 +60,7 @@
 int main(int argc, char** argv)
 {
   // Check for invalid input
-  if (argc < 3)  {
+  if (argc != 3)  {
     std::cout << "Error: insert input argument." << std::endl;
     return -1;
   }

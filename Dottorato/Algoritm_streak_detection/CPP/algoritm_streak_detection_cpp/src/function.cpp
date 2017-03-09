@@ -24,8 +24,10 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
+#include "function_os.h"
 #include "function.h"
 #include "macros.h"
+
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -1996,6 +1998,34 @@ void writeResult
   }
 }
 
+void writeResult
+(
+  std::ostream& stream
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector< cv::Vec<float, 3> >& radecP
+  , const std::vector< cv::Vec<float, 3> >& radecS
+)
+{
+  std::string s_nS = "Detected streaks: " + std::to_string(STREAKS.size());
+  stamp(stream, s_nS.c_str());
+  for (size_t i = 0; i < STREAKS.size(); ++i)
+  {
+    std::string cS = "Centroid streaks: Row Col (" + std::to_string(STREAKS.at(i)[0]) + "," + std::to_string(STREAKS.at(i)[1]) + ")" 
+      + " Ra Dec (" + std::to_string(radecS.at(i)[0]) + "," + std::to_string(radecS.at(i)[1]) + ")";
+    stamp(stream, cS.c_str());
+  }
+
+  std::string s_nP = "Detected points: " + std::to_string(POINTS.size());
+  stamp(stream, s_nP.c_str());
+  for (size_t i = 0; i < POINTS.size(); ++i)
+  {
+    std::string cP = "Centroid points: Row Col  (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")"
+      + " Ra Dec (" + std::to_string(radecP.at(i)[0]) + "," + std::to_string(radecP.at(i)[1]) + ")";;
+    stamp(stream, cP.c_str());
+  }
+}
+
 /* ==========================================================================
 *        FUNCTION NAME: plotResult
 * FUNCTION DESCRIPTION: Plot result points and streaks centroid
@@ -2154,21 +2184,6 @@ void coordConv
   , std::vector< cv::Vec<float, 3> >& radec
 )
 {
-#if 0
-  u = -crpix0 + stkPimg(1);
-  v = -crpix1 + stkPimg(2);
-
-  f = A_0_2 * v ^ 2 + A_1_1 * u*v + A_2_0 * u ^ 2;
-  g = B_0_2 * v ^ 2 + B_1_1 * u*v + B_2_0 * u ^ 2;
-
-  GM = [cd11, cd12; cd21, cd22];
-
-  cc = GM *[u + f; v + g];
-
-  x = crval0 + cc(1);
-  y = crval1 + cc(2);
-#endif
-
   for (size_t i = 0; i<pixel.size(); ++i)
   {
     double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1;
@@ -2191,8 +2206,8 @@ void coordConv
     cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
     outV = GM * inV;
 
-    radec.push_back({ static_cast<float>(outV.at<double>(0, 0))
-    , static_cast<float>(outV.at<double>(1, 0)), 0 });
+    radec.push_back({ static_cast<float>(par.CRVAL1 + outV.at<double>(0, 0))
+    , static_cast<float>(par.CRVAL2 + outV.at<double>(1, 0)), 0 });
   }
 }
 
@@ -2531,4 +2546,26 @@ void sigmaClipProcessing
   convImgRms.release();
 
   timeElapsed(infoFile, start, "Connected components");
+}
+
+
+std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par)
+{
+  return std::async(std::launch::async, [&]() 
+  {
+    bool res = false;
+
+    //lancia script per risolvere campo stellare
+    
+    //verifica esistenza file .wcs
+    bool existWCS = spd_os::fileExists(pStr.c_str());
+    
+    if (existWCS)
+    {      
+      parseWCS(pStr.c_str(), par);
+      res = true;
+    }
+    
+    return res;
+  });
 }

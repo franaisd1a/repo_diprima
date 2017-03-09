@@ -77,7 +77,7 @@ bool algo_selection(const std::vector<char *>& input)
     printf("Error in input parameters.");
   }
 
-  std::cout << input.at(1) << "." << input.at(2) << std::endl;
+  std::cout << "Start processing: " << input.at(1) << "." << input.at(2) << std::endl;
 
 #if SPD_DEBUG
   std::cout <<      "nameFile " << input.at(0) << std::endl;

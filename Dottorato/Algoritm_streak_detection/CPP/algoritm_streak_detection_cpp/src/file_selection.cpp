@@ -25,14 +25,7 @@
 * INCLUDES
 * ========================================================================== */
 #include "file_selection.h"
-
-#ifdef _WIN32
-# include <windows.h>
-# include "function_os_win.h"
-#else
-# include "function_os_posix.h"
-#endif
-
+#include "function_os.h"
 #include "algo_selection.h"
 #include "macros.h"
 

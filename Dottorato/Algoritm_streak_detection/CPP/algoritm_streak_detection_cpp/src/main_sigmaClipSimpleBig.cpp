@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+
 /* ==========================================================================
 * MODULE PRIVATE MACROS
 * ========================================================================== */
@@ -92,8 +93,23 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   pixel.push_back( { 1669.546875f,2122.958008f, 0 });
   std::vector< cv::Vec<float, 3> > radec;
   coordConv(par, pixel, radec);
+
 #endif
 
+  char fileWCS[1024];
+  ::memset(fileWCS, 0, sizeof(fileWCS));
+  ::strcpy(fileWCS, input.at(4));
+  ::strcat(fileWCS, input.at(1));
+  ::strcat(fileWCS, ".wcs");
+
+  std::string wcsF = fileWCS;
+  
+  std::future<bool> fut_astrometry;
+  
+  wcsPar par;
+  //Cambiare input mettere quelli dello script formare file wcs dentro function async
+  fut_astrometry = asyncAstrometry(wcsF, par);
+  
 
 /* ----------------------------------------------------------------------- *
  * Open and read file                                                      *
@@ -105,15 +121,14 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   const char* extjpg = "jpg";
   const char* extJPG = "JPG";
   const char* extfit = "fit";
-  const char* extfits = "fits";
   const char* extFIT = "FIT";
   
   /* Open log file */
 # if SPD_STAMP_FILE_INFO
   char s_infoFileName[1024];
-  strcpy (s_infoFileName, input.at(4));
-  strcat (s_infoFileName, input.at(1));
-  strcat (s_infoFileName, "_info.txt" );
+  ::strcpy (s_infoFileName, input.at(4));
+  ::strcat (s_infoFileName, input.at(1));
+  ::strcat (s_infoFileName, "_info.txt" );
   std::ofstream infoFile(s_infoFileName);
 # else
   std::ofstream infoFile(stdout);  
@@ -140,14 +155,14 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
     // Check for invalid file
     if (!Img_input.data) {
-      printf("Error: could not open or find the image.");
+      ::printf("Error: could not open or find the image.");
       return -1;
     }
   }
-  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) || (0==strcmp(input.at(2), extfits)) ) {
+  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) ) {
     readFit(input.at(0), infoFile, Img_input);
   } else {
-    printf("Error in reading process.");
+    ::printf("Error in reading process.");
     return -1;
   }
 
@@ -181,7 +196,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   {
     histStretch = Img_input;
   }
-  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) || (0==strcmp(input.at(2), extfits)) )
+  else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) )
   {
     histStretch = histogramStretching(Img_input);
   }
@@ -264,21 +279,45 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
 
 /* ----------------------------------------------------------------------- *
- * Write result                                                             *
+ * Coordinate conversion                                                   *
+ * ----------------------------------------------------------------------- */
+
+  fut_astrometry.wait();
+  bool compPar = fut_astrometry.get();
+
+  std::vector< cv::Vec<float, 3> > radecS;
+  std::vector< cv::Vec<float, 3> > radecP;
+
+  if (compPar) {
+    coordConv(par, STREAKS, radecS);
+    coordConv(par, POINTS, radecP);
+  }
+  else
+  {
+    for (size_t u = 0; u < STREAKS.size(); ++u) {
+      radecS.push_back({ 0,0,0 });
+    }
+    for (size_t u = 0; u < POINTS.size(); ++u) {
+      radecP.push_back({ 0,0,0 });
+    }
+  }
+
+/* ----------------------------------------------------------------------- *
+ * Write result                                                            *
  * ----------------------------------------------------------------------- */
 
 #if SPD_STAMP_FILE_RESULT
   /* Open result file */
   char s_resFileName[256];
-  strcpy (s_resFileName, input.at(4));
-  strcat (s_resFileName, input.at(1));
-  strcat (s_resFileName, ".txt" );
+  ::strcpy (s_resFileName, input.at(4));
+  ::strcat (s_resFileName, input.at(1));
+  ::strcat (s_resFileName, ".txt" );
   std::ofstream resFile(s_resFileName);
 # else
   std::ofstream resFile(stdout);
 # endif
 
-  writeResult(resFile, POINTS, STREAKS);
+  writeResult(resFile, POINTS, STREAKS, radecP, radecS);
 
   
 /* ----------------------------------------------------------------------- *

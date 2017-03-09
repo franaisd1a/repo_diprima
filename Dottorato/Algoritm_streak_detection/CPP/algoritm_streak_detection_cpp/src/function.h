@@ -33,6 +33,8 @@
 #include <numeric>
 #include <time.h>
 #include <limits>
+#include <future>
+#include <thread>
 
 #include <opencv2/opencv.hpp>
 //#include <opencv\highgui.h>
@@ -338,8 +340,16 @@ void stamp(std::ostream& stream, const char* strName);
 void writeResult
 (
   std::ostream& stream
+  , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+);
+void writeResult
+(
+  std::ostream& stream
   , const std::vector< cv::Vec<float, 3> >& STREAKS
   , const std::vector< cv::Vec<float, 3> >& POINTS
+  , const std::vector< cv::Vec<float, 3> >& radecP
+  , const std::vector< cv::Vec<float, 3> >& radecS
 );
 
 void plotResult
@@ -351,20 +361,11 @@ void plotResult
 );
 
 struct wcsPar {
-  double CRVAL1 = 0;
-  double CRVAL2 = 0;
-  double CRPIX1 = 0;
-  double CRPIX2 = 0;
-  double  CD1_1 = 0;
-  double  CD1_2 = 0;
-  double  CD2_1 = 0;
-  double  CD2_2 = 0;
-  double  A_0_2 = 0;
-  double  A_1_1 = 0;
-  double  A_2_0 = 0;
-  double  B_0_2 = 0;
-  double  B_1_1 = 0;
-  double  B_2_0 = 0;
+  double CRVAL1 = 0, CRVAL2 = 0;
+  double CRPIX1 = 0, CRPIX2 = 0;
+  double CD1_1 = 0, CD1_2 = 0, CD2_1 = 0, CD2_2 = 0;
+  double A_0_2 = 0, A_1_1 = 0, A_2_0 = 0;
+  double B_0_2 = 0, B_1_1 = 0, B_2_0 = 0;
 };
 
 
@@ -387,5 +388,6 @@ void sigmaClipProcessing
 );
 
 
+std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par);
 
 #endif /* FUNCTION_H */
