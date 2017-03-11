@@ -195,9 +195,10 @@ void connectedComponents2
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
   , const cv::Mat& Img_input
-  , const cv::Vec<int, 4>& borders
   , std::vector< cv::Vec<float, 3> >& POINTS
   , std::vector< cv::Vec<float, 3> >& STREAKS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point > >& outContoursS
 );
 
 /**
@@ -243,7 +244,6 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
   const std::vector<std::vector<cv::Point > >& contours
   , const cv::Vec<int, 4>& borders
   , std::vector<std::vector<cv::Point > >& outContoursRes
-  , std::vector< cv::RotatedRect >& rotRectV
 );
 
 /**
@@ -269,6 +269,16 @@ void deleteOverlapping
   , std::vector<std::vector<cv::Point> >& outContoursS
 );
 
+void deleteOverlapping2
+(
+  const cv::Point imgSz
+  , std::vector< cv::Vec<int, 3> >& inPOINTS
+  , std::vector< cv::Vec<int, 3> >& inSTREAKS
+  , const std::vector<std::vector<cv::Point > >& incontoursP
+  , const std::vector<std::vector<cv::Point > >& incontoursS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point > >& outContoursS
+);
 
 void preciseCentroid
 (
@@ -389,5 +399,14 @@ void sigmaClipProcessing
 
 
 std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par);
+
+
+void lightCurve
+(
+  const cv::Mat& img
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector<std::vector<cv::Point > >& contours
+);
+
 
 #endif /* FUNCTION_H */

@@ -951,13 +951,22 @@ void connectedComponents2
   const cv::Mat& imgPoints
   , const cv::Mat& imgStreaks
   , const cv::Mat& imgInput
-  , const cv::Vec<int, 4>& borders
   , std::vector< cv::Vec<float, 3> >& POINTS
   , std::vector< cv::Vec<float, 3> >& STREAKS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point > >& outContoursS
 )
 {
   const cv::Point imgSz = {imgPoints.rows, imgPoints.cols};
   float max_img_sz = std::max(imgPoints.cols, imgPoints.rows);
+
+  cv::Point_<int> I_input_size = { imgInput.cols, imgInput.rows };
+  double bordersThick = 0.015;
+  cv::Point_<double> perc = { bordersThick, 1 - bordersThick };
+  cv::Vec<int, 4> borders = { static_cast<int>( ceil(perc.x * I_input_size.x))
+                            , static_cast<int>( ceil(perc.x * I_input_size.y))
+                            , static_cast<int>(floor(perc.y * I_input_size.x))
+                            , static_cast<int>(floor(perc.y * I_input_size.y)) };
 
   std::vector<std::vector<cv::Point> > contoursP;
   std::vector<std::vector<cv::Point> > contoursS;
@@ -985,24 +994,19 @@ void connectedComponents2
 
   std::vector< cv::Vec<int, 3> > firstSTREAKS;
   std::vector<std::vector<cv::Point > > firstContoursS;
-  std::vector< cv::RotatedRect > rotRectS;
 
   if (contoursS.size() > 0)
   {
     firstSTREAKS = connectedComponentsStreaks2
-    (contoursS, borders, firstContoursS, rotRectS);
+    (contoursS, borders, firstContoursS);
     contoursS.clear();
   }
   
   /* Delete overlapping objects */
-  std::vector<std::vector<cv::Point > > outContoursP;
-  std::vector<std::vector<cv::Point > > outContoursS;
-  std::vector< cv::Vec<int, 3> > delOverlapPOINTS;
-  std::vector< cv::Vec<int, 3> > delOverlapSTREAKS;
-
-  deleteOverlapping
+  
+  deleteOverlapping2
   (imgSz, firstPOINTS, firstSTREAKS, firstContoursP, firstContoursS
-    , delOverlapPOINTS, delOverlapPOINTS, outContoursP, outContoursS);
+    , outContoursP, outContoursS);
   firstPOINTS.clear();
   firstSTREAKS.clear();
   firstContoursP.clear();
@@ -1028,9 +1032,6 @@ void connectedComponents2
     namedWindow("Contours", cv::WINDOW_NORMAL);
     imshow("Contours", drawing);
 #endif
-
-  outContoursP.clear();
-  outContoursS.clear();
 }
 
 /* ==========================================================================
@@ -1448,7 +1449,6 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
   const std::vector<std::vector<cv::Point > >& contours
   , const cv::Vec<int, 4>& borders
   , std::vector<std::vector<cv::Point > >& outContoursRes
-  , std::vector< cv::RotatedRect >& rotRectV
 )
 {
   std::vector< cv::Vec<int, 3> > STREAKS;
@@ -1471,11 +1471,6 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
         float majorAxis = rotRec.size.height;
         float minorAxis = rotRec.size.width;
         
-        //To remove
-        cv::Point2f pRotRec[4];
-        rotRec.points(pRotRec);
-        cv::Rect rotBoundRec = rotRec.boundingRect();
-        
         if (minorAxis<1.9 || majorAxis<5)
         {
           continue;
@@ -1484,7 +1479,6 @@ std::vector< cv::Vec<int, 3> > connectedComponentsStreaks2
         /* Identify linear connect components */
         if (majorAxis / minorAxis > 3.78)//4
         {
-          rotRectV.push_back(rotRec);
           outContoursRes.push_back(contours[i]);
           STREAKS.push_back(
           { static_cast<int>(rotRec.center.x)
@@ -1606,6 +1600,100 @@ void deleteOverlapping
       if (1 == inPOINTS.at(k)[2])
       {
         outPOINTS.push_back({ inPOINTS.at(k)[0], inPOINTS.at(k)[1], 0});
+        outContoursP.push_back(incontoursP[k]);
+      }
+    }
+  }    
+}
+
+void deleteOverlapping2
+(
+  const cv::Point imgSz
+  , std::vector< cv::Vec<int, 3> >& inPOINTS
+  , std::vector< cv::Vec<int, 3> >& inSTREAKS
+  , const std::vector<std::vector<cv::Point > >& incontoursP
+  , const std::vector<std::vector<cv::Point > >& incontoursS
+  , std::vector<std::vector<cv::Point > >& outContoursP
+  , std::vector<std::vector<cv::Point > >& outContoursS
+)
+{
+  /* Delete streaks on points */
+  cv::Mat imgP = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
+  int cIdx = -1;
+  const cv::Scalar color = 255;
+  int lineType = 8;
+  cv::InputArray hierarchy = cv::noArray();
+  int maxLevel = 0;
+  cv::Point offset = {0,0};
+  for (size_t l = 0; l < incontoursP.size(); ++l) {
+    drawContours(imgP, incontoursP, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  }
+  
+  int n_streaks = 0;
+
+  for (size_t i = 0; i < inSTREAKS.size(); ++i)
+  {
+    const uchar* pRimgP = imgP.ptr<uchar>(inSTREAKS.at(i)[1]);
+    uchar value = pRimgP[inSTREAKS.at(i)[0]];
+
+    if (255 != value)
+    {
+      inSTREAKS.at(i)[2] = 1;
+    }
+    n_streaks = n_streaks + inSTREAKS.at(i)[2];
+  }
+#if SPD_DEBUG
+  // Show in a window
+  namedWindow("ContoursP", cv::WINDOW_NORMAL);
+  imshow("ContoursP", imgP);
+  cv::waitKey(0);
+#endif
+  imgP.release();
+    
+  if (n_streaks)
+  {    
+    for (size_t k = 0; k < inSTREAKS.size(); ++k)
+    {
+      if (1 == inSTREAKS.at(k)[2])
+      {
+        outContoursS.push_back(incontoursS[k]);
+      }
+    }
+  }
+
+  /* Delete points on streak */
+  cv::Mat imgS = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
+  for (size_t l = 0; l < outContoursS.size(); ++l) {
+    drawContours(imgS, outContoursS, l, color, CV_FILLED, lineType, hierarchy, maxLevel, offset);
+  }
+    
+  int n_points = 0;
+
+  for (size_t i = 0; i < inPOINTS.size(); ++i)
+  {
+    const uchar* pRimgS = imgS.ptr<uchar>(inPOINTS.at(i)[1]);
+    uchar value = pRimgS[inPOINTS.at(i)[0]];
+
+    if (255 != value)
+    {
+      inPOINTS.at(i)[2] = 1;
+    }
+    n_points = n_points + inPOINTS.at(i)[2];
+  }
+#if SPD_DEBUG
+  // Show in a window
+  namedWindow("ContoursS", cv::WINDOW_NORMAL);
+  imshow("ContoursS", imgS);
+  cv::waitKey(0);
+#endif
+  imgS.release();
+    
+  if (n_points)
+  {    
+    for (size_t k = 0; k < inPOINTS.size(); ++k)
+    {
+      if (1 == inPOINTS.at(k)[2])
+      {
         outContoursP.push_back(incontoursP[k]);
       }
     }
@@ -2306,16 +2394,6 @@ void sigmaClipProcessing
 
   timeElapsed(infoFile, start, "Median filter");
   cv::waitKey(0);
-#if 0
-  {
-    char s_imgName[256];
-    strcpy(s_imgName, input.at(4));
-    strcat(s_imgName, input.at(1));
-    strcat(s_imgName, "medianBgSubImg");
-    strcat(s_imgName, ".jpg");
-    imwrite(s_imgName, medianBgSubImg);
-  }
-#endif
 
 
 /* ----------------------------------------------------------------------- *
@@ -2357,17 +2435,6 @@ void sigmaClipProcessing
     
   cv::Mat distStk = distTransform(binaryImgStk);
   binaryImgStk.release();
-
-#if 0
-  {
-    char s_imgName[256];
-    strcpy(s_imgName, input.at(4));
-    strcat(s_imgName, input.at(1));
-    strcat(s_imgName, "distStk");
-    strcat(s_imgName, ".jpg");
-    imwrite(s_imgName, distStk);
-  }
-#endif 
 
 
 /* ----------------------------------------------------------------------- *
@@ -2515,37 +2582,27 @@ void sigmaClipProcessing
  * ----------------------------------------------------------------------- */
 
   start = clock();
-    
-#if 0
-    char s_imgNamePnt[256];
-    strcpy(s_imgNamePnt, input.at(4));
-    strcat(s_imgNamePnt, input.at(1));
-    strcat(s_imgNamePnt, "Pnt.jpg");
-    imwrite( s_imgNamePnt, convImgRms );    
-#endif
 
-  connectedComponents2(convImgRms, distStk, Img_input, imgBorders, POINTS, STREAKS);
-#if 0
-  {
-    char s_imgName[256];
-    strcpy(s_imgName, input.at(4));
-    strcat(s_imgName, input.at(1));
-    strcat(s_imgName, "convImgRms");
-    strcat(s_imgName, ".jpg");
-    imwrite(s_imgName, convImgRms);
-  }
-  {
-    char s_imgName[256];
-    strcpy(s_imgName, input.at(4));
-    strcat(s_imgName, input.at(1));
-    strcat(s_imgName, "distStk");
-    strcat(s_imgName, ".jpg");
-    imwrite(s_imgName, distStk);
-  }
-#endif
+  std::vector<std::vector<cv::Point > > contoursP;
+  std::vector<std::vector<cv::Point > > contoursS;
+
+  connectedComponents2(convImgRms, distStk, Img_input
+    , POINTS, STREAKS, contoursP, contoursS);
+
+  distStk.release();
   convImgRms.release();
 
   timeElapsed(infoFile, start, "Connected components");
+
+
+/* ----------------------------------------------------------------------- *
+ * Light curve study                                                       *
+ * ----------------------------------------------------------------------- */
+
+  //lightCurve(Img_input, STREAKS, contoursS);
+
+
+
 }
 
 
@@ -2568,4 +2625,35 @@ std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par)
     
     return res;
   });
+}
+
+
+void lightCurve
+(
+  const cv::Mat& img
+  , const std::vector< cv::Vec<float, 3> >& STREAKS
+  , const std::vector<std::vector<cv::Point > >& contours
+)
+{
+  for (size_t i = 0; i < contours.size(); ++i)
+  {
+    cv::RotatedRect rotRec = fitEllipse(contours[i]);
+    float majorAxis = rotRec.size.height;
+    float minorAxis = rotRec.size.width;
+    cv::Size2f sizeRR = rotRec.size;
+
+    //cv::Size2f sizeRRarea = rotRec.size.area;
+
+    float alfa = rotRec.angle;
+
+    cv::Point2f p;
+    rotRec.points(&p);
+    
+    cv::Point2f pRotRec[4];
+    rotRec.points(pRotRec);
+    cv::Rect rotBoundRec = rotRec.boundingRect();
+
+    
+    cv::Point2f centreRR = rotRec.center;
+  }
 }

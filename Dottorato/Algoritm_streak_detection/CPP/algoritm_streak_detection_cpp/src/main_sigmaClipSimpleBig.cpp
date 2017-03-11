@@ -282,25 +282,38 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
  * Coordinate conversion                                                   *
  * ----------------------------------------------------------------------- */
 
-  fut_astrometry.wait();
-  bool compPar = fut_astrometry.get();
-
   std::vector< cv::Vec<float, 3> > radecS;
   std::vector< cv::Vec<float, 3> > radecP;
 
-  if (compPar) {
-    coordConv(par, STREAKS, radecS);
-    coordConv(par, POINTS, radecP);
+  if (0!=STREAKS.size() && 0!=POINTS.size())
+  {
+    fut_astrometry.wait();
+    bool compPar = fut_astrometry.get();    
+
+    if (compPar) 
+    {
+      if (0 != STREAKS.size()) {
+        coordConv(par, STREAKS, radecS);
+      }
+      if (0 != POINTS.size()) {
+        coordConv(par, POINTS, radecP);
+      }
+    }
+    else
+    {
+      for (size_t u = 0; u < STREAKS.size(); ++u) {
+        radecS.push_back({ 0,0,0 });
+      }
+      for (size_t u = 0; u < POINTS.size(); ++u) {
+        radecP.push_back({ 0,0,0 });
+      }
+    }
   }
   else
   {
-    for (size_t u = 0; u < STREAKS.size(); ++u) {
-      radecS.push_back({ 0,0,0 });
-    }
-    for (size_t u = 0; u < POINTS.size(); ++u) {
-      radecP.push_back({ 0,0,0 });
-    }
+    //fut_astrometry._Abandon();
   }
+
 
 /* ----------------------------------------------------------------------- *
  * Write result                                                            *

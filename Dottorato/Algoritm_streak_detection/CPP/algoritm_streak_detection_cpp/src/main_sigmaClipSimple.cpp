@@ -455,6 +455,8 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
+  std::vector<std::vector<cv::Point > > contoursP;
+  std::vector<std::vector<cv::Point > > contoursS;
 
 #if 0
     char s_imgNamePnt[256];
@@ -464,7 +466,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
     imwrite( s_imgNamePnt, convImgRms );    
 #endif
 
-  connectedComponents2(convImgRms, distStk, Img_input, imgBorders, POINTS, STREAKS);
+  connectedComponents2(convImgRms, distStk, Img_input, POINTS, STREAKS, contoursP, contoursS);
 #if 0
   {
     char s_imgName[256];
