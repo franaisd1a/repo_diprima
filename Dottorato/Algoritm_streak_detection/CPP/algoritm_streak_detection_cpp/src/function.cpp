@@ -2599,7 +2599,7 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  //lightCurve(Img_input, STREAKS, contoursS);
+  lightCurve(histStretch, STREAKS, contoursS);//Img_input
 
 
 
@@ -2635,25 +2635,163 @@ void lightCurve
   , const std::vector<std::vector<cv::Point > >& contours
 )
 {
+  
+#if !SPD_FIGURE_1
+  /// Draw contours
+  cv::Mat drawing = cv::Mat::zeros(img.size(), CV_8UC3);
+  int cIdx = -1;
+  cv::Scalar color = cv::Scalar(0, 255, 0);
+  cv::Scalar colorS = cv::Scalar(0, 0, 255);
+  cv::Scalar colorp = cv::Scalar(255, 0, 0);
+  int lineType = 8;
+  cv::InputArray hierarchy = cv::noArray();
+  int maxLevel = 0;
+  cv::Point offset = cv::Point(0, 0);
+  int thickness = 3;
+  int shift = 0;
+
+  drawContours(drawing, contours, cIdx, color, 1, 8, hierarchy, 0, offset);
+  
+#endif
+
+  std::vector< std::vector< std::vector< cv::Vec<uchar, 1> > > > buf(contours.size());
+  std::vector< std::vector< std::vector< cv::Point> > > points(contours.size());
+
   for (size_t i = 0; i < contours.size(); ++i)
   {
     cv::RotatedRect rotRec = fitEllipse(contours[i]);
+    cv::Point2f centreRR = rotRec.center;
     float majorAxis = rotRec.size.height;
     float minorAxis = rotRec.size.width;
-    cv::Size2f sizeRR = rotRec.size;
-
-    //cv::Size2f sizeRRarea = rotRec.size.area;
-
     float alfa = rotRec.angle;
 
-    cv::Point2f p;
-    rotRec.points(&p);
-    
+    //Bounding box
+    cv::Rect rotBoundRec = rotRec.boundingRect();
+    cv::Point tlBBi = rotBoundRec.tl();
+    cv::Point2f tlBBf = { static_cast<float>(tlBBi.x), static_cast<float>(tlBBi.y)};
+
+    //RoI extraction
+    cv::Mat roi = img(rotBoundRec);
+
+    //Point of the roted rectangle big image
     cv::Point2f pRotRec[4];
     rotRec.points(pRotRec);
-    cv::Rect rotBoundRec = rotRec.boundingRect();
+
+    //Point of the roted rectangle RoI
+    cv::Point2f pRotRecRoI[4];
+    pRotRecRoI[0] = pRotRec[0] - tlBBf;
+    pRotRecRoI[1] = pRotRec[1] - tlBBf;
+    pRotRecRoI[2] = pRotRec[2] - tlBBf;
+    pRotRecRoI[3] = pRotRec[3] - tlBBf;
+
+    //Central point of the roted rectangle RoI
+    cv::Point2f pMinV[4];
+    pMinV[0] = {std::min(pRotRecRoI[0].x , pRotRecRoI[1].x) , std::min(pRotRecRoI[0].y , pRotRecRoI[1].y)};
+    pMinV[1] = {std::min(pRotRecRoI[1].x , pRotRecRoI[2].x) , std::min(pRotRecRoI[1].y , pRotRecRoI[2].y)};
+    pMinV[2] = {std::min(pRotRecRoI[2].x , pRotRecRoI[3].x) , std::min(pRotRecRoI[2].y , pRotRecRoI[3].y)};
+    pMinV[3] = {std::min(pRotRecRoI[3].x , pRotRecRoI[0].x) , std::min(pRotRecRoI[3].y , pRotRecRoI[0].y)};
+
+    cv::Point2f pCenterP[4];
+    pCenterP[0] = {pMinV[0].x + std::abs(pRotRecRoI[0].x - pRotRecRoI[1].x)/2 , pMinV[0].y + std::abs(pRotRecRoI[0].y - pRotRecRoI[1].y)/2};
+    pCenterP[1] = {pMinV[1].x + std::abs(pRotRecRoI[1].x - pRotRecRoI[2].x)/2 , pMinV[1].y + std::abs(pRotRecRoI[1].y - pRotRecRoI[2].y)/2};
+    pCenterP[2] = {pMinV[2].x + std::abs(pRotRecRoI[2].x - pRotRecRoI[3].x)/2 , pMinV[2].y + std::abs(pRotRecRoI[2].y - pRotRecRoI[3].y)/2};
+    pCenterP[3] = {pMinV[3].x + std::abs(pRotRecRoI[3].x - pRotRecRoI[0].x)/2 , pMinV[3].y + std::abs(pRotRecRoI[3].y - pRotRecRoI[0].y)/2};
+
+#if 0
+    //Line points
+    int connectivity = 8;
+    bool leftToRight = true;
+
+    cv::LineIterator it{ roi, pRotRecRoI[0], pRotRecRoI[1], connectivity, leftToRight };
+
+    int cntLi = it.count;    
+    std::vector< cv::Vec<uchar,1> >    buf(cntLi);
+    std::vector<         cv::Point> points(cntLi);
+
+    for (size_t x = 0; x < it.count; ++x)
+    {
+      buf[i] = (const cv::Vec<uchar,1>)*it;
+      points[i] = it.pos();
+      it++;
+      printf("Value: %u    position: %d , %d\n", buf[i], points[i].x, points[i].y);
+    }
+#else
+
+    std::vector< cv::Vec<uchar, 1> > bufC;
+    std::vector< cv::Point> pointsC;
+    linePoints(roi, pCenterP[0], pCenterP[2], bufC, pointsC);
+    
+    std::vector< cv::Vec<uchar, 1> > bufL;
+    std::vector< cv::Point> pointsL;
+    linePoints(roi, pCenterP[3], pCenterP[1], bufL, pointsL);
+
+    buf[i].push_back(bufC);
+    buf[i].push_back(bufL);
+
+    points[i].push_back(pointsC);
+    points[i].push_back(pointsL);
+    
+#endif
+
+
+#if 0
+    // grabs pixels along the line (pt1, pt2)
+    // from 8-bit 3-channel image to the buffer
+    cv::LineIterator it(img, pt1, pt2, 8);
+    cv::LineIterator it2 = it;
+    cv::vector<cv::Vec3b> buf(it.count);
+    for (int i = 0; i < it.count; i++, ++it)
+      buf[i] = *(const cv::Vec3b)*it;
+    // alternative way of iterating through the line
+    for (int i = 0; i < it2.count; i++, ++it2)
+    {
+      cv::Vec3b val = img.at<cv::Vec3b>(it2.pos());
+      CV_Assert(buf[i] == val);
+    }
+#endif
+    
+    int asfd = 0;
+
+    rectangle(drawing, rotBoundRec, colorS, thickness, lineType, shift);
+
+
+    line(drawing, pRotRec[0], pRotRec[1], colorp, thickness, lineType, shift);
+    line(drawing, pRotRec[1], pRotRec[2], colorp, thickness, lineType, shift);
+    line(drawing, pRotRec[2], pRotRec[3], colorp, thickness, lineType, shift);
+    line(drawing, pRotRec[3], pRotRec[0], colorp, thickness, lineType, shift);
 
     
-    cv::Point2f centreRR = rotRec.center;
+  }
+
+  // Show in a window
+  namedWindow("Contours", cv::WINDOW_NORMAL);
+  imshow("Contours", drawing);
+  cv::waitKey(0);
+
+
+  int asfaefdad = 0;
+}
+
+void linePoints
+(
+  const cv::Mat& img
+  , const cv::Point2f & p1
+  , const cv::Point2f & p2
+  , std::vector< cv::Vec<uchar,1> >& buf
+  , std::vector< cv::Point>& points
+)
+{
+  //Line points
+  int connectivity = 8;
+  bool leftToRight = true;
+
+  cv::LineIterator it{ img, p1, p2, connectivity, leftToRight };
+
+  for (size_t x = 0; x < it.count; ++x)
+  {
+    buf.push_back( (const cv::Vec<uchar, 1>)*it );
+    points.push_back( it.pos() );
+    it++;
+    printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
   }
 }

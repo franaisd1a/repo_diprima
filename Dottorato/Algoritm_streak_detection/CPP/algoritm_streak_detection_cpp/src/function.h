@@ -408,5 +408,13 @@ void lightCurve
   , const std::vector<std::vector<cv::Point > >& contours
 );
 
+void linePoints
+(
+  const cv::Mat& img
+  , const cv::Point2f & p1
+  , const cv::Point2f & p2
+  , std::vector< cv::Vec<uchar, 1> >& buf
+  , std::vector< cv::Point>& points
+);
 
 #endif /* FUNCTION_H */
