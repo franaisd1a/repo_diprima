@@ -2599,8 +2599,7 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  lightCurve(Img_input, STREAKS, contoursS);//Img_input//histStretch
-
+  lightCurve(Img_input, STREAKS, contoursS);
 
 }
 
@@ -2634,24 +2633,6 @@ void lightCurve
   , const std::vector<std::vector<cv::Point > >& contours
 )
 {
-  
-#if SPD_FIGURE_1
-  /// Draw contours
-  cv::Mat drawing = cv::Mat::zeros(img.size(), CV_8UC3);
-  int cIdx = -1;
-  cv::Scalar color = cv::Scalar(0, 255, 0);
-  cv::Scalar colorS = cv::Scalar(0, 0, 255);
-  cv::Scalar colorp = cv::Scalar(255, 0, 0);
-  int lineType = 8;
-  cv::InputArray hierarchy = cv::noArray();
-  int maxLevel = 0;
-  cv::Point offset = cv::Point(0, 0);
-  int thickness = 3;
-  int shift = 0;
-  drawContours(drawing, contours, cIdx, color, 1, 8, hierarchy, 0, offset);  
-#endif
-
-  //std::vector< std::vector< std::vector< cv::Vec<uchar, 1> > > > buf(contours.size());
   std::vector< std::vector< std::vector< cv::Vec<ushort, 1> > > > buf(contours.size());
   std::vector< std::vector< std::vector< cv::Point> > > points(contours.size());
 
@@ -2703,12 +2684,9 @@ void lightCurve
     ::strcat(s_lCfileName, ".txt");
     std::ofstream lcFile(s_lCfileName);
 
-    //std::vector< cv::Vec<uchar, 1> > bufC;
     std::vector< cv::Vec<ushort, 1> > bufC;
     std::vector< cv::Point> pointsC;
-    //linePoints(roi, pCenterP[0], pCenterP[2], tlBBi, bufC, pointsC, lcFile);
     linePoints(roi, pCenterP[0], pCenterP[2], tlBBi, bufC, pointsC, lcFile);
-    //std::vector< unsigned short >& buf
     
     //Compute count along streak
     char s_lCafileName[1024];
@@ -2717,7 +2695,6 @@ void lightCurve
     ::strcat(s_lCafileName, ".txt");
     std::ofstream lcaFile(s_lCafileName);
 
-    //std::vector< cv::Vec<uchar, 1> > bufL;
     std::vector< cv::Vec<ushort, 1> > bufL;
     std::vector< cv::Point> pointsL;
     linePoints(roi, pCenterP[3], pCenterP[1], tlBBi, bufL, pointsL, lcaFile);
@@ -2726,60 +2703,10 @@ void lightCurve
     buf[i].push_back(bufL);
 
     points[i].push_back(pointsC);
-    points[i].push_back(pointsL);
-
-    
-
-
-    
-
-#if 0
-    //To remove
-    rectangle(drawing, rotBoundRec, colorS, thickness, lineType, shift);
-    line(drawing, pRotRec[0], pRotRec[1], colorp, thickness, lineType, shift);
-    line(drawing, pRotRec[1], pRotRec[2], colorp, thickness, lineType, shift);
-    line(drawing, pRotRec[2], pRotRec[3], colorp, thickness, lineType, shift);
-    line(drawing, pRotRec[3], pRotRec[0], colorp, thickness, lineType, shift);
-#endif
-  }
-    
-#if SPD_FIGURE_1
-  // Show in a window
-  namedWindow("Contours", cv::WINDOW_NORMAL);
-  imshow("Contours", drawing);
-  cv::waitKey(0);
-#endif
-
-  int asfaefdad = 0;
-}
-
-void linePoints
-(
-  const cv::Mat& img
-  , const cv::Point2f & p1
-  , const cv::Point2f & p2
-  , const cv::Point tl
-  , std::vector< cv::Vec<uchar,1> >& buf
-  , std::vector< cv::Point>& points
-  , std::ostream& stream
-)
-{
-  //Line points
-  int connectivity = 8;
-  bool leftToRight = true;
-
-  cv::LineIterator it{ img, p1, p2, connectivity, leftToRight };
-
-  for (size_t x = 0; x < it.count; ++x)
-  {
-    buf.push_back( (const cv::Vec<uchar, 1>)*it );
-    points.push_back({ it.pos().x + tl.x , it.pos().y + tl.y });
-    it++;
-    stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;
-    
-    //printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
+    points[i].push_back(pointsL);        
   }
 }
+
 
 void linePoints
 (
@@ -2792,7 +2719,6 @@ void linePoints
   , std::ostream& stream
 )
 {
-  //Line points
   int connectivity = 8;
   bool leftToRight = true;
 
@@ -2800,15 +2726,12 @@ void linePoints
 
   for (size_t x = 0; x < it.count; ++x)
   {
-    //buf.push_back( (const cv::Vec<uchar, 1>)*it );
     points.push_back({ it.pos().x + tl.x , it.pos().y + tl.y });
 
     const ushort* pLine = img.ptr<ushort>(it.pos().y);
     buf.push_back({ pLine[it.pos().x] });
 
     it++;
-    stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;
-    
-    //printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
+    stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;    
   }
 }

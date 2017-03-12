@@ -5,7 +5,9 @@ set(MAINTGT algo_streak_detection)
 
 find_package(  OpenCV REQUIRED )
 find_package( CFITSIO REQUIRED )
-#### find_package( CUDA REQUIRED )
+find_package( CUDA QUIET)
+message("Find CUDA: " ${CUDA_FOUND})
+
 
 if(UNIX)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
