@@ -5,7 +5,8 @@ set(MAINTGT algo_streak_detection)
 
 find_package(  OpenCV REQUIRED )
 find_package( CFITSIO REQUIRED )
-find_package( CUDA QUIET)
+find_package(    CUDA    QUIET )
+
 message("Find CUDA: " ${CUDA_FOUND})
 
 
@@ -15,7 +16,7 @@ endif()
 
 # Setup variables: source and include paths
 set(SRC_PATH "src")
-### set(INC_PATH "inc")
+set(INC_PATH "src")#inc
 
 
 #### set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
@@ -37,13 +38,15 @@ set(SRC_PATH "src")
 
 if (${WIN32})
 set(SOURCES_OS ${SRC_PATH}/function_os_win.cpp)
+set(INCS_OS    ${INC_PATH}/function_os_win.h)
 elseif (${UNIX})
 set(SOURCES_OS ${SRC_PATH}/function_os_posix.cpp)
+set(INCS_OS    ${INC_PATH}/function_os_posix.h)
 else   ()
   message("Building for unknown system.")
 endif  ()
 
-
+# Set source files
 set(SOURCES  
     ${SRC_PATH}/main.cpp
     ${SRC_PATH}/file_selection.cpp
@@ -61,8 +64,21 @@ set(SOURCES
 			 #${SRC_PATH}/externalClass.cu
 			 )
 
+# Set header files
+set(HEADERS
+  ${INC_PATH}/file_selection.h
+  ${INC_PATH}/algo_selection.h
+		${INC_PATH}/main_simple.h
+  ${INC_PATH}/main_sigmaClip.h
+	 ${INC_PATH}/main_sigmaClipSimple.h
+  ${INC_PATH}/main_sigmaClipSimpleBig.h
+  ${INC_PATH}/main_fits.h
+  ${INC_PATH}/function.h
+  )
+
+
 #add_executable			 
-add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_OS})
+add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_OS} ${HEADERS})
 	
 # Update the central variable containing all external libraries
 set(LIBS
