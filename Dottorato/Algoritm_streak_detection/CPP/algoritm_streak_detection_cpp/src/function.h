@@ -413,8 +413,21 @@ void linePoints
   const cv::Mat& img
   , const cv::Point2f & p1
   , const cv::Point2f & p2
+  , const cv::Point tl
   , std::vector< cv::Vec<uchar, 1> >& buf
   , std::vector< cv::Point>& points
+  , std::ostream& stream
+);
+
+void linePoints
+(
+  const cv::Mat& img
+  , const cv::Point2f & p1
+  , const cv::Point2f & p2
+  , const cv::Point tl
+  , std::vector< cv::Vec<ushort,1> >& buf
+  , std::vector< cv::Point>& points
+  , std::ostream& stream
 );
 
 #endif /* FUNCTION_H */

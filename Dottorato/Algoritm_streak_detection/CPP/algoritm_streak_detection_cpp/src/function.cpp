@@ -2599,8 +2599,7 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  lightCurve(histStretch, STREAKS, contoursS);//Img_input
-
+  lightCurve(Img_input, STREAKS, contoursS);//Img_input//histStretch
 
 
 }
@@ -2636,7 +2635,7 @@ void lightCurve
 )
 {
   
-#if !SPD_FIGURE_1
+#if SPD_FIGURE_1
   /// Draw contours
   cv::Mat drawing = cv::Mat::zeros(img.size(), CV_8UC3);
   int cIdx = -1;
@@ -2649,12 +2648,11 @@ void lightCurve
   cv::Point offset = cv::Point(0, 0);
   int thickness = 3;
   int shift = 0;
-
-  drawContours(drawing, contours, cIdx, color, 1, 8, hierarchy, 0, offset);
-  
+  drawContours(drawing, contours, cIdx, color, 1, 8, hierarchy, 0, offset);  
 #endif
 
-  std::vector< std::vector< std::vector< cv::Vec<uchar, 1> > > > buf(contours.size());
+  //std::vector< std::vector< std::vector< cv::Vec<uchar, 1> > > > buf(contours.size());
+  std::vector< std::vector< std::vector< cv::Vec<ushort, 1> > > > buf(contours.size());
   std::vector< std::vector< std::vector< cv::Point> > > points(contours.size());
 
   for (size_t i = 0; i < contours.size(); ++i)
@@ -2697,77 +2695,60 @@ void lightCurve
     pCenterP[2] = {pMinV[2].x + std::abs(pRotRecRoI[2].x - pRotRecRoI[3].x)/2 , pMinV[2].y + std::abs(pRotRecRoI[2].y - pRotRecRoI[3].y)/2};
     pCenterP[3] = {pMinV[3].x + std::abs(pRotRecRoI[3].x - pRotRecRoI[0].x)/2 , pMinV[3].y + std::abs(pRotRecRoI[3].y - pRotRecRoI[0].y)/2};
 
-#if 0
-    //Line points
-    int connectivity = 8;
-    bool leftToRight = true;
-
-    cv::LineIterator it{ roi, pRotRecRoI[0], pRotRecRoI[1], connectivity, leftToRight };
-
-    int cntLi = it.count;    
-    std::vector< cv::Vec<uchar,1> >    buf(cntLi);
-    std::vector<         cv::Point> points(cntLi);
-
-    for (size_t x = 0; x < it.count; ++x)
-    {
-      buf[i] = (const cv::Vec<uchar,1>)*it;
-      points[i] = it.pos();
-      it++;
-      printf("Value: %u    position: %d , %d\n", buf[i], points[i].x, points[i].y);
-    }
-#else
-
-    std::vector< cv::Vec<uchar, 1> > bufC;
-    std::vector< cv::Point> pointsC;
-    linePoints(roi, pCenterP[0], pCenterP[2], bufC, pointsC);
     
-    std::vector< cv::Vec<uchar, 1> > bufL;
+    //Compute count cross streak
+    char s_lCfileName[1024];
+    ::strcpy(s_lCfileName, "lightCurve_Cross_");
+    ::strcat(s_lCfileName, std::to_string(i).c_str());
+    ::strcat(s_lCfileName, ".txt");
+    std::ofstream lcFile(s_lCfileName);
+
+    //std::vector< cv::Vec<uchar, 1> > bufC;
+    std::vector< cv::Vec<ushort, 1> > bufC;
+    std::vector< cv::Point> pointsC;
+    //linePoints(roi, pCenterP[0], pCenterP[2], tlBBi, bufC, pointsC, lcFile);
+    linePoints(roi, pCenterP[0], pCenterP[2], tlBBi, bufC, pointsC, lcFile);
+    //std::vector< unsigned short >& buf
+    
+    //Compute count along streak
+    char s_lCafileName[1024];
+    ::strcpy(s_lCafileName, "lightCurve_Along_");
+    ::strcat(s_lCafileName, std::to_string(i).c_str());
+    ::strcat(s_lCafileName, ".txt");
+    std::ofstream lcaFile(s_lCafileName);
+
+    //std::vector< cv::Vec<uchar, 1> > bufL;
+    std::vector< cv::Vec<ushort, 1> > bufL;
     std::vector< cv::Point> pointsL;
-    linePoints(roi, pCenterP[3], pCenterP[1], bufL, pointsL);
+    linePoints(roi, pCenterP[3], pCenterP[1], tlBBi, bufL, pointsL, lcaFile);
 
     buf[i].push_back(bufC);
     buf[i].push_back(bufL);
 
     points[i].push_back(pointsC);
     points[i].push_back(pointsL);
-    
-#endif
 
+    
+
+
+    
 
 #if 0
-    // grabs pixels along the line (pt1, pt2)
-    // from 8-bit 3-channel image to the buffer
-    cv::LineIterator it(img, pt1, pt2, 8);
-    cv::LineIterator it2 = it;
-    cv::vector<cv::Vec3b> buf(it.count);
-    for (int i = 0; i < it.count; i++, ++it)
-      buf[i] = *(const cv::Vec3b)*it;
-    // alternative way of iterating through the line
-    for (int i = 0; i < it2.count; i++, ++it2)
-    {
-      cv::Vec3b val = img.at<cv::Vec3b>(it2.pos());
-      CV_Assert(buf[i] == val);
-    }
-#endif
-    
-    int asfd = 0;
-
+    //To remove
     rectangle(drawing, rotBoundRec, colorS, thickness, lineType, shift);
-
-
     line(drawing, pRotRec[0], pRotRec[1], colorp, thickness, lineType, shift);
     line(drawing, pRotRec[1], pRotRec[2], colorp, thickness, lineType, shift);
     line(drawing, pRotRec[2], pRotRec[3], colorp, thickness, lineType, shift);
     line(drawing, pRotRec[3], pRotRec[0], colorp, thickness, lineType, shift);
-
-    
+#endif
   }
-
+    
+#if SPD_FIGURE_1
   // Show in a window
   namedWindow("Contours", cv::WINDOW_NORMAL);
   imshow("Contours", drawing);
   cv::waitKey(0);
-
+#endif
 
   int asfaefdad = 0;
 }
@@ -2777,8 +2758,10 @@ void linePoints
   const cv::Mat& img
   , const cv::Point2f & p1
   , const cv::Point2f & p2
+  , const cv::Point tl
   , std::vector< cv::Vec<uchar,1> >& buf
   , std::vector< cv::Point>& points
+  , std::ostream& stream
 )
 {
   //Line points
@@ -2790,8 +2773,42 @@ void linePoints
   for (size_t x = 0; x < it.count; ++x)
   {
     buf.push_back( (const cv::Vec<uchar, 1>)*it );
-    points.push_back( it.pos() );
+    points.push_back({ it.pos().x + tl.x , it.pos().y + tl.y });
     it++;
-    printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
+    stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;
+    
+    //printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
+  }
+}
+
+void linePoints
+(
+  const cv::Mat& img
+  , const cv::Point2f & p1
+  , const cv::Point2f & p2
+  , const cv::Point tl
+  , std::vector< cv::Vec<ushort,1> >& buf
+  , std::vector< cv::Point>& points
+  , std::ostream& stream
+)
+{
+  //Line points
+  int connectivity = 8;
+  bool leftToRight = true;
+
+  cv::LineIterator it{ img, p1, p2, connectivity, leftToRight };
+
+  for (size_t x = 0; x < it.count; ++x)
+  {
+    //buf.push_back( (const cv::Vec<uchar, 1>)*it );
+    points.push_back({ it.pos().x + tl.x , it.pos().y + tl.y });
+
+    const ushort* pLine = img.ptr<ushort>(it.pos().y);
+    buf.push_back({ pLine[it.pos().x] });
+
+    it++;
+    stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;
+    
+    //printf("Value: %u    position: %d , %d\n", buf[x], points[x].x, points[x].y);
   }
 }
