@@ -44,7 +44,6 @@ set(CUDA_SRC
     ${SRC_PATH}/main_sigmaClip.cpp
 	   ${SRC_PATH}/main_sigmaClipSimple.cpp
     ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
-    #${SRC_PATH}/main_2.cpp
     ${SRC_PATH}/main_fits.cpp
     ${SRC_PATH}/main_GPU.cpp
     ${SRC_PATH}/main_GPU_cuda.cu
@@ -69,7 +68,7 @@ set(HEADERS
   )
 
 #add_executable
-CUDA_ADD_EXECUTABLE( algo_streak_detection ${CUDA_SRC} ${HEADERS})
+CUDA_ADD_EXECUTABLE( ${MAINTGT} ${CUDA_SRC} ${HEADERS})
 
 
 else   ()
@@ -82,13 +81,8 @@ set(SOURCES
     ${SRC_PATH}/main_sigmaClip.cpp
 	   ${SRC_PATH}/main_sigmaClipSimple.cpp
     ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
-			 #${SRC_PATH}/main_2.cpp
 			 ${SRC_PATH}/main_fits.cpp
-			 #${SRC_PATH}/main_GPU.cpp
-			 #${SRC_PATH}/main_GPU_cuda.cu
 			 ${SRC_PATH}/function.cpp
-			 #${SRC_PATH}/function_GPU.cpp)
-			 #${SRC_PATH}/externalClass.cu
     ${SOURCES_OS}
 			 )
 
@@ -130,5 +124,5 @@ target_include_directories(${MAINTGT} PRIVATE ${INCS} ${INC_PATH})
 target_link_libraries( ${MAINTGT} ${LIBS} )
 
 set(CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
-	
+
 #set(CMAKE_CXX_FLAG "-g -Wall -std=gnu++11")-std=c++11
