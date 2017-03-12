@@ -16,7 +16,7 @@ endif()
 
 # Setup variables: source and include paths
 set(SRC_PATH "src")
-set(INC_PATH "src")#inc
+set(INC_PATH "inc")#inc
 
 
 #### set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
@@ -94,7 +94,7 @@ set(INCS
   ${CFITSIO_INCLUDE_DIRS}
 )
 
-target_include_directories(${MAINTGT} PRIVATE ${INCS}) #${INC_PATH} 
+target_include_directories(${MAINTGT} PRIVATE ${INCS} ${INC_PATH}) #${INC_PATH} 
 
 target_link_libraries( ${MAINTGT} ${LIBS} )
 
