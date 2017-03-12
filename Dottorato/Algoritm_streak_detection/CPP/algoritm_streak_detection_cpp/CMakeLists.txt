@@ -38,10 +38,10 @@ set(INC_PATH "src")#inc
 
 if (${WIN32})
 set(SOURCES_OS ${SRC_PATH}/function_os_win.cpp)
-set(INCS_OS    ${INC_PATH}/function_os_win.h)
+set(HEADERS_OS    ${INC_PATH}/function_os_win.h)
 elseif (${UNIX})
 set(SOURCES_OS ${SRC_PATH}/function_os_posix.cpp)
-set(INCS_OS    ${INC_PATH}/function_os_posix.h)
+set(HEADERS_OS    ${INC_PATH}/function_os_posix.h)
 else   ()
   message("Building for unknown system.")
 endif  ()
@@ -62,6 +62,7 @@ set(SOURCES
 			 ${SRC_PATH}/function.cpp
 			 #${SRC_PATH}/function_GPU.cpp)
 			 #${SRC_PATH}/externalClass.cu
+    ${SOURCES_OS}
 			 )
 
 # Set header files
@@ -74,11 +75,13 @@ set(HEADERS
   ${INC_PATH}/main_sigmaClipSimpleBig.h
   ${INC_PATH}/main_fits.h
   ${INC_PATH}/function.h
+  ${INC_PATH}/function_os.h
+  ${HEADERS_OS}
   )
 
 
 #add_executable			 
-add_executable( ${MAINTGT} ${SOURCES} ${SOURCES_OS} ${HEADERS})
+add_executable( ${MAINTGT} ${SOURCES} ${HEADERS})
 	
 # Update the central variable containing all external libraries
 set(LIBS
