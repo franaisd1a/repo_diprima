@@ -21,7 +21,8 @@ int main_GPU_cuda(char* name_file)
 
   int deviceCount = gpu::getCudaEnabledDeviceCount();
 
-  gpu::setDevice(deviceCount-1);
+  //gpu::setDevice(deviceCount-1);
+  gpu::setDevice(deviceCount);
     
   // --- CUDA warm up
   gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);

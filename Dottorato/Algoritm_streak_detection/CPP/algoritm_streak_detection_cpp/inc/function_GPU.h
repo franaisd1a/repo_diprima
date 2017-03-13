@@ -36,10 +36,13 @@
 #include <opencv/highgui.h>
 #include "opencv2/gpu/gpu.hpp"
 
+#if 0
 #include </usr/local/cuda-6.5/include/cuda.h>
-//#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
 #include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
+#endif
 
+#include <cuda.h>
+#include <cuda_runtime_api.h>
 
 /* ==========================================================================
 * MACROS
