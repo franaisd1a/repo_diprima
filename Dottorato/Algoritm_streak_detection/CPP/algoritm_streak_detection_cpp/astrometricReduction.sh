@@ -4,8 +4,8 @@ echo "Astrometric reduction"
 echo "Start processing"
 
 inParam=$#
-expParam=3
-expParamArcsecpix=5
+expParam=2
+expParamArcsecpix=4
 
 if [ "$inParam" -ne "$expParam" ]
 then
@@ -23,9 +23,6 @@ echo $imgName
 resWcsFile=$2
 echo $resWcsFile
 
-onlyFileName=$3
-echo $onlyFileName
-
 imgNameLength=${#imgName}
 extLength=4
 
@@ -39,26 +36,15 @@ fi
 
 if [ "$inParam" -eq "$expParamArcsecpix" ]
 then
-	arcsecpixScaleL=$3
-	arcsecpixScaleH=$4
-	solve-field --dir $resWcsFile --overwrite --cpulimit 30 --guess-scale --no-plots --scale-units arcsecperpix --scale-low $arcsecpixScaleL --scale-high $arcsecpixScaleH $imgName
+	arcsecpixScaleL=$2
+	arcsecpixScaleH=$3
+	solve-field --dir $resWcsFile --overwrite --cpulimit 30 --no-plots --guess-scale --scale-units arcsecperpix --scale-low $arcsecpixScaleL --scale-high $arcsecpixScaleH $imgName
 else
-	solve-field --dir $resWcsFile --overwrite --cpulimit 30 --guess-scale $imgName
+	#solve-field --dir $resWcsFile --overwrite --cpulimit 30 --no-plots --guess-scale $imgName
+	/cygdrive/c/cygwin/lib/astrometry/bin/solve-field.exe --dir $resWcsFile --overwrite --cpulimit 30 --no-plots --guess-scale $imgName
 fi
 
 #solve-field --overwrite --cpulimit 30 --guess-scale --no-plots --scale-units arcsecperpix --scale-low $arcsecpixScaleL --scale-high $arcsecpixScaleH $imgName
-
-
-
-
-fileName="$resWcsFile/$onlyFileName"
-echo $fileName
-
-wcsFileName="$fileName.wcs"
-wcsResult="$fileName.txt"
-
-wcsinfo $wcsFileName>$wcsResult
-
 
 echo "End processing"
 echo "========================================"
