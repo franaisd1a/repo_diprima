@@ -1,3 +1,29 @@
+/* ==========================================================================
+* ALGO STREAK DETECTION
+* ========================================================================== */
+
+/* ==========================================================================
+* MODULE FILE NAME: main_GPU_cuda.cpp
+*      MODULE TYPE:
+*
+*         FUNCTION: Detect streaks and points.
+*          PURPOSE:
+*    CREATION DATE: 20160727
+*          AUTHORS: Francesco Diprima
+*     DESIGN ISSUE: None
+*       INTERFACES: None
+*     SUBORDINATES: None.
+*
+*          HISTORY: See table below.
+*
+* 27-Jul-2016 | Francesco Diprima | 0.0 |
+* Initial creation of this file.
+*
+* ========================================================================== */
+
+/* ==========================================================================
+* INCLUDES
+* ========================================================================== */
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv/highgui.h>
