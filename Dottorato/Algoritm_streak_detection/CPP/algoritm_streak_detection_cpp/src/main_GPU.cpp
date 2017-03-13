@@ -64,6 +64,8 @@ using namespace std;
 * ========================================================================== */
 int main_GPU(char* name_file)
 {
+  std::ofstream infoFile(stdout);
+
   cout << "GPU algorithms ." << std::endl;
   /* Open file */
   FILE * pFile;
@@ -124,7 +126,7 @@ int main_GPU(char* name_file)
 
   gpu::GpuMat gaussImg = gaussianFilter(srcImgGPU, hsize, sigma);
 
-  timeElapsed(start, "Gaussian filter");
+  timeElapsed(infoFile, start, "Gaussian filter");
 
   fprintf(pFile, "End Gaussian filter\n");
 
@@ -136,7 +138,7 @@ int main_GPU(char* name_file)
 
   gpu::GpuMat backgroundSub = subtractImage(srcImgGPU, gaussImg);
   
-  timeElapsed(start, "Background subtraction");
+  timeElapsed(infoFile, start, "Background subtraction");
 
   gaussImg.release();
 
@@ -170,7 +172,7 @@ int main_GPU(char* name_file)
   start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
 
-  timeElapsed(start, "Binarization");
+  timeElapsed(infoFile, start, "Binarization");
 
   medianImgGPU.release();
 
@@ -188,7 +190,7 @@ int main_GPU(char* name_file)
   start = clock();
   gpu::GpuMat convImgGPU = convolution(binaryImgGPU, kernel, threshConv);
   
-  timeElapsed(start, "Convolution");
+  timeElapsed(infoFile, start, "Convolution");
 
   fprintf(pFile, "End Convolution kernel\n");
 
@@ -207,12 +209,11 @@ int main_GPU(char* name_file)
 /* ----------------------------------------------------------------------- *
  * Connected components                                                    *
  * ----------------------------------------------------------------------- */
-
-  std::vector< cv::Vec<int, 3> > POINTS;
-
-  std::vector< cv::Vec<int, 3> > STREAKS;
+      
+  std::vector< cv::Vec<float, 3> > POINTS;
+  std::vector< cv::Vec<float, 3> > STREAKS;
   
-  connectedComponents(convImg, imgBorders, POINTS, STREAKS);
+  connectedComponents(convImg, convImg, Img_input, imgBorders, POINTS, STREAKS);
 
   Mat color_Img_input;
   cvtColor( Img_input, color_Img_input, CV_GRAY2BGR );
@@ -228,7 +229,7 @@ cout << "points sz " << POINTS.size() << std::endl;
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
     cout << "points " << i << std::endl;
-    Point center = { POINTS.at(i)[0], POINTS.at(i)[1] };
+    Point center = { static_cast<int>(POINTS.at(i)[0]), static_cast<int>(POINTS.at(i)[1]) };
     circle(color_Img_input, center, radius, colorP, thickness, lineType, shift);
 
     /*center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
@@ -238,7 +239,7 @@ cout << "STREAKS sz " << STREAKS.size() << std::endl;
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
     cout << "STREAKS " << i << std::endl;
-    Point center = { STREAKS.at(i)[0], STREAKS.at(i)[1] };
+    Point center = { static_cast<int>(STREAKS.at(i)[0]), static_cast<int>(STREAKS.at(i)[1]) };
     circle(color_Img_input, center, radius, colorS, thickness, lineType, shift);
   }
 
@@ -247,7 +248,7 @@ cout << "STREAKS sz " << STREAKS.size() << std::endl;
  * Morphology opening                                                      *
  * ----------------------------------------------------------------------- */
 
-  if (FIGURE)
+  if (SPD_FIGURE)
   {
     // Create a window for display.
     namedWindow("Algo gpu", WINDOW_NORMAL);
@@ -265,7 +266,7 @@ cout << "STREAKS sz " << STREAKS.size() << std::endl;
 
   cv::waitKey(0);
   
-  fclose(pFile);
+  std::fclose(pFile);
       
   return 1;
 }

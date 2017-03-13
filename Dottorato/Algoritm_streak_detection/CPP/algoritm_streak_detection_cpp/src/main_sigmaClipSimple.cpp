@@ -99,7 +99,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   strcat (s_infoFileName, "_info.txt" );
   std::ofstream infoFile(s_infoFileName);
 # else
-  std::ofstream infoFile(stdout);  
+  std::ofstream infoFile(stdout);
 # endif
 
   {

@@ -67,7 +67,7 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
   int columnBorderType=-1;
   cv::gpu::GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT, columnBorderType);
   
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_host;
     imgOut.download(result_host);
@@ -95,7 +95,7 @@ cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB)
       
   cv::gpu::subtract(imgA, imgB, imgOut);
   
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_host;
     imgOut.download(result_host);
@@ -129,7 +129,7 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
 
   cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter);
     
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_host;
     imgOut.download(result_host);
@@ -168,7 +168,7 @@ cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn)
   
   cv::gpu::threshold(imgIn, imgOut, level, maxval, cv::THRESH_BINARY);
   
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     /* Create a window for display.
     namedWindow("Binary image", WINDOW_NORMAL);
@@ -232,7 +232,7 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag)
 
   /*da completare*/
 
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     // Create a window for display.
     namedWindow("Binary image", cv::WINDOW_NORMAL);
@@ -285,7 +285,7 @@ cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, doubl
   cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
 //cv::gpu::threshold(imgIn, imgOut, thresh, maxval, cv::THRESH_BINARY);
   
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_host;
     imgOut.download(result_host);

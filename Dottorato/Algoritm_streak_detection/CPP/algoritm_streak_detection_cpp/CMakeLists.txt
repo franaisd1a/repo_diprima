@@ -32,7 +32,7 @@ endif  ()
 #CUDA Settings
 if (${CUDA_FOUND})
 
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_30)#20
 
 #set(CUDA_SRC src/medianKernel.cu)
 
@@ -47,8 +47,10 @@ set(CUDA_SRC
     ${SRC_PATH}/main_fits.cpp
     ${SRC_PATH}/main_GPU.cpp
     ${SRC_PATH}/main_GPU_cuda.cu
+    ${SRC_PATH}/main_GPU_cuda.cuh
     ${SRC_PATH}/function.cpp
-    ${SRC_PATH}/function_GPU.cpp)
+    ${SRC_PATH}/function_GPU.cpp
+    ${SOURCES_OS})
     #${SRC_PATH}/externalClass.cu)
 
 # Set header files

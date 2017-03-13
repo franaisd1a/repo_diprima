@@ -4,9 +4,9 @@
 #include "opencv2/gpu/gpu.hpp"
 #include "externalClass.cu" // important to include .cu file, not header file
 
-#include "function_GPU.h"
-#include "function.h"
-#include "macros.h"
+#include "../inc/function_GPU.h"
+#include "../inc/function.h"
+#include "../inc/macros.h"
 
 using namespace cv;
 using namespace std;
@@ -14,7 +14,8 @@ using namespace std;
 int main_GPU_cuda(char* name_file)
 {
   //cout << "GPU algorithms with CUDA kernel." << std::endl;
-  
+  std::ofstream infoFile(stdout);
+
 /* ======================================================================= *
  * GPU initializations and informations                                    *
  * ======================================================================= */
@@ -70,8 +71,8 @@ int main_GPU_cuda(char* name_file)
 
   gpu::GpuMat gaussImg = gaussianFilter(srcImgGPU, hsize, sigma);
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Gaussian filter");}
+  if (SPD_STAMP) {
+    timeElapsed(infoFile, start, "Gaussian filter");}
 
   fprintf(pFile, "End Gaussian filter\n");
 //cv::waitKey(0);
@@ -86,8 +87,8 @@ int main_GPU_cuda(char* name_file)
   srcImgGPU.release();
   gaussImg.release();
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Background subtraction");}
+  if (SPD_STAMP) {
+    timeElapsed(infoFile, start, "Background subtraction");}
 
   gaussImg.release();
 
@@ -109,10 +110,10 @@ int main_GPU_cuda(char* name_file)
   
   backgroundSub.release();
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Median filter ");}
+  if (SPD_STAMP) {
+    timeElapsed(infoFile, start, "Median filter ");}
 
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_hostMedian;
     medianImgGPU.download(result_hostMedian);
@@ -129,8 +130,8 @@ int main_GPU_cuda(char* name_file)
   start = clock();
   gpu::GpuMat binaryImgGPU = binarization(medianImgGPU);
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Binarization");}
+  if (SPD_STAMP) {
+    timeElapsed(infoFile, start, "Binarization");}
 
   medianImgGPU.release();
 
@@ -157,7 +158,7 @@ int main_GPU_cuda(char* name_file)
   
   binaryImgGPU.release();
 
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_hostcon;
     convImgGPU.download(result_hostcon);
@@ -171,10 +172,10 @@ int main_GPU_cuda(char* name_file)
     
   convImgGPU.release();
 
-  if (TIME_STAMP) {
-    timeElapsed(start, "Convolution");}
+  if (SPD_STAMP) {
+    timeElapsed(infoFile, start, "Convolution");}
 
-  if (FIGURE_1)
+  if (SPD_FIGURE_1)
   {
     cv::Mat result_hostthcon;
     convBinGPU.download(result_hostthcon);
@@ -194,17 +195,17 @@ int main_GPU_cuda(char* name_file)
   convBinGPU.download(convImg);
   convBinGPU.release();
   
-  std::vector< cv::Vec<int, 3> > POINTS;
-
-  std::vector< cv::Vec<int, 3> > STREAKS;
+  std::vector< cv::Vec<float, 3> > POINTS;
+  std::vector< cv::Vec<float, 3> > STREAKS;
   
-  connectedComponents(convImg, imgBorders, POINTS, STREAKS);
+  connectedComponents(convImg, convImg, Img_input, imgBorders, POINTS, STREAKS);
 
+  
 /* ----------------------------------------------------------------------- *
  * Plot Result                                                             *
  * ----------------------------------------------------------------------- */
 
-  if (FIGURE)
+  if (SPD_FIGURE)
   {
     Mat color_Img_input;
     cvtColor( Img_input, color_Img_input, CV_GRAY2BGR );
