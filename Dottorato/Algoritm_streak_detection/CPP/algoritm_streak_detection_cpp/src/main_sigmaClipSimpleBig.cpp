@@ -63,52 +63,9 @@ using namespace std;
 *         SUBORDINATES: None
 * ========================================================================== */
 int main_sigmaClipSimpleBig(const std::vector<char *>& input)
-{
-#if 0
-	int as0d = system ("pwd");
-
-#ifdef _WIN32
-	std::string astroScript = "launcherWIN.bat ";
-#else
-  std::string astroScript = "./astrometricReduction.sh ";
-#endif
-	std::string command = astroScript + input.at(0) + " " + input.at(4) + " " + input.at(1);
-	printf("\n%s\n", command.c_str());
-	int asd = system (command.c_str());
-
-	printf("fine astrometry \d\n", asd);
-
-
-  //const char* fileWCS = "C:\\Users\\Francesco Diprima\\Desktop\\prova\\41384.00007800.TRK\\41384.00007800.TRK.wcs";
-  char fileWCS[1024];
-  ::memset(fileWCS, 0, sizeof(fileWCS));
-  ::strcpy(fileWCS, input.at(4));
-  ::strcat(fileWCS, input.at(1));
-  ::strcat(fileWCS, ".wcs");
-    
+{ 
   wcsPar par;
-  parseWCS(fileWCS, par);
-
-  std::vector< cv::Vec<float, 3> > pixel;
-  pixel.push_back( { 1669.546875f,2122.958008f, 0 });
-  std::vector< cv::Vec<float, 3> > radec;
-  coordConv(par, pixel, radec);
-
-#endif
-
-  char fileWCS[1024];
-  ::memset(fileWCS, 0, sizeof(fileWCS));
-  ::strcpy(fileWCS, input.at(4));
-  ::strcat(fileWCS, input.at(1));
-  ::strcat(fileWCS, ".wcs");
-
-  std::string wcsF = fileWCS;
-  
-  std::future<bool> fut_astrometry;
-  
-  wcsPar par;
-  //Cambiare input mettere quelli dello script formare file wcs dentro function async
-  fut_astrometry = asyncAstrometry(wcsF, par);
+  std::future<bool> fut_astrometry = asyncAstrometry(input, par);
   
 
 /* ----------------------------------------------------------------------- *

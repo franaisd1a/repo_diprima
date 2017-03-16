@@ -61,7 +61,7 @@
 * @return File extension
 */
 std::vector<char*> fileExt(const char* strN);
-
+std::string fileCygwin(const std::string strN);
 /**
 * readFit Read .fit file and copy in opencv Mat
 * @param nameFile Input file name
@@ -399,7 +399,7 @@ void sigmaClipProcessing
 
 
 std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par);
-
+std::future<bool> asyncAstrometry(const std::vector<char *>& input, wcsPar& par);
 
 void lightCurve
 (

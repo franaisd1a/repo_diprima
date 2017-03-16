@@ -124,6 +124,47 @@ std::vector<char*> fileExt(const char* strN)
   return vec;
 }
 
+std::string fileCygwin(const std::string strN)
+{
+  char cwStr[1024];
+
+  const char slashS = 92;
+  const char slashD = 47;
+  const char duePunti = 58;
+
+  size_t count = 0;
+  for (size_t i = 0; i < strN.size(); ++i)
+  {
+    if (0 == i)
+    {
+      cwStr[count] = tolower(strN[i]);
+      count++;
+    }
+    else if (slashS == strN[i])
+    {
+      cwStr[count] = slashD;
+      count++;
+    }
+    else if (duePunti == strN[i])
+    {
+      int afadfa = 0;
+    }
+    else
+    {
+      cwStr[count] = strN[i];
+      count++;
+    }
+  }
+
+  cwStr[count] = 0;
+
+  char cwStrF[1024];
+  strcpy ( cwStrF, "/cygdrive/" );
+  strcat ( cwStrF, cwStr );
+
+  return cwStrF;
+}
+
 /* ==========================================================================
 *        FUNCTION NAME: readFit
 * FUNCTION DESCRIPTION: Read .fit file and copy in opencv Mat
@@ -2618,6 +2659,43 @@ std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par)
     if (existWCS)
     {      
       parseWCS(pStr.c_str(), par);
+      res = true;
+    }
+    
+    return res;
+  });
+}
+
+std::future<bool> asyncAstrometry(const std::vector<char *>& input, wcsPar& par)
+{
+  return std::async(std::launch::async, [&]() 
+  {
+    bool res = false;
+        
+    //Launch script for solve astrometry
+#if 0
+#ifdef _WIN32
+    std::string astroScript = "launcherWIN.bat ";
+#else
+    std::string astroScript = "./astrometricReduction.sh ";
+#endif
+#endif
+    std::string astroScript = "./astrometricReduction.sh ";
+
+    std::string file = fileCygwin(input.at(0));
+    std::string pathRes = fileCygwin(input.at(4));
+
+    std::string command = astroScript + file + " " + pathRes;
+    printf("\n%s\n", command.c_str());
+    int asd = system(command.c_str());
+
+    //Parse .wcs file
+    std::string wcsF = std::string(input.at(4)) + input.at(1) + ".wcs";    
+
+    bool existWCS = spd_os::fileExists(wcsF.c_str());
+    
+    if (existWCS) {      
+      parseWCS(wcsF.c_str(), par);
       res = true;
     }
     
