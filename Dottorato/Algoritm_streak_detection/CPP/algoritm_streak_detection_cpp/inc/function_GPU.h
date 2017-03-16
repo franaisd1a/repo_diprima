@@ -56,6 +56,9 @@
 * FUNCTION DECLARATION
 * ========================================================================== */
 
+cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgInOr
+  , const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg);
+
 /**
 * gaussianFilter Filter an image using Gaussian lowpass filter
 * @param imgIn Input image
@@ -63,7 +66,7 @@
 * @param sigma Filter standard deviation
 * @return outImage Filtered image
 */
-cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigma);
+cv::gpu::GpuMat gaussianFilter(const cv::gpu::GpuMat& imgIn, int hsize[2], double sigma);
 
 /**
 * subtractImage Subtraction of image, matrix-matrix difference
@@ -71,8 +74,9 @@ cv::gpu::GpuMat gaussianFilter(cv::gpu::GpuMat& imgIn, int hsize[2], double sigm
 * @param imgB Input image B
 * @return outImage Subtracted image
 */
-cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB);
+cv::gpu::GpuMat subtractImage(const cv::gpu::GpuMat& imgA, const cv::gpu::GpuMat& imgB);
 
+cv::gpu::GpuMat addiction(const cv::gpu::GpuMat& imgA, const cv::gpu::GpuMat& imgB);
 /**
 * morphologyOpen Morphology opening on image with a rectangular kernel rotate of
 * an angle. Delete noise and points object in the image and preserve the streaks
@@ -81,7 +85,8 @@ cv::gpu::GpuMat subtractImage(cv::gpu::GpuMat& imgA, cv::gpu::GpuMat& imgB);
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_streak);
+cv::gpu::GpuMat morphologyOpen(const cv::gpu::GpuMat& imgIn, int dimLine, double teta_streak);
+cv::gpu::GpuMat morphologyOpen(const cv::gpu::GpuMat& imgIn, int rad);
 
 /**
 * binarization Image binarization
@@ -90,10 +95,14 @@ cv::gpu::GpuMat morphologyOpen(cv::gpu::GpuMat& imgIn, int dimLine, double teta_
 * @param teta_streak Line inclination angle
 * @return outImage Morphology opening image
 */
-cv::gpu::GpuMat binarization(cv::gpu::GpuMat& imgIn);
+cv::gpu::GpuMat binarization(const cv::gpu::GpuMat& imgIn);
+cv::gpu::GpuMat binarizationZone(const cv::gpu::GpuMat& imgIn
+  , const cv::Point zoneCnt, const cv::Mat& level);
 #if 0
 cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag);
 #endif
+
+std::vector<std::pair<float, int>> hough(const cv::gpu::GpuMat& imgIn);
 
 /**
 * convolution Convolution images
@@ -102,7 +111,7 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag);
 * @param threshold Threshold
 * @return outImage Convolution images
 */
-cv::gpu::GpuMat convolution(cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, double threshold);
+cv::gpu::GpuMat convolution(const cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, double threshold);
 
 /**
 * callKernel Function for call CUDA kernel

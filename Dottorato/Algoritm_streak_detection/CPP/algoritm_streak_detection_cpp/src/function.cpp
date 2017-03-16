@@ -570,7 +570,7 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
 
 /* ==========================================================================
 *        FUNCTION NAME: backgroundEstimation
-* FUNCTION DESCRIPTION: 
+* FUNCTION DESCRIPTION: Background Estimation
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
