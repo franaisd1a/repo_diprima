@@ -48,6 +48,8 @@ set(CUDA_SRC
     ${SRC_PATH}/main_GPU.cpp
     ${SRC_PATH}/main_GPU_cuda.cu
     ${SRC_PATH}/main_GPU_cuda.cuh
+    ${SRC_PATH}/main_sigmaClipBig_GPU.cu
+    ${SRC_PATH}/main_sigmaClipBig_GPU.cuh
     ${SRC_PATH}/function.cpp
     ${SRC_PATH}/function_GPU.cpp
     ${SOURCES_OS})
