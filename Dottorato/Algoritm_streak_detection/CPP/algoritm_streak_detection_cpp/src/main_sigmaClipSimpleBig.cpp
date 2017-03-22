@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <time.h>
+#include "main_sigmaClipBig_GPU.cu"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -215,8 +216,13 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
       std::vector< cv::Vec<float, 3> > localPOINTS;
       std::vector< cv::Vec<float, 3> > localSTREAKS;
 
+#if 0
       sigmaClipProcessing(histStretchPart, Img_inputPart, infoFile
         , localPOINTS, localSTREAKS);
+#else
+      main_sigmaClipBig_GPU(histStretchPart, Img_inputPart, infoFile
+        , localPOINTS, localSTREAKS);
+#endif
 
       for (size_t p = 0; p < localPOINTS.size(); ++p)
       {

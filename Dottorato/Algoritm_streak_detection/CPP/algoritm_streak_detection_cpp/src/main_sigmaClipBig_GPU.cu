@@ -157,7 +157,7 @@ void main_sigmaClipBig_GPU
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
 
-  clock_t start = clock();
+  start = clock();
   
   gpu::GpuMat medianBgSubImg = gpu::createContinuous(histStretch.rows
     , histStretch.cols, histStretch.type());
