@@ -3,20 +3,25 @@ project( algo_streak_detection) #project( algo_streak_detection CXX)
 
 set(MAINTGT algo_streak_detection)
 
+
 find_package(  OpenCV REQUIRED )
 find_package( CFITSIO REQUIRED )
 find_package(    CUDA    QUIET )
 
+
 message("Find CUDA: " ${CUDA_FOUND})
+set(SPD_CUDA_C ${CUDA_FOUND})
 
 
 if(UNIX)
-	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
+ #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=gnu++0x")
 endif()
+
 
 # Setup variables: source and include paths
 set(SRC_PATH "src")
 set(INC_PATH "inc")
+
 
 # Opereting system functions
 if (${WIN32})
@@ -29,9 +34,18 @@ else   ()
   message("Building for unknown system.")
 endif  ()
 
-#CUDA Settings
-if (${CUDA_FOUND})
 
+#
+# Build configuration include file.
+#
+CONFIGURE_FILE(
+  ${CMAKE_SOURCE_DIR}/config.h.cmake
+  ${INC_PATH}/${MAINTGT}_config.h)
+
+
+#CUDA Settings
+if (NOT ${CUDA_FOUND})
+message("Building for GPU.")
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_30)#20
 
 #set(CUDA_SRC src/medianKernel.cu)
@@ -42,7 +56,7 @@ set(CUDA_SRC
     ${SRC_PATH}/algo_selection.cpp
     ${SRC_PATH}/main_simple.cpp
     ${SRC_PATH}/main_sigmaClip.cpp
-	   ${SRC_PATH}/main_sigmaClipSimple.cpp
+    ${SRC_PATH}/main_sigmaClipSimple.cpp
     ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
     ${SRC_PATH}/main_fits.cpp
     ${SRC_PATH}/main_GPU.cpp
@@ -59,15 +73,16 @@ set(CUDA_SRC
 set(HEADERS
   ${INC_PATH}/file_selection.h
   ${INC_PATH}/algo_selection.h
-		${INC_PATH}/main_simple.h
+  ${INC_PATH}/main_simple.h
   ${INC_PATH}/main_sigmaClip.h
-	 ${INC_PATH}/main_sigmaClipSimple.h
+  ${INC_PATH}/main_sigmaClipSimple.h
   ${INC_PATH}/main_sigmaClipSimpleBig.h
   ${INC_PATH}/main_fits.h
   ${INC_PATH}/main_GPU.h
   ${INC_PATH}/function.h
   ${INC_PATH}/function_GPU.h
   ${INC_PATH}/function_os.h
+  ${INC_PATH}/${MAINTGT}_config.h
   ${HEADERS_OS}
   )
 
@@ -81,26 +96,27 @@ set(SOURCES
     ${SRC_PATH}/main.cpp
     ${SRC_PATH}/file_selection.cpp
     ${SRC_PATH}/algo_selection.cpp
-			 ${SRC_PATH}/main_simple.cpp
+    ${SRC_PATH}/main_simple.cpp
     ${SRC_PATH}/main_sigmaClip.cpp
-	   ${SRC_PATH}/main_sigmaClipSimple.cpp
+    ${SRC_PATH}/main_sigmaClipSimple.cpp
     ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
-			 ${SRC_PATH}/main_fits.cpp
-			 ${SRC_PATH}/function.cpp
+    ${SRC_PATH}/main_fits.cpp
+    ${SRC_PATH}/function.cpp
     ${SOURCES_OS}
-			 )
+    )
 
 # Set header files
 set(HEADERS
   ${INC_PATH}/file_selection.h
   ${INC_PATH}/algo_selection.h
-		${INC_PATH}/main_simple.h
+  ${INC_PATH}/main_simple.h
   ${INC_PATH}/main_sigmaClip.h
-	 ${INC_PATH}/main_sigmaClipSimple.h
+  ${INC_PATH}/main_sigmaClipSimple.h
   ${INC_PATH}/main_sigmaClipSimpleBig.h
   ${INC_PATH}/main_fits.h
   ${INC_PATH}/function.h
   ${INC_PATH}/function_os.h
+  ${INC_PATH}/${MAINTGT}_config.h
   ${HEADERS_OS}
   )
 
@@ -110,12 +126,12 @@ add_executable( ${MAINTGT} ${SOURCES} ${HEADERS})
 endif  ()
 
 
-	
 # Update the central variable containing all external libraries
 set(LIBS
   ${OpenCV_LIBS}
   ${CFITSIO_LIBRARY}
 )
+
 
 # Update the central variable containing all external includes
 set(INCS
