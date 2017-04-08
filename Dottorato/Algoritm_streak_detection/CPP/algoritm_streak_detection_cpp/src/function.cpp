@@ -2640,7 +2640,7 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  lightCurve(Img_input, STREAKS, contoursS);
+  //lightCurve(Img_input, STREAKS, contoursS);
 
 }
 

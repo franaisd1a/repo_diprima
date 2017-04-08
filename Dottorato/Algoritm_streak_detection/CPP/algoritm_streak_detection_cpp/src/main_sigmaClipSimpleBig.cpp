@@ -248,7 +248,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > radecS;
   std::vector< cv::Vec<float, 3> > radecP;
 
-  if (0!=STREAKS.size() && 0!=POINTS.size())
+  if (0!=STREAKS.size() || 0!=POINTS.size())
   {
     fut_astrometry.wait();
     bool compPar = fut_astrometry.get();    
