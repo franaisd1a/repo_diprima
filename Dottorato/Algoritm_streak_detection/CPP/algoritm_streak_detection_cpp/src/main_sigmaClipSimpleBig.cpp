@@ -28,10 +28,11 @@
 #include "macros.h"
 
 #include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include "main_sigmaClipBig_GPU.cu"
+#include "main_sigmaClipBig_GPU.cuh"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -64,16 +65,10 @@ using namespace std;
 *         SUBORDINATES: None
 * ========================================================================== */
 int main_sigmaClipSimpleBig(const std::vector<char *>& input)
-{ 
-  wcsPar par;
-  std::future<bool> fut_astrometry = asyncAstrometry(input, par);
-  
-
+{
 /* ----------------------------------------------------------------------- *
- * Open and read file                                                      *
+ * Initialization                                                          *
  * ----------------------------------------------------------------------- */
-
-  clock_t start = clock();
 
   /* Read file extension */
   const char* extjpg = "jpg";
@@ -104,6 +99,28 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     stamp(infoFile, "\n");
   }
 
+
+/* ----------------------------------------------------------------------- *
+ * Solve star field                                                        *
+ * ----------------------------------------------------------------------- */
+
+  clock_t start = clock();
+  clock_t start0 = start;
+
+  wcsPar par;
+#if 1
+  bool compPar = astrometry( input, par);
+#else  
+  std::future<bool> fut_astrometry = asyncAstrometry(input, par);
+#endif
+
+  timeElapsed(infoFile, start, "Astrometry");
+
+
+/* ----------------------------------------------------------------------- *
+ * Open and read file                                                      *
+ * ----------------------------------------------------------------------- */
+  
   /* Read raw image */
   Mat Img_input;
 
@@ -131,14 +148,6 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   stamp(infoFile, s_Ch.c_str());
   std::string s_Dp = "Image depth bit: " + std::to_string(depth);
   stamp(infoFile, s_Dp.c_str());
-
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows };
-  double bordersThick = 0.015;
-  cv::Point_<double> borders = { bordersThick, 1 - bordersThick };
-  Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * I_input_size.x))
-                          , static_cast<int>(ceil(borders.x * I_input_size.y))
-                          , static_cast<int>(floor(borders.y * I_input_size.x))
-                          , static_cast<int>(floor(borders.y * I_input_size.y)) };
 
   timeElapsed(infoFile, start, "Open and read file");
 
@@ -170,8 +179,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
 
-  size_t maxColdim = 1024000;
-  size_t maxRowdim = 1024000;
+  size_t maxColdim = 4099;
+  size_t maxRowdim = 4099;
 
   size_t regionNumR = static_cast<size_t>(::round(histStretch.rows / maxRowdim));
   size_t regionNumC = static_cast<size_t>(::round(histStretch.cols / maxColdim));
@@ -216,11 +225,11 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
       std::vector< cv::Vec<float, 3> > localPOINTS;
       std::vector< cv::Vec<float, 3> > localSTREAKS;
 
-#if 0
-      sigmaClipProcessing(histStretchPart, Img_inputPart, infoFile
+#if 1
+      main_sigmaClipBig_GPU(histStretchPart, Img_inputPart, infoFile
         , localPOINTS, localSTREAKS);
 #else
-      main_sigmaClipBig_GPU(histStretchPart, Img_inputPart, infoFile
+      sigmaClipProcessing(histStretchPart, Img_inputPart, infoFile
         , localPOINTS, localSTREAKS);
 #endif
 
@@ -234,9 +243,13 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
         localSTREAKS.at(p)[0] = localSTREAKS.at(p)[0] + ptTL.x;
         localSTREAKS.at(p)[1] = localSTREAKS.at(p)[1] + ptTL.y;
       }
-
-      POINTS.insert(POINTS.end(), localPOINTS.begin(), localPOINTS.end());
-      STREAKS.insert(STREAKS.end(), localSTREAKS.begin(), localSTREAKS.end());
+      
+      if (localSTREAKS.size()>0) {
+        POINTS.insert(POINTS.end(), localPOINTS.begin(), localPOINTS.end());
+      }
+      if (localSTREAKS.size()>0) {
+        STREAKS.insert(STREAKS.end(), localSTREAKS.begin(), localSTREAKS.end());
+      }
     }
   }
 
@@ -248,11 +261,12 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > radecS;
   std::vector< cv::Vec<float, 3> > radecP;
 
-  if (0!=STREAKS.size() && 0!=POINTS.size())
+  if (0!=STREAKS.size() || 0!=POINTS.size())
   {
+#if 0
     fut_astrometry.wait();
     bool compPar = fut_astrometry.get();    
-
+#endif
     if (compPar) 
     {
       if (0 != STREAKS.size()) {
@@ -304,5 +318,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     
   destroyAllWindows();
   
+  timeElapsed(infoFile, start0, "Total");
+
   return 0;
 }

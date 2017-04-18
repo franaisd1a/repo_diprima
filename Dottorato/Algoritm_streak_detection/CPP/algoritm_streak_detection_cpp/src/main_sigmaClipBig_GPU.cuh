@@ -17,8 +17,8 @@
 *
 * ========================================================================== */
 
-#ifndef MAIN_GPU_CUDA_H
-#define MAIN_GPU_CUDA_H
+#ifndef MAIN__SIGMACLIPBIG_GPU_CUDA_H
+#define MAIN__SIGMACLIPBIG_GPU_CUDA_H
 
 /* ==========================================================================
 * INCLUDE
@@ -50,5 +50,5 @@ void main_sigmaClipBig_GPU(
   , std::vector< cv::Vec<float, 3> >& STREAKS
 );
 
-#endif /* MAIN_GPU_CUDA_H */
+#endif /* MAIN__SIGMACLIPBIG_GPU_CUDA_H */
 

@@ -7,6 +7,15 @@
 #include <opencv/highgui.h>
 #include "opencv2/gpu/gpu.hpp"
 
+
+#if 1
+#include </usr/local/cuda-6.5/include/cuda.h>
+#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
+#else
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
+
 /*
 __global__ void square_array(double *a, int N)
 {
@@ -63,24 +72,61 @@ __global__ void medianKernel
 }
 
 __global__ void convolutionKernel
-(const uchar * input, uchar * output, int Image_Width, int Image_Height, int szK)
+(const uchar * input, uchar * output, int imgW, int imgH, int szK)
 {
   int radius = (int)(szK/2);  
 
   const int x     = blockDim.x * blockIdx.x + threadIdx.x;
   const int y     = blockDim.y * blockIdx.y + threadIdx.y;  
  
-//if( (x >= (Image_Width - 1)) || (y >= Image_Height - 1) || (x == 0) || (y == 0)) return;
-  if( (x >= (Image_Width - radius)) || (y >= Image_Height - radius) || (x == radius) || (y == radius)) return;
+  if( (x >= (imgW - radius)) || (y >= imgH - radius) || (x == radius) || (y == radius)) return;
 
   unsigned short sum = 0;
   for (int r = x - radius; r <= x + radius; r++) {
       for (int c = y - radius; c <= y + radius; c++) {
-          sum += input[c*Image_Width+r];
+          sum += input[c*imgW+r];
       }
   }
   
-  output[(y*Image_Width)+x]=sum;
+  output[(y*imgW)+x]=sum;
+}
+
+__global__ void convolutionKernelThreshold
+(const uchar * input, uchar * output, int imgW, int imgH, int szK, int thresh, int maxval)
+{
+  int rad = (int)(szK/2);
+
+  const int x     = blockDim.x * blockIdx.x + threadIdx.x;
+  const int y     = blockDim.y * blockIdx.y + threadIdx.y;  
+ 
+  if( (x >= (imgW - rad)) || (y >= imgH - rad) || (x < rad) || (y < rad)) 
+  {
+  }
+  else 
+  {
+    unsigned short sum = 0;
+    for (int r = x - rad; r <= x + rad; r++) {
+        for (int c = y - rad; c <= y + rad; c++) {
+            sum += input[(c*imgW)+r];
+        }
+    }
+    //non funziona restituisce img nera
+    if(sum>thresh*maxval) {
+      output[(y*imgW)+x]=maxval;
+    }
+  }
+}
+
+__global__ void fillImgKernel
+(const uchar * mask, uchar * dst, int maskW, int dstW, int tlX, int tlY, int brX, int brY)
+{
+  const int x     = blockDim.x * blockIdx.x + threadIdx.x;
+  const int y     = blockDim.y * blockIdx.y + threadIdx.y;  
+ 
+  if ( (x>=tlX) && (x<brX) && (y>=tlY) && (y<brY)  )
+  {
+    dst[(y*dstW)+x]=mask[(y-tlY)*maskW+(x-tlX)];
+  }  
 }
 
 class externalClass {
@@ -92,6 +138,8 @@ public:
 	
 	void medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK);
 	void convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK);
+  void convolutionThreshCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK, int thresh, int maxval);
+  void fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuMat &dst, int tlX, int tlY, int brX, int brY);
 };
 
 #endif

@@ -273,7 +273,7 @@ int main_simple(const std::vector<char *>& input)
 
   cv::Mat sumStrImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
-  for (int i = 0; i < angle.size(); ++i)
+  for (size_t i = 0; i < angle.size(); ++i)
   {
 
 /* ----------------------------------------------------------------------- *

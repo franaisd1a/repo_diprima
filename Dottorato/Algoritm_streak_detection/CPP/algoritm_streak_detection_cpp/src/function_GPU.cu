@@ -24,15 +24,15 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
-#include <iostream>
+/*#include <iostream>
 #include <opencv2/opencv.hpp>
 #include <opencv/highgui.h>
-#include "opencv2/gpu/gpu.hpp"
+#include "opencv2/gpu/gpu.hpp"*/
+
+
+#include "../inc/function_GPU.cuh"
+#include "../inc/macros.h"
 #include "externalClass.cu" // important to include .cu file, not header file
-
-#include "function_GPU.h"
-#include "macros.h"
-
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -55,6 +55,35 @@
 * ========================================================================== */
  
 /* ==========================================================================
+*        FUNCTION NAME: medianFIlterK
+* FUNCTION DESCRIPTION: Median filter on GPU
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::gpu::GpuMat medianFIlterK(const cv::gpu::GpuMat& imgIn, int kerlen)
+{
+  cv::gpu::GpuMat imgOut = cv::gpu::createContinuous(imgIn.rows, imgIn.cols
+    , imgIn.type());
+
+  externalClass kernelCUDA;
+  kernelCUDA.medianCUDAKernel(imgIn, imgOut, kerlen);
+    
+#if SPD_FIGURE_1
+  cv::Mat imgOut_host;
+  imgOut.download(imgOut_host);
+  // Create a window for display.
+  namedWindow("Median filter GPU", cv::WINDOW_NORMAL);
+  imshow("Median filter GPU", imgOut_host);
+  cv::waitKey(0);
+#endif
+
+  return imgOut;
+} 
+
+
+/* ==========================================================================
 *        FUNCTION NAME: backgroundEstimation
 * FUNCTION DESCRIPTION: Background Estimation
 *        CREATION DATE: 20160727
@@ -62,11 +91,12 @@
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgInOr, const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
+cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgIn, const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
 {
-  cv::gpu::GpuMat imgIn = imgInOr.clone();
-  size_t backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt.y));
-  size_t backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt.x));
+  //cv::gpu::GpuMat imgIn = imgInOr.clone();
+
+  size_t backSzR = static_cast<size_t>(::round(static_cast<float>(imgIn.rows / backCnt.y)));
+  size_t backSzC = static_cast<size_t>(::round(static_cast<float>(imgIn.cols / backCnt.x)));
   
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
@@ -90,13 +120,13 @@ cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgInOr, const cv::P
   {
     for (size_t j = 0; j < backCnt.x; ++j)
     {
-      const cv::Point ptTL = {vBackScol.at(j), vBackSrow.at(i)};
-      const cv::Point ptBR = {vBackScol.at(j+1), vBackSrow.at(i+1)};
+      const cv::Point ptTL (vBackScol.at(j), vBackSrow.at(i));
+      const cv::Point ptBR (vBackScol.at(j+1), vBackSrow.at(i+1));
 
       cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
       cv::gpu::GpuMat imgPart = imgIn(region_of_interest);
+
       cv::gpu::GpuMat imgPartTh = cv::gpu::createContinuous(imgPart.rows, imgPart.cols, imgPart.type());
-      //in cpu braso a zero
       cv::gpu::GpuMat imgPart2 = cv::gpu::createContinuous(imgPart.rows, imgPart.cols, imgPart.type());
       
       float oldStd=0;
@@ -122,19 +152,15 @@ cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgInOr, const cv::P
         double maxval = 1.0;
         double asdf = cv::gpu::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_BINARY_INV);
 
-        cv::gpu::multiply(imgPart, imgPartTh, imgPart2, cv::gpu::Stream::Null());
+        int dType = -1;
+        cv::gpu::multiply(imgPart, imgPartTh, imgPart2, maxval, dType, cv::gpu::Stream::Null());
 
         diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
         oldStd=stdBg.at<double>(i,j);        
       }
       
-      /*cv::gpu::GpuMat img_RoI = outImg(region_of_interest);
-      imgPart2.copyTo(img_RoI);
-      //imgPart2.copyTo(outImg(region_of_interest).ptr());*/
-
-      /*externalClass kernelCUDA;
-      kernelCUDA.fillImgCUDAKernel(imgPart2, outImg, ptTL.x, ptTL.y, ptBR.x, ptBR.y);*/
-
+      externalClass kernelCUDA;
+      kernelCUDA.fillImgCUDAKernel(imgPart2, outImg, ptTL.x, ptTL.y, ptBR.x, ptBR.y);
     }
   }
 
@@ -164,7 +190,7 @@ cv::gpu::GpuMat gaussianFilter(const cv::gpu::GpuMat& imgIn, int hsize[2], doubl
   cv::gpu::GpuMat imgOut = 
     cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
 
-  cv::Size h = { hsize[0], hsize[1] };
+  cv::Size h ( hsize[0], hsize[1] );
 
   int columnBorderType=-1;
   cv::gpu::GaussianBlur(imgIn, imgOut, h, sigma, sigma, cv::BORDER_DEFAULT, columnBorderType);
@@ -227,8 +253,8 @@ cv::gpu::GpuMat addiction(const cv::gpu::GpuMat& imgA, const cv::gpu::GpuMat& im
   cv::Mat result_host;
   imgOut.download(result_host);
   // Create a window for display.
-  namedWindow("Subtracted image GPU", cv::WINDOW_NORMAL);
-  imshow("Subtracted image GPU", result_host);
+  namedWindow("Sum image GPU", cv::WINDOW_NORMAL);
+  imshow("Sum image GPU", result_host);
   cv::waitKey(0);
 #endif
   
@@ -253,7 +279,7 @@ cv::gpu::GpuMat morphologyOpen(const cv::gpu::GpuMat& imgIn, int dimLine, double
   cv::Point anchor = cv::Point(-1, -1);
 
   //InputArray kernel;
-  cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1));
+  cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_RECT, cv::Size(dimLine, 1), anchor);
 
   cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter);
     
@@ -287,9 +313,9 @@ cv::gpu::GpuMat morphologyOpen(const cv::gpu::GpuMat& imgIn, int rad)
   cv::Size size = cv::Size(rad, rad);
 
   //InputArray kernel;
-  cv::Mat horizontalStructure = getStructuringElement(cv::MORPH_ELLIPSE, size, anchor);
+  cv::Mat structElement = cv::getStructuringElement(cv::MORPH_ELLIPSE, size, anchor);
 
-  cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, horizontalStructure, anchor, iter);
+  cv::gpu::morphologyEx(imgIn, imgOut, cv::MORPH_OPEN, structElement, anchor, iter);
 
 #if SPD_FIGURE_1
   cv::Mat result_host;
@@ -356,8 +382,8 @@ cv::gpu::GpuMat binarization(const cv::gpu::GpuMat& imgIn)
 * ========================================================================== */
 cv::gpu::GpuMat binarizationZone(const cv::gpu::GpuMat& imgIn, const cv::Point zoneCnt, const cv::Mat& level)
 {
-  size_t zoneSzR = static_cast<size_t>(::round(imgIn.rows / zoneCnt.y));
-  size_t zoneSzC = static_cast<size_t>(::round(imgIn.cols / zoneCnt.x));
+  size_t zoneSzR = static_cast<size_t>(::round(static_cast<float>(imgIn.rows / zoneCnt.y)));
+  size_t zoneSzC = static_cast<size_t>(::round(static_cast<float>(imgIn.cols / zoneCnt.x)));
   
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
@@ -380,8 +406,8 @@ cv::gpu::GpuMat binarizationZone(const cv::gpu::GpuMat& imgIn, const cv::Point z
   {
     for (size_t j = 0; j < zoneCnt.x; ++j)
     {
-      const cv::Point ptTL = { vBackScol.at(j), vBackSrow.at(i) };
-      const cv::Point ptBR = { vBackScol.at(j + 1), vBackSrow.at(i + 1) };
+      const cv::Point ptTL ( vBackScol.at(j), vBackSrow.at(i) );
+      const cv::Point ptBR ( vBackScol.at(j + 1), vBackSrow.at(i + 1) );
 
       cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
       cv::gpu::GpuMat imgPart = imgIn(region_of_interest);
@@ -420,7 +446,7 @@ cv::gpu::GpuMat binarizationDiffTh(cv::gpu::GpuMat& imgIn, int flag)
   cv::gpu::GpuMat imgOut, binImg;
   cv::gpu::GpuMat subBImgTL, subBImgTR, subBImgBL, subBImgBR;
 
-  cv::Point imgSz = { imgIn.rows, imgIn.cols };
+  cv::Point imgSz ( imgIn.rows, imgIn.cols );
 
   /*int dims[] = { 5, 1 };
   cv::Mat level(2, dims, CV_64F);*/
@@ -485,7 +511,12 @@ std::vector<std::pair<float, int>> hough(const cv::gpu::GpuMat& imgIn)
   int maxLines = 5;
 
   cv::gpu::HoughLines(imgIn, houghVal, rho, theta, threshold, doSort, maxLines);
-    
+  
+  cv::Mat houghValCPU;
+  cv::gpu::HoughLinesDownload(houghVal, houghValCPU);
+
+  std::cout << "hough val " << houghValCPU << std::endl;
+
 #if 0
   // Select the inclination angles
   std::vector<float> angle;
@@ -538,39 +569,13 @@ std::vector<std::pair<float, int>> hough(const cv::gpu::GpuMat& imgIn)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::gpu::GpuMat convolution(const cv::gpu::GpuMat& imgIn, const cv::Mat& kernel, double thresh)
+cv::gpu::GpuMat convolution(const cv::gpu::GpuMat& imgIn, int szK, int thresh, int maxval)
 {
-  //cv::gpu::GpuMat imgOut, convImg;
   cv::gpu::GpuMat imgOut = 
     cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
-    
-  /*cv::gpu::GpuMat convImg = 
-    cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());*/
-  cv::gpu::GpuMat convImg;      
-    
-  /*kernel_size = 3 + 2 * (ind % 5);
-  kernel = Mat::ones(kernel_size, kernel_size, CV_32F) / (float)(kernel_size*kernel_size);*/
-
-  int ddepth = -1;
-  cv::Point anchor = cv::Point(-1, -1);
-  cv::gpu::Stream stream;
-  stream.Null();
   
-  std::cout << "prima di filter2d " << std::endl;
-  cv::gpu::filter2D(imgIn, convImg, ddepth, kernel, anchor, cv::BORDER_DEFAULT);
-  std::cout << "dopo di filter2d " << std::endl;
-/*thresh=1;
-  cv::gpu::boxFilter(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ddepth, kernel, anchor, stream);
-*/
-  
-/*cv::Size ksize(3, 3);
-  cv::gpu::blur(const_cast<const cv::gpu::GpuMat&>(imgIn), convImg, ksize, anchor, stream);
-*/  
-  
-  double maxval = 255.0;
-    
-  cv::gpu::threshold(convImg, imgOut, thresh, maxval, cv::THRESH_BINARY);
-//cv::gpu::threshold(imgIn, imgOut, thresh, maxval, cv::THRESH_BINARY);
+  externalClass kernelCUDA;
+  kernelCUDA.convolutionThreshCUDAKernel(imgIn, imgOut, szK, thresh, maxval);  
   
 #if SPD_FIGURE_1
     cv::Mat result_host;

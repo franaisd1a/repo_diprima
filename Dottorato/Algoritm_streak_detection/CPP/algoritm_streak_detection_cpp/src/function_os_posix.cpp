@@ -150,16 +150,13 @@ bool spd_os::fileExists(const char* pStrName)
  * ========================================================================== */
 bool spd_os::directoryExists(const char* pStrName)
 {
-  bool res = true;
   if (nullptr == pStrName) {
     printf("NULL required parameter\n");
-    res = false;
   }
   struct stat st;
   
   if (::stat(pStrName,&st) < 0) {
     printf("Not a directory\n");
-    res = false;
   }
   return (0 != (st.st_mode & S_IFDIR));
 }
@@ -218,22 +215,17 @@ bool spd_os::directoryOpen(void* dhOut, const char* pStrName)
  * ========================================================================== */
 bool spd_os::directoryNextItem( void* dhIn, DirectoryItem& out)
 {
-  bool res = true;
-
   if (nullptr == dhIn) {
     printf("NIL handle\n");
-    res = false;
   }
   
   PrivTDir* pDir = reinterpret_cast<PrivTDir*>(dhIn);
   
   if (nullptr == pDir) {
     printf("NULL directory pointer\n");
-    res = false;
   }
   if (pDir->uMarker != MakeU32LE('J', 'D', 'I', 'R')) {
     printf("Not a directory structure\n");
-    res = false;
   }
 
   struct dirent entry;
@@ -398,6 +390,37 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   ::strcat(s_pathResFile, "Result");
   ::strcat(s_pathResFile, slash);
   
+/************************/
+
+char *nameL[32][256];
+  pch = ::strtok(name,".");
+  count = 0;
+  while (pch != NULL)
+  {    
+    //printf ("%s\n",pch);
+    *nameL[count] = pch;
+    pch = ::strtok (NULL, ".");
+    count++;
+  }
+  char* ext = *nameL[count-1];
+  //char* fileName = *path[count-2];
+  char s_fileName[256];
+  ::strcpy (s_fileName, *nameL[0]);
+  for (size_t i = 1; i < count - 1; ++i)
+  {
+    ::strcat(s_fileName, ".");
+    ::strcat(s_fileName, *nameL[i]);
+  }
+
+  vec.push_back(s_fileName);
+  vec.push_back(ext);
+  vec.push_back(s_pathFileName);
+  vec.push_back(s_pathResFile);
+
+  return vec;
+/*************************/
+
+#if 0
   pch = strtok(name,".");
   while (pch != NULL)
   {    
@@ -415,4 +438,5 @@ std::vector<char*> spd_os::fileExt(const char* strN)
   vec.push_back(s_pathResFile);
 
   return vec;
+#endif
 }

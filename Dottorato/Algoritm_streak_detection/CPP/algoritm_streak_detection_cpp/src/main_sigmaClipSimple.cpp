@@ -142,14 +142,6 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
   std::string s_Dp = "Image depth bit: " + std::to_string(depth);
   stamp(infoFile, s_Dp.c_str());
 
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows  };
-  double bordersThick = 0.015;
-  cv::Point_<double> borders = { bordersThick, 1-bordersThick };
-  Vec<int, 4> imgBorders = {static_cast<int>(ceil( borders.x * I_input_size.x))
-                          , static_cast<int>(ceil( borders.x * I_input_size.y))
-                          , static_cast<int>(floor(borders.y * I_input_size.x))
-                          , static_cast<int>(floor(borders.y * I_input_size.y))};  
-
   timeElapsed(infoFile, start, "Open and read file");
 
 
@@ -386,7 +378,7 @@ int main_sigmaClipSimple(const std::vector<char *>& input)
 
   cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
-  for (int i = 0; i < angle.size(); ++i)
+  for (size_t i = 0; i < angle.size(); ++i)
   {
 
 /* ----------------------------------------------------------------------- *

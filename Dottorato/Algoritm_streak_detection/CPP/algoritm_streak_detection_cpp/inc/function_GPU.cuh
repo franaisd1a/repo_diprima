@@ -17,8 +17,8 @@
 *
 * ========================================================================== */
 
-#ifndef FUNCTION_GPU_H
-#define FUNCTION_GPU_H
+#ifndef FUNCTION_GPU_CUH
+#define FUNCTION_GPU_CUH
 
 /* ==========================================================================
 * INCLUDE: Basic include file.
@@ -43,6 +43,10 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #endif
+
+#include "../inc/macros.h"
+//#include "../src/externalClass.cu" // important to include .cu file, not header file
+
 /* ==========================================================================
 * MACROS
 * ========================================================================== */
@@ -54,6 +58,10 @@
 /* ==========================================================================
 * FUNCTION DECLARATION
 * ========================================================================== */
+
+cv::gpu::GpuMat convolution(const cv::gpu::GpuMat& imgIn, int szK, int thresh, int maxval);
+
+cv::gpu::GpuMat medianFIlterK(const cv::gpu::GpuMat& imgIn, int kerlen);
 
 cv::gpu::GpuMat backgroundEstimation(const cv::gpu::GpuMat& imgInOr
   , const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg);

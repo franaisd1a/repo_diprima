@@ -374,7 +374,7 @@ int main_sigmaClip(const std::vector<char *>& input)
   cv::Mat sumStrImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
   cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
-  for (int i = 0; i < angle.size(); ++i)
+  for (size_t i = 0; i < angle.size(); ++i)
   {
 
 /* ----------------------------------------------------------------------- *
@@ -512,7 +512,7 @@ int main_sigmaClip(const std::vector<char *>& input)
     imwrite( s_imgNameStk, sumStrImg );
 #endif
 
-  connectedComponents(convImgRms, binaryImgStk, Img_input, imgBorders, POINTS, STREAKS);//1°param openImg
+  connectedComponents(convImgRms, binaryImgStk, Img_input, imgBorders, POINTS, STREAKS);//1\B0param openImg
   //connectedComponents(convImgRms, sumStrImg, Img_input, imgBorders, POINTS, STREAKS);
   sumStrImg.release();
   convImgRms.release();

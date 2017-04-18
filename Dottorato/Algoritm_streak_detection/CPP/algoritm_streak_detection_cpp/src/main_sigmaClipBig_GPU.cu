@@ -28,11 +28,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv/highgui.h>
 #include "opencv2/gpu/gpu.hpp"
-#include "externalClass.cu" // important to include .cu file, not header file
+//#include "externalClass.cu" // important to include .cu file, not header file
 
-#include "../inc/function_GPU.h"
+//#include "../inc/function_GPU.h"
+#include "../inc/function_GPU.cuh"
 #include "../inc/function.h"
-#include "../inc/macros.h"
 
 using namespace cv;
 using namespace std;
@@ -52,28 +52,21 @@ void main_sigmaClipBig_GPU
  * ======================================================================= */
 
   int deviceCount = gpu::getCudaEnabledDeviceCount();
-
-  //gpu::setDevice(deviceCount-1);
-  gpu::setDevice(deviceCount);
+  
+  cv::gpu::setDevice(deviceCount-1);
     
   // --- CUDA warm up
-  gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
-
-  /* Open file */
-  FILE * pFile;
-  pFile = fopen ("consoleGPU.txt","w");
-   
-  fprintf(pFile, "Device number %d\n", deviceCount);
-    
+  cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
+      
   //Move data on GPU
-  gpu::GpuMat histStretchGPU = gpu::createContinuous(histStretch.rows
+  cv::gpu::GpuMat histStretchGPU = gpu::createContinuous(histStretch.rows
     , histStretch.cols, histStretch.type());
   
   histStretchGPU.upload(histStretch);
 
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows };
-  double bordersThick = 0.015;
-  cv::Point_<double> borders = { bordersThick, 1 - bordersThick };
+  double bordersThick = 0.015;  
+  cv::Point I_input_size ( Img_input.cols, Img_input.rows );
+  cv::Point_<double> borders ( bordersThick, 1 - bordersThick );
   cv::Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * I_input_size.x))
                           , static_cast<int>(ceil(borders.x * I_input_size.y))
                           , static_cast<int>(floor(borders.y * I_input_size.x))
@@ -89,26 +82,13 @@ void main_sigmaClipBig_GPU
  * ----------------------------------------------------------------------- */
 
   clock_t start = clock();
-  
-  gpu::GpuMat medianImgGPU = gpu::createContinuous(histStretch.rows
-    , histStretch.cols, histStretch.type());
-  
+
   int kerlen = 3;
 
-  externalClass kernelCUDA;
-  kernelCUDA.medianCUDAKernel(histStretchGPU, medianImgGPU, kerlen);
-    
-#if SPD_FIGURE_1
-  cv::Mat result_hostMedian;
-  medianImgGPU.download(result_hostMedian);
-  // Create a window for display.
-  namedWindow("Median filter GPU", cv::WINDOW_NORMAL);
-  imshow("Median filter GPU", result_hostMedian);
-#endif
+  gpu::GpuMat medianImgGPU = medianFIlterK(histStretchGPU, kerlen);
 
 	timeElapsed(infoFile, start, "Median filter");
-  cv::waitKey(0);
-
+  
   
 /* ----------------------------------------------------------------------- *
  * Background estimation                                                   *
@@ -119,10 +99,10 @@ void main_sigmaClipBig_GPU
   size_t maxColdim = 512;
   size_t maxRowdim = 512;
 
-  int regionNumR = static_cast<int>(::round(histStretch.rows / maxRowdim));
-  int regionNumC = static_cast<int>(::round(histStretch.cols / maxColdim));
+  int regionNumR = static_cast<int>(::round(static_cast<float>(histStretch.rows / maxRowdim)));
+  int regionNumC = static_cast<int>(::round(static_cast<float>(histStretch.cols / maxColdim)));
 
-  cv::Point backCnt = {regionNumC, regionNumR};
+  cv::Point backCnt (regionNumC, regionNumR);
   cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
   cv::Mat  stdBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
 
@@ -130,7 +110,6 @@ void main_sigmaClipBig_GPU
     backgroundEstimation(medianImgGPU, backCnt, meanBg, stdBg);
 
   timeElapsed(infoFile, start, "Background estimation");
-  cv::waitKey(0);
 
 
 /* ----------------------------------------------------------------------- *
@@ -141,39 +120,21 @@ void main_sigmaClipBig_GPU
 
   cv::gpu::GpuMat bgSubtracImg = subtractImage(medianImgGPU, backgroungImg);
     
+  timeElapsed(infoFile, start, "Background subtraction");
+  
   medianImgGPU.release();
   backgroungImg.release();
-  
-  timeElapsed(infoFile, start, "Background subtraction");
-
-#if SPD_FIGURE_1
-    namedWindow("Background subtraction", cv::WINDOW_NORMAL);
-    imshow("Background subtraction", bgSubtracImg);
-    cv::waitKey(0);
-#endif
-  
 
 /* ----------------------------------------------------------------------- *
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
 
   start = clock();
-  
-  gpu::GpuMat medianBgSubImg = gpu::createContinuous(histStretch.rows
-    , histStretch.cols, histStretch.type());
-  
-  kernelCUDA.medianCUDAKernel(bgSubtracImg, medianBgSubImg, kerlen);
-    
-#if SPD_FIGURE_1
-  cv::Mat result_hostMedian;
-  medianImgGPU.download(result_hostMedian);
-  // Create a window for display.
-  namedWindow("Median filter GPU", cv::WINDOW_NORMAL);
-  imshow("Median filter GPU", result_hostMedian);
-#endif
+
+  gpu::GpuMat medianBgSubImg = medianFIlterK(bgSubtracImg, kerlen);
+  bgSubtracImg.release();
 
 	timeElapsed(infoFile, start, "Median filter");
-  cv::waitKey(0);
 
 
 /* ----------------------------------------------------------------------- *
@@ -187,8 +148,7 @@ void main_sigmaClipBig_GPU
   
   gpu::GpuMat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
   
-  timeElapsed(infoFile, start, "Binarization");
-  cv::waitKey(0);
+  timeElapsed(infoFile, start, "Binarization for points detection");
 
 
 /* ----------------------------------------------------------------------- *
@@ -204,7 +164,6 @@ void main_sigmaClipBig_GPU
   medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization for streaks detection");
-  cv::waitKey(0);
   
 
 /* ----------------------------------------------------------------------- *
@@ -218,6 +177,7 @@ void main_sigmaClipBig_GPU
 
   cv::Mat distStk = distTransform(binaryImgStk_cpu);
   binaryImgStk.release();
+  binaryImgStk_cpu.release();
 
 
 /* ----------------------------------------------------------------------- *
@@ -227,13 +187,13 @@ void main_sigmaClipBig_GPU
   start = clock();
 
   int szKernel = 3;
-  cv::Mat kernel = cv::Mat::ones(szKernel, szKernel, CV_8U);
-  double threshConv = 7;//6
-  
-  gpu::GpuMat convImgPnt = convolution(binaryImgPnt, kernel, threshConv);
+  int threshConv = 7;//6
+  int maxvalConv = 255;
+
+  gpu::GpuMat convImgPnt = convolution(binaryImgPnt, szKernel, threshConv, maxvalConv);
   binaryImgPnt.release();
+
   timeElapsed(infoFile, start, "Convolution for points detection");
-  cv::waitKey(0);
 
 
 /* ----------------------------------------------------------------------- *
@@ -244,11 +204,10 @@ void main_sigmaClipBig_GPU
 
   int radDisk = 6;  
   gpu::GpuMat openImg = morphologyOpen(convImgPnt, radDisk);
+  convImgPnt.release();
 
   timeElapsed(infoFile, start, "Morphology opening");
-  
-  cv::waitKey(0);
-
+    
 
 /* ======================================================================= *
  * Streaks detection                                                       *
@@ -262,7 +221,7 @@ void main_sigmaClipBig_GPU
 
   cv::Mat resizeImg;
   double f = 0.5;
-  cv::Size dsize = { 0, 0 };
+  cv::Size dsize ( 0, 0 );
   resize(distStk, resizeImg, dsize, f, f, cv::INTER_LINEAR);
 
   std::vector<std::pair<float, int>> angle = hough(resizeImg);
@@ -279,8 +238,17 @@ void main_sigmaClipBig_GPU
   }
 
   timeElapsed(infoFile, start, "Hough transform");
-  cv::waitKey(0);
+  
 
+/*************************************************/
+  //Move data on GPU
+  cv::gpu::GpuMat resizeGPU = gpu::createContinuous(resizeImg.rows
+    , resizeImg.cols, resizeImg.type());
+  
+  resizeGPU.upload(resizeImg);
+
+  std::vector<std::pair<float, int>> asd = hough(resizeGPU);
+/*************************************************/
 
 /* ----------------------------------------------------------------------- *
  * Sum streaks binary image                                                *
@@ -290,7 +258,6 @@ void main_sigmaClipBig_GPU
 
   gpu::GpuMat sumStrRemImg = gpu::createContinuous(histStretch.rows
     , histStretch.cols, histStretch.type());
-  //cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
   for (int i = 0; i < angle.size(); ++i)
   {
@@ -302,8 +269,7 @@ void main_sigmaClipBig_GPU
     int dimLineRem = 60;
 
     gpu::GpuMat morpOpLinRem = morphologyOpen(openImg, dimLineRem, angle.at(i).first);
-    cv::waitKey(0);
-
+    
 
 /* ----------------------------------------------------------------------- *
  * Binary image with streaks                                               *
@@ -313,8 +279,10 @@ void main_sigmaClipBig_GPU
     morpOpLinRem.release();
         
 #if SPD_FIGURE_1
+    cv::Mat sumStrRemImg_host;
+    sumStrRemImg.download(sumStrRemImg_host);
     namedWindow("sumStrRemImg", cv::WINDOW_NORMAL);
-    imshow("sumStrRemImg", sumStrRemImg);
+    imshow("sumStrRemImg", sumStrRemImg_host);
     cv::waitKey(0);
 #endif
   }
@@ -326,15 +294,13 @@ void main_sigmaClipBig_GPU
  * Binary image without streaks                                            *
  * ----------------------------------------------------------------------- */
   
+  start = clock();
+
   gpu::GpuMat onlyPoints = subtractImage(openImg, sumStrRemImg);
   sumStrRemImg.release();
   openImg.release();
 
-#if SPD_FIGURE_1
-  namedWindow("onlyPoints", cv::WINDOW_NORMAL);
-  imshow("onlyPoints", onlyPoints);
-  cv::waitKey(0);
-#endif
+  timeElapsed(infoFile, start, "Subtract image");
 
 
 /* ----------------------------------------------------------------------- *
@@ -342,19 +308,13 @@ void main_sigmaClipBig_GPU
  * ----------------------------------------------------------------------- */
 
   start = clock();
-
-  cv::Mat kernelRm = cv::Mat::ones(szKernel, szKernel, CV_8U);
-  double threshConvRm = 8;
   
-  gpu::GpuMat convImgRms_GPU = gpu::createContinuous(histStretch.rows
-    , histStretch.cols, histStretch.type());
-
-  convImgRms_GPU = convolution(onlyPoints, kernelRm, threshConvRm);
-  kernelRm.release();
+  int threshConvRm = 8;
+   
+  gpu::GpuMat convImgRms_GPU = convolution(onlyPoints, szKernel, threshConvRm, maxvalConv);
   onlyPoints.release();
-  cv::waitKey(0);
 
-  timeElapsed(infoFile, start, "Convolution");
+  timeElapsed(infoFile, start, "Convolution remove streaks");
     
 
   /* ----------------------------------------------------------------------- *
@@ -368,6 +328,7 @@ void main_sigmaClipBig_GPU
 
   cv::Mat convImgRms;
   convImgRms_GPU.download(convImgRms);
+  convImgRms_GPU.release();
 
   connectedComponents2(convImgRms, distStk, Img_input
     , POINTS, STREAKS, contoursP, contoursS);
@@ -382,6 +343,6 @@ void main_sigmaClipBig_GPU
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  lightCurve(Img_input, STREAKS, contoursS);
+  //lightCurve(Img_input, STREAKS, contoursS);
 
 }

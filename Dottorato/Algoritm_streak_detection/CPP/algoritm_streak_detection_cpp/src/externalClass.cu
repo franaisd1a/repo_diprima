@@ -1,5 +1,5 @@
-#include "externalClass.cuh"
 
+#include "externalClass.cuh"
 /*
 void externalClass::squareOnDevice(double *a_h, const int N) {
 	double *a_d = new double[N]; // initialize a_d as an array with N double pointer
@@ -44,3 +44,30 @@ void externalClass::convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::G
 	convolutionKernel<<<cblocks, cthreads>>>(src.ptr(), dst.ptr(), src.cols, src.rows, szK);
 
 }
+
+void externalClass::convolutionThreshCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK, int thresh, int maxval)
+{
+	dim3 cthreads(16, 16);
+
+	dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
+					static_cast<double>(cthreads.x)))
+			   , static_cast<int>(std::ceil(src.size().height / 
+					static_cast<double>(cthreads.y))));
+
+	convolutionKernelThreshold<<<cblocks, cthreads>>>(src.ptr(), dst.ptr(), src.cols, src.rows, szK, thresh, maxval);                
+}
+
+void externalClass::fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuMat &dst, int tlX, int tlY, int brX, int brY)
+{
+	dim3 cthreads(16, 16);
+
+	dim3 cblocks(static_cast<int>(std::ceil(dst.size().width / 
+					static_cast<double>(cthreads.x)))
+			   , static_cast<int>(std::ceil(dst.size().height / 
+					static_cast<double>(cthreads.y))));
+
+	fillImgKernel<<<cblocks, cthreads>>>(mask.ptr(), dst.ptr(), mask.cols, dst.cols, tlX, tlY, brX, brY);
+
+}
+
+

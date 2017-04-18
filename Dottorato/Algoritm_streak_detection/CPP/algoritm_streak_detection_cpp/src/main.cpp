@@ -65,8 +65,8 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  char* folder = "-D";
-  char* file = "-F";
+  char folder[] = "-D";
+  char file[]   = "-F";
   bool folderMod = false;
  
   if (0 == ::strcmp(folder, argv[1])) {
@@ -85,7 +85,7 @@ int main(int argc, char** argv)
 
   bool res = file_selection(argv[2], folderMod);
 
-  std::cout << "End streaks points detection algorithm" << std::endl;
+  std::cout << "End streaks points detection algorithm: " << res << std::endl;
 
   return 1;
 }

@@ -147,7 +147,7 @@ std::string fileCygwin(const std::string strN)
     }
     else if (duePunti == strN[i])
     {
-      int afadfa = 0;
+      
     }
     else
     {
@@ -210,7 +210,6 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
 
   /* Read image */
   
-  int statusRead = 0;
   void *nulval = NULL;
   long fpixel[2] = {1, 1};
   long nelements = naxes[0] * naxes[1];
@@ -392,10 +391,11 @@ cv::Mat subtraction(const cv::Mat& imgA, const cv::Mat& imgB)
     const uchar* pLimgA = imgA.ptr<uchar>(row);
     const uchar* pLimgB = imgB.ptr<uchar>(row);
     uchar* pLimgOut = imgOut.ptr<uchar>(row);
-
+    
     for (int col = 0; col < imgA.cols; ++col) {      
       pLimgOut[col] =  pLimgA[col]>pLimgB[col] ? pLimgA[col]-pLimgB[col] : 0;
     }
+    
   }
   return imgOut;
 }
@@ -438,8 +438,9 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int kerlen)
   medianBlur(imgIn, imgOut, kerlen);
 
 #if SPD_FIGURE_1
-    namedWindow("Median filter", cv::WINDOW_NORMAL);
-    imshow("Median filter", imgOut);
+  namedWindow("Median filter", cv::WINDOW_NORMAL);
+  imshow("Median filter", imgOut);
+  cv::waitKey(0);
 #endif
 
   return imgOut;
@@ -463,8 +464,9 @@ cv::Mat medianFilter(const cv::Mat& imgIn, int littleKerlen, int bigKerlen)
   imgOut = imgOut - imgBigKer;
 
 #if SPD_FIGURE_1
-    namedWindow("Subtraction of median filter", cv::WINDOW_NORMAL);
-    imshow("Subtraction of median filter", imgOut);
+  namedWindow("Subtraction of median filter", cv::WINDOW_NORMAL);
+  imshow("Subtraction of median filter", imgOut);
+  cv::waitKey(0);
 #endif
 
   return imgOut;
@@ -560,9 +562,10 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
     , cv::BORDER_CONSTANT, cv::morphologyDefaultBorderValue());
 
 #if SPD_FIGURE_1
-    // Create a window for display.
-    namedWindow("Morphology opening with circular kernel", cv::WINDOW_NORMAL);
-    imshow("Morphology opening with circular kernel", imgOut);
+  // Create a window for display.
+  namedWindow("Morphology opening with circular kernel", cv::WINDOW_NORMAL);
+  imshow("Morphology opening with circular kernel", imgOut);
+  cv::waitKey(0);
 #endif
 
   return imgOut;
@@ -585,13 +588,13 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
 
-  for (size_t o = 0; o < backCnt.y; ++o)
+  for (int o = 0; o < backCnt.y; ++o)
   {
     vBackSrow.push_back(backSzR*o);
   }
   vBackSrow.push_back(imgIn.rows);
 
-  for (size_t o = 0; o < backCnt.x; ++o)
+  for (int o = 0; o < backCnt.x; ++o)
   {
     vBackScol.push_back(backSzC*o);
   }
@@ -599,9 +602,9 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
     
   cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
   
-  for (size_t i = 0; i < backCnt.y; ++i)
+  for (int i = 0; i < backCnt.y; ++i)
   {
-    for (size_t j = 0; j < backCnt.x; ++j)
+    for (int j = 0; j < backCnt.x; ++j)
     {
       const cv::Point ptTL = {vBackScol.at(j), vBackSrow.at(i)};
       const cv::Point ptBR = {vBackScol.at(j+1), vBackSrow.at(i+1)};
@@ -641,6 +644,7 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
     // Create a window for display.
     namedWindow("Background estimationl", cv::WINDOW_NORMAL);
     imshow("Background estimationl", outImg);
+    cv::waitKey(0);
 #endif
 
   return outImg;
@@ -696,13 +700,13 @@ cv::Mat binarizationZone(const cv::Mat& imgIn, const cv::Point zoneCnt, const cv
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
 
-  for (size_t o = 0; o < zoneCnt.y; ++o)
+  for (int o = 0; o < zoneCnt.y; ++o)
   {
     vBackSrow.push_back(zoneSzR*o);
   }
   vBackSrow.push_back(imgIn.rows);
 
-  for (size_t o = 0; o < zoneCnt.x; ++o)
+  for (int o = 0; o < zoneCnt.x; ++o)
   {
     vBackScol.push_back(zoneSzC*o);
   }
@@ -710,9 +714,9 @@ cv::Mat binarizationZone(const cv::Mat& imgIn, const cv::Point zoneCnt, const cv
     
   cv::Mat outImg = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
   
-  for (size_t i = 0; i < zoneCnt.y; ++i)
+  for (int i = 0; i < zoneCnt.y; ++i)
   {
-    for (size_t j = 0; j < zoneCnt.x; ++j)
+    for (int j = 0; j < zoneCnt.x; ++j)
     {
       const cv::Point ptTL = { vBackScol.at(j), vBackSrow.at(i) };
       const cv::Point ptBR = { vBackScol.at(j + 1), vBackSrow.at(i + 1) };
@@ -840,9 +844,10 @@ cv::Mat convolution(const cv::Mat& imgIn, const cv::Mat& kernel, double thresh)
   imgOut.convertTo(imgOut, CV_8U, alpha, beta);
 
 #if SPD_FIGURE_1
-    // Create a window for display.
-    namedWindow("Convolution image", cv::WINDOW_NORMAL);
-    imshow("Convolution image", imgOut);
+  // Create a window for display.
+  namedWindow("Convolution image", cv::WINDOW_NORMAL);
+  imshow("Convolution image", imgOut);
+  cv::waitKey(0);
 #endif
   return imgOut;
 }
@@ -1018,7 +1023,7 @@ void connectedComponents2
   /* Find points contours */
   findContours( imgPoints, contoursP, hierarchyP, CV_RETR_EXTERNAL
                 , CV_CHAIN_APPROX_NONE , offset);
-  
+
   std::vector< cv::Vec<int, 3> > firstPOINTS;
   std::vector<std::vector<cv::Point > > firstContoursP;
 
@@ -1564,7 +1569,6 @@ void deleteOverlapping
 {
   /* Delete streaks on points */
   cv::Mat imgP = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
-  int cIdx = -1;
   const cv::Scalar color = 255;
   int lineType = 8;
   cv::InputArray hierarchy = cv::noArray();
@@ -1660,7 +1664,6 @@ void deleteOverlapping2
 {
   /* Delete streaks on points */
   cv::Mat imgP = cv::Mat::zeros(imgSz.x, imgSz.y, CV_8U);
-  int cIdx = -1;
   const cv::Scalar color = 255;
   int lineType = 8;
   cv::InputArray hierarchy = cv::noArray();
@@ -1762,14 +1765,12 @@ void preciseCentroid
   {
     cv::Rect br = boundingRect(contours.at(i));
     int minX = br.x;
-    int maxX = br.x + br.width -1;
     int minY = br.y;
-    int maxY = br.y + br.height -1;
     
-    for (size_t y = 0; y < br.height + 2*epsB; ++y)
+    for (int y = 0; y < br.height + 2*epsB; ++y)
     {
       int row = static_cast<int>(minY +y - epsB);
-      for (size_t x=0; x< br.width + 2*epsB; ++x)
+      for (int x=0; x< br.width + 2*epsB; ++x)
       {        
         int col = static_cast<int>(minX + x - epsB);
         cv::Point pIn = { col, row };
@@ -1807,7 +1808,6 @@ void barycentre
   , cv::Point2f& p
 )
 {
-  int type = img.type();
   int col = 0;
   int row = 0;
   const ushort* pLine = nullptr;
@@ -1871,27 +1871,27 @@ bool rayCasting
       B = Aa;
     }
     
-    /* Verifica che il punto non è alla stessa altezza dei vertici */
+    /* Verifica che il punto non \E8 alla stessa altezza dei vertici */
     if ((pnt.y == B.y) || (pnt.y == A.y))
     {
       pnt.y += eps;
     }
 
-    /* Verifica se il punto è sopra (1) o sotto al segmento (2) */
-    /* Verifica se il punto è alla destra del segmento (3) */
+    /* Verifica se il punto \E8 sopra (1) o sotto al segmento (2) */
+    /* Verifica se il punto \E8 alla destra del segmento (3) */
     if ((pnt.y > B.y) || (pnt.y < A.y) || (pnt.x > std::max(A.x, B.x)))
     {
       continue;
     }
 
-    /* Il punto è all'estrema sinistra del segmento quindi lo interseca */
+    /* Il punto \E8 all'estrema sinistra del segmento quindi lo interseca */
     if ( pnt.x < std::min(A.x, B.x) )
     {
       inside = !inside;
       continue;
     }
 
-    /* Verifica se il punto è alla sinistra o destra del segmento */
+    /* Verifica se il punto \E8 alla sinistra o destra del segmento */
     float m_edge;
     /*if (0.0f == B.x - A.x)
     {m_edge = huge;}
@@ -1966,9 +1966,9 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
   {
     angle.push_back(houghVal.at(i)[1]);
   }
-  angle.push_back(CV_PI / 2); //Force research at 0°
+  angle.push_back(CV_PI / 2); //Force research at 0\B0
   
-  int count = 0;
+  size_t count = 0;
   std::vector<std::pair<float, int>> countAngle;
   for (size_t i = 0; i < houghVal.size(); ++i)
   {
@@ -2028,8 +2028,8 @@ void timeElapsed(std::ostream& stream, clock_t start, const char* strName)
 * ========================================================================== */
 cv::Mat linearKernel(int dimLine, double teta)
 {
-  int yDim = static_cast<int>(::ceil(dimLine * ::abs(::sin((CV_PI/2)-teta))));  
-  int xDim = static_cast<int>(::ceil(dimLine * ::abs(::cos((CV_PI/2)-teta))));
+  int yDim = static_cast<int>(::ceil(dimLine * ::fabs(::sin((CV_PI/2)-teta))));
+  int xDim = static_cast<int>(::ceil(dimLine * ::fabs(::cos((CV_PI/2)-teta))));
 
   /* Minimum dimensions */
   if(yDim<3){
@@ -2071,8 +2071,7 @@ cv::Mat linearKernel(int dimLine, double teta)
 #if SPD_FIGURE_1
     // Create a window for display.
     namedWindow("Kernel", cv::WINDOW_NORMAL);
-    imshow("Kernel", kernel);
-    
+    imshow("Kernel", kernel);    
     cv::waitKey(0);
 #endif
 
@@ -2236,7 +2235,7 @@ void parseWCS(const char* file, wcsPar& par)
   char strN[81];
   char strValue[81];
 
-  for (int p = 0; p < line.size(); p += 80) 
+  for (size_t p = 0; p < line.size(); p += len) 
   {
     ::memset(buf,0,sizeof(buf));
     snprintf(buf, 81, "%s", line.c_str() + p);
@@ -2357,14 +2356,7 @@ void sigmaClipProcessing
   , std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
-  cv::Point_<int> I_input_size = { Img_input.cols, Img_input.rows };
-  double bordersThick = 0.015;
-  cv::Point_<double> borders = { bordersThick, 1 - bordersThick };
-  cv::Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * I_input_size.x))
-                          , static_cast<int>(ceil(borders.x * I_input_size.y))
-                          , static_cast<int>(floor(borders.y * I_input_size.x))
-                          , static_cast<int>(floor(borders.y * I_input_size.y)) };
-
+  
 /* ======================================================================= *
  * Points detection                                                        *
  * ======================================================================= */
@@ -2402,8 +2394,8 @@ void sigmaClipProcessing
     backgroundEstimation(medianImg, backCnt, meanBg, stdBg);
 
   timeElapsed(infoFile, start, "Background estimation");
-  cv::waitKey(0);
-  
+
+
 /* ----------------------------------------------------------------------- *
  * Background subtraction                                                  *
  * ----------------------------------------------------------------------- */
@@ -2427,16 +2419,15 @@ void sigmaClipProcessing
 /* ----------------------------------------------------------------------- *
  * Median filter                                                           *
  * ----------------------------------------------------------------------- */
-
+  
   start = clock();
   
   cv::Mat medianBgSubImg = medianFilter(bgSubtracImg, kerlenSz);
   bgSubtracImg.release();
 
   timeElapsed(infoFile, start, "Median filter");
-  cv::waitKey(0);
-
-
+  
+  
 /* ----------------------------------------------------------------------- *
  * Binarization for points detection                                       *
  * ----------------------------------------------------------------------- */
@@ -2449,8 +2440,7 @@ void sigmaClipProcessing
   cv::Mat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
   
   timeElapsed(infoFile, start, "Binarization");
-  cv::waitKey(0);
-
+  
 
 /* ----------------------------------------------------------------------- *
  * Binarization for streaks detection                                      *
@@ -2465,8 +2455,7 @@ void sigmaClipProcessing
   medianBgSubImg.release();
 
   timeElapsed(infoFile, start, "Binarization for streaks detection");
-  cv::waitKey(0);
-  
+    
 
 /* ----------------------------------------------------------------------- *
  * Distance transformation for streaks detection                           *
@@ -2491,8 +2480,7 @@ void sigmaClipProcessing
   cv::Mat convImgPnt = convolution(binaryImgPnt, kernel, threshConv);
   binaryImgPnt.release();
   timeElapsed(infoFile, start, "Convolution for points detection");
-  cv::waitKey(0);
-  
+    
 
 /* ----------------------------------------------------------------------- *
  * Morphology opening                                                      *
@@ -2505,7 +2493,7 @@ void sigmaClipProcessing
 
   timeElapsed(infoFile, start, "Morphology opening");
   
-  cv::waitKey(0);
+  
 #if 0
   {
     char s_imgName[256];
@@ -2546,8 +2534,7 @@ void sigmaClipProcessing
   }
 
   timeElapsed(infoFile, start, "Hough transform");
-  cv::waitKey(0);
-
+  
 
 /* ----------------------------------------------------------------------- *
  * Sum streaks binary image                                                *
@@ -2557,7 +2544,7 @@ void sigmaClipProcessing
 
   cv::Mat sumStrRemImg = cv::Mat::zeros(histStretch.rows, histStretch.cols, CV_8U);
 
-  for (int i = 0; i < angle.size(); ++i)
+  for (size_t i = 0; i < angle.size(); ++i)
   {
 
 /* ----------------------------------------------------------------------- *
@@ -2567,8 +2554,7 @@ void sigmaClipProcessing
     int dimLineRem = 60;
 
     cv::Mat morpOpLinRem = morphologyOpen(openImg, dimLineRem, angle.at(i).first);
-    cv::waitKey(0);
-
+    
 
 /* ----------------------------------------------------------------------- *
  * Binary image with streaks                                               *
@@ -2612,8 +2598,7 @@ void sigmaClipProcessing
   
   cv::Mat convImgRms = convolution(onlyPoints, kernelRm, threshConvRm);
   kernelRm.release();
-  onlyPoints.release();
-  cv::waitKey(0);
+  onlyPoints.release();  
 
   timeElapsed(infoFile, start, "Convolution");
     
@@ -2640,11 +2625,11 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  lightCurve(Img_input, STREAKS, contoursS);
+  //lightCurve(Img_input, STREAKS, contoursS);
 
 }
 
-
+#if 0
 std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par)
 {
   return std::async(std::launch::async, [&]() 
@@ -2702,7 +2687,31 @@ std::future<bool> asyncAstrometry(const std::vector<char *>& input, wcsPar& par)
     return res;
   });
 }
+#else
 
+bool astrometry(const std::vector<char *>& input, wcsPar& par)
+{
+  bool res = false;
+  std::string astroScript = "./astrometricReduction.sh ";
+
+  std::string command = astroScript + input.at(0) + " " + input.at(4);
+  printf("\n%s\n", command.c_str());
+  int asd = system(command.c_str());
+
+  //Parse .wcs file
+  std::string wcsF = std::string(input.at(4)) + input.at(1) + ".wcs";    
+
+  bool existWCS = spd_os::fileExists(wcsF.c_str());
+    
+  if (existWCS) {      
+    parseWCS(wcsF.c_str(), par);
+    res = true;
+  }
+    
+  return res;  
+}
+
+#endif
 
 void lightCurve
 (
@@ -2717,11 +2726,7 @@ void lightCurve
   for (size_t i = 0; i < contours.size(); ++i)
   {
     cv::RotatedRect rotRec = fitEllipse(contours[i]);
-    cv::Point2f centreRR = rotRec.center;
-    float majorAxis = rotRec.size.height;
-    float minorAxis = rotRec.size.width;
-    float alfa = rotRec.angle;
-
+    
     //Bounding box
     cv::Rect rotBoundRec = rotRec.boundingRect();
     cv::Point tlBBi = rotBoundRec.tl();
@@ -2802,7 +2807,7 @@ void linePoints
 
   cv::LineIterator it{ img, p1, p2, connectivity, leftToRight };
 
-  for (size_t x = 0; x < it.count; ++x)
+  for (int x = 0; x < it.count; ++x)
   {
     points.push_back({ it.pos().x + tl.x , it.pos().y + tl.y });
 

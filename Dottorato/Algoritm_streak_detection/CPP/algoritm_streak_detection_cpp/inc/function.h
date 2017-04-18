@@ -33,8 +33,10 @@
 #include <numeric>
 #include <time.h>
 #include <limits>
+#if 0
 #include <future>
 #include <thread>
+#endif
 
 #include <opencv2/opencv.hpp>
 //#include <opencv\highgui.h>
@@ -316,7 +318,7 @@ void barycentre
 * @param imgIn Input image
 * @return Vector with lines incination angle
 */
-std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn);
+std::vector<std::pair<float, int> > hough(const cv::Mat& imgIn);
 
 /**
 * timeElapsed Compute elapsed time
@@ -397,9 +399,12 @@ void sigmaClipProcessing
   , std::vector< cv::Vec<float, 3> >& STREAKS
 );
 
-
+#if 0
 std::future<bool> asyncAstrometry(std::string& pStr, wcsPar& par);
 std::future<bool> asyncAstrometry(const std::vector<char *>& input, wcsPar& par);
+#else
+bool astrometry(const std::vector<char *>& input, wcsPar& par);
+#endif
 
 void lightCurve
 (

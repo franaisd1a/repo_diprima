@@ -95,7 +95,6 @@ bool file_selection(char* input, bool folderMod)
   void* hdir = ::malloc(512);
   
   bool exitLoop = false;
-  bool createResDir = true;
 
   //Open input directory and create result folder
   bool openDir = false;
