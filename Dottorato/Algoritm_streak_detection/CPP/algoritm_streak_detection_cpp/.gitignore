@@ -5,3 +5,4 @@
 /.settings/
 .gitignore~
 *.sh~
+*.cmake~

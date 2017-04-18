@@ -45,7 +45,7 @@ CONFIGURE_FILE(
 
 #CUDA Settings
 if (${CUDA_FOUND})
-
+message("Building for GPU.")
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20 -std c++11)#20
 
 #set(CUDA_SRC src/medianKernel.cu)
@@ -92,7 +92,7 @@ set(SOURCES
 		#${SRC_PATH}/main_fits.cpp
 		${SRC_PATH}/function.cpp
     ${SOURCES_OS}
-			 )
+    )
 
 # Set header files
 set(HEADERS
@@ -115,13 +115,13 @@ add_executable( ${MAINTGT} ${SOURCES} ${HEADERS})
 endif  ()
 
 
-	
 # Update the central variable containing all external libraries
 set(LIBS
   ${OpenCV_LIBS}
   ${CFITSIO_LIBRARY}
   ${CUDA_LIBRARIES}
 )
+
 
 # Update the central variable containing all external includes
 set(INCS
