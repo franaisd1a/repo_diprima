@@ -26,22 +26,20 @@ __global__ void square_array(double *a, int N)
 */
 
 __global__ void medianKernel
-(const uchar * input, uchar * output, int Image_Width, int Image_Height, int szK)
+(const uchar* input, uchar* output, int Image_Width, int Image_Height, int szK)
 {
   int numValue = szK*szK;
   int radius = (int)(szK/2);
   int middleValue = (int)(numValue/2);
 
-  unsigned short surround[122];
+  unsigned short surround[82];
 //unsigned short* surround = new unsigned short[numValue];
 
   int iterator;
 
   const int x     = blockDim.x * blockIdx.x + threadIdx.x;
   const int y     = blockDim.y * blockIdx.y + threadIdx.y;
-  //const int tid   = threadIdx.y * blockDim.x + threadIdx.x;   
 
-//if( (x >= (Image_Width - 1)) || (y >= Image_Height - 1) || (x == 0) || (y == 0)) return;
   if( (x >= (Image_Width - radius)) || (y >= Image_Height - radius) || (x < radius) || (y < radius)) return;
 
   // --- Fill array private to the threads
@@ -129,17 +127,64 @@ __global__ void fillImgKernel
   }  
 }
 
+__global__ void lutKernel
+(float* pLUT, int imgW, const double outputByteDepth
+  , const int minValue, const int maxValue)
+{
+  const int i = blockDim.x * blockIdx.x + threadIdx.x;  
+  double scaleFactor = outputByteDepth/(maxValue - minValue);
+  if( (i >= imgW) || (i < 0) )
+  {}
+  else
+  {
+    if (i < minValue)
+    {
+      pLUT[i] = 0;
+    }
+    else if (i > maxValue) {
+      pLUT[i] = outputByteDepth;
+    }
+    else {
+      pLUT[i] = (i - minValue)*scaleFactor;
+    }
+  }  
+  return;
+}
+
+__global__ void stretchingKernel
+(const ushort* pInImg, const float* pLUT, uchar* pDstImg, int imgW, int imgH)
+{
+  const int x = blockDim.x * blockIdx.x + threadIdx.x;
+  const int y = blockDim.y * blockIdx.y + threadIdx.y;  
+ 
+  if( (x >= imgW) || (y >= imgH ) || (x < 0) || (y < 0)) 
+  {
+  }
+  else 
+  {
+    ushort valIn = pInImg[(y*imgW)+x];
+    float valLUT = pLUT[valIn];
+    pDstImg[(y*imgW)+x] = (uchar)(valLUT);
+  }
+}
+
+
+/******************************************************************************/
+/*                            externalClass                                   */
+/******************************************************************************/
+
 class externalClass {
 
 public:
-	int GetInt() { return 5; };
+	//int GetInt() { return 5; };
 
-	//void squareOnDevice(double *a_h, const int N);
-	
 	void medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK);
 	void convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK);
   void convolutionThreshCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK, int thresh, int maxval);
   void fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuMat &dst, int tlX, int tlY, int brX, int brY);
+  void LUT(cv::gpu::GpuMat& lut, const double outByteDepth, const int minValue, const int maxValue);
+  void stretching(const cv::gpu::GpuMat& src, const cv::gpu::GpuMat& lut, cv::gpu::GpuMat& dst);
 };
 
-#endif
+#endif /* EXTERNALCLASS_CUH_ */
+

@@ -78,6 +78,7 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img);
 * @return Output stretched image
 */
 cv::Mat histogramStretching(const cv::Mat& imgIn);
+cv::Mat histogram(const cv::Mat& imgIn, double& outputByteDepth, int& minValue, int& maxValue);
 
 cv::Mat subtraction(const cv::Mat& imgA, const cv::Mat& imgB);
 

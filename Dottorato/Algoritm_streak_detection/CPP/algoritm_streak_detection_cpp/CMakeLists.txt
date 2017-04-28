@@ -54,7 +54,7 @@ set(CUDA_SRC
     ${SRC_PATH}/main.cpp
     ${SRC_PATH}/file_selection.cpp
     ${SRC_PATH}/algo_selection.cpp
-    ${SRC_PATH}/main_sigmaClipSimpleBig.cpp
+    ${SRC_PATH}/main_sigmaClipSimpleBig_GPU.cu
     ${SRC_PATH}/main_sigmaClipBig_GPU.cu
     ${SRC_PATH}/function.cpp
     ${SRC_PATH}/function_GPU.cu
@@ -66,7 +66,7 @@ set(CUDA_SRC
 set(HEADERS
   ${INC_PATH}/file_selection.h
   ${INC_PATH}/algo_selection.h
-  ${INC_PATH}/main_sigmaClipSimpleBig.h
+  ${INC_PATH}/main_sigmaClipSimpleBig_GPU.cuh
   ${INC_PATH}/function.h
   #${INC_PATH}/function_GPU.h
   ${INC_PATH}/function_GPU.cuh
@@ -78,6 +78,12 @@ set(HEADERS
 #add_executable
 CUDA_ADD_EXECUTABLE( ${MAINTGT} ${CUDA_SRC} ${HEADERS})
 
+# Update the central variable containing all external libraries
+set(LIBS
+  ${OpenCV_LIBS}
+  ${CFITSIO_LIBRARY}
+  ${CUDA_LIBRARIES}
+)
 
 else   ()
 # Set source files
@@ -112,15 +118,16 @@ set(HEADERS
 #add_executable
 add_executable( ${MAINTGT} ${SOURCES} ${HEADERS})
 
-endif  ()
-
-
 # Update the central variable containing all external libraries
 set(LIBS
   ${OpenCV_LIBS}
   ${CFITSIO_LIBRARY}
-  ${CUDA_LIBRARIES}
 )
+
+endif  ()
+
+
+
 
 
 # Update the central variable containing all external includes

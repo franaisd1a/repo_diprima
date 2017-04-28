@@ -245,6 +245,95 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
+cv::Mat histogram(const cv::Mat& imgIn, double& outputByteDepth, int& minValue, int& maxValue)
+{
+  //int depth = imgIn.depth();
+  int type = imgIn.type();
+  outputByteDepth = 255.0;
+
+  int color = 0;
+
+  if (0 == type) {
+    color = static_cast<int>(::pow(2, 8));
+  } else if (2 == type) {
+    color = static_cast<int>(::pow(2, 16));
+  } else {
+    printf("Error. Unsupported pixel type.\n");
+  }
+  cv::Mat hist = cv::Mat::zeros(1, color, CV_32F);
+
+  for (int row = 0; row < imgIn.rows; ++row)
+  {
+    const ushort* pLine = imgIn.ptr<ushort>(row);
+    for (int col = 0; col < imgIn.cols; ++col) {
+      ushort value = pLine[col];
+
+      float* pLineH = hist.ptr<float>(0);
+      pLineH[value] +=  1;
+    }
+  }
+
+#if SPD_DEBUG
+  //Print matrix value
+  for (int row = 0; row < hist.rows; ++row)
+  {
+    const float* pLine = hist.ptr<float>(row);
+    for (int col = 0; col < hist.cols; ++col) {
+      float value = pLine[col];
+      printf("%f ", value);      
+    }
+    printf("\n\n");
+  }
+#endif
+
+  double maxHistValue = 0, minHistValue = 0;
+  cv::Point minLocHistValue = {0, 0};
+  cv::Point maxLocHistValue = {0, 0};
+  cv::minMaxLoc(imgIn, &minHistValue, &maxHistValue, &minLocHistValue, &maxLocHistValue, cv::noArray());
+
+  double peakMax = 0, peakMin = 0;
+  cv::Point peakMinLoc = {0, 0};
+  cv::Point peakMaxLoc = {0, 0};
+  cv::minMaxLoc(hist, &peakMin, &peakMax, &peakMinLoc, &peakMaxLoc, cv::noArray());
+  
+  const double percentile[2] = { 0.432506, (1 - 0.97725) };
+  double  lowThresh = peakMax * percentile[0];
+  double highThresh = peakMax * percentile[1];
+
+  int i = 0, k = 0;
+  minValue = 0;
+  maxValue = 0;
+
+  for (i = 0; i < peakMaxLoc.x; ++i)
+  {
+    k = peakMaxLoc.x - i;
+    double val = static_cast<double>(hist.at<float>(0, k));
+    if (val < lowThresh) {
+      minValue = k;
+      break;
+    }
+  }
+
+  for (i = peakMaxLoc.x; i < hist.cols; ++i)
+  {
+    double val = static_cast<double>(hist.at<float>(0, i));
+    if (val < highThresh) {
+      maxValue = i;
+      break;
+    }
+  }
+
+  return hist;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: histogramStretching
+* FUNCTION DESCRIPTION: Histogram Stretching
+*        CREATION DATE: 20160727
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
 cv::Mat histogramStretching(const cv::Mat& imgIn)
 {
   //int depth = imgIn.depth();

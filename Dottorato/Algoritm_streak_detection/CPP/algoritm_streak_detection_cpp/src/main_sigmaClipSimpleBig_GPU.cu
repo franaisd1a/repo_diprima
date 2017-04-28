@@ -3,7 +3,7 @@
 * ========================================================================== */
 
 /* ==========================================================================
-* MODULE FILE NAME: main_sigmaClipSimpleBig.cpp
+* MODULE FILE NAME: main_sigmaClipSimpleBig_GPU.cu
 *      MODULE TYPE:
 *
 *         FUNCTION: Detect streaks and points.
@@ -24,15 +24,15 @@
 /* ==========================================================================
 * INCLUDES
 * ========================================================================== */
-#include "function.h"
-#include "macros.h"
+#include "../inc/function.h"
+#include "../inc/macros.h"
 
 #include <stdio.h>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <time.h>
-#include "main_sigmaClipBig_GPU.cuh"
+#include "../src/main_sigmaClipBig_GPU.cuh"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -64,8 +64,20 @@ using namespace std;
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-int main_sigmaClipSimpleBig(const std::vector<char *>& input)
+int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
 {
+/* ======================================================================= *
+ * GPU initializations and informations                                    *
+ * ======================================================================= */
+
+  int deviceCount = gpu::getCudaEnabledDeviceCount();
+  
+  cv::gpu::setDevice(deviceCount-1);
+
+  // --- CUDA warm up
+  cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
+      
+  
 /* ----------------------------------------------------------------------- *
  * Initialization                                                          *
  * ----------------------------------------------------------------------- */
@@ -109,9 +121,13 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   wcsPar par;
 #if 1
+#if 1
   bool compPar = astrometry( input, par);
 #else  
   std::future<bool> fut_astrometry = asyncAstrometry(input, par);
+#endif
+#else
+  bool compPar = true; 
 #endif
 
   timeElapsed(infoFile, start, "Astrometry");
@@ -143,6 +159,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   int channels = Img_input.channels();
   int depth = Img_input.depth();
+  int imgRows = Img_input.rows;
+  int imgCols = Img_input.cols;
 
   std::string s_Ch = "Image channels: " + std::to_string(channels);
   stamp(infoFile, s_Ch.c_str());
@@ -159,17 +177,23 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   start = clock();
 
   Mat histStretch;
+  cv::gpu::GpuMat histStretchGPU;
   if ( (0==strcmp(input.at(2), extJPG)) || (0==strcmp(input.at(2), extjpg)) )
   {
     histStretch = Img_input;
   }
   else if ( (0==strcmp(input.at(2), extFIT)) || (0==strcmp(input.at(2), extfit)) )
   {
-    histStretch = histogramStretching(Img_input);
+    double outByteDepth=0;
+    int minValue=0;
+    int maxValue=0;
+    cv::Mat hist = histogram(Img_input, outByteDepth, minValue, maxValue);
+
+    histStretchGPU = streching(Img_input, hist, outByteDepth, minValue, maxValue);
+    hist.release();
   }
   
   timeElapsed(infoFile, start, "Histogram Stretching");
-  cv::waitKey(0);
 
 
 /***************************************************************************/
@@ -182,8 +206,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   size_t maxColdim = 4099;
   size_t maxRowdim = 4099;
 
-  size_t regionNumR = static_cast<size_t>(::round(histStretch.rows / maxRowdim));
-  size_t regionNumC = static_cast<size_t>(::round(histStretch.cols / maxColdim));
+  size_t regionNumR = static_cast<size_t>(::round(static_cast<float>(imgRows / maxRowdim)));
+  size_t regionNumC = static_cast<size_t>(::round(static_cast<float>(imgCols / maxColdim)));
 
   /* Odd dimensions */
   if (0 == regionNumR % 2) {
@@ -193,8 +217,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     regionNumC = regionNumC + 1;
   }
 
-  size_t regionDimR = static_cast<size_t>(::round(histStretch.rows / regionNumR));
-  size_t regionDimC = static_cast<size_t>(::round(histStretch.cols / regionNumC));
+  size_t regionDimR = static_cast<size_t>(::round(static_cast<float>(imgRows / regionNumR)));
+  size_t regionDimC = static_cast<size_t>(::round(static_cast<float>(imgCols / regionNumC)));
 
   std::vector<int> vRegRow;
   std::vector<int> vRegCol;
@@ -203,30 +227,30 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   {
     vRegRow.push_back(regionDimR*o);
   }
-  vRegRow.push_back(histStretch.rows);
+  vRegRow.push_back(imgRows);
 
   for (size_t o = 0; o < regionNumC; ++o)
   {
     vRegCol.push_back(regionDimC*o);
   }
-  vRegCol.push_back(histStretch.cols);
-    
+  vRegCol.push_back(imgCols);
+
   for (size_t i = 0; i < regionNumR; ++i)
   {
     for (size_t j = 0; j < regionNumC; ++j)
     {
-      const cv::Point ptTL = { vRegCol.at(j), vRegRow.at(i) };
-      const cv::Point ptBR = { vRegCol.at(j + 1), vRegRow.at(i + 1) };
+      const cv::Point ptTL ( vRegCol.at(j), vRegRow.at(i) );
+      const cv::Point ptBR ( vRegCol.at(j + 1), vRegRow.at(i + 1) );
 
       cv::Rect region_of_interest = cv::Rect(ptTL, ptBR);
-      cv::Mat histStretchPart = histStretch(region_of_interest);
+      cv::gpu::GpuMat histStretchPart = histStretchGPU(region_of_interest);
       cv::Mat Img_inputPart = Img_input(region_of_interest);
 
       std::vector< cv::Vec<float, 3> > localPOINTS;
       std::vector< cv::Vec<float, 3> > localSTREAKS;
 
 /******************************************************************************/
-      sigmaClipProcessing(histStretchPart, Img_inputPart, infoFile
+      main_sigmaClipBig_GPU(histStretchPart, Img_inputPart, infoFile
         , localPOINTS, localSTREAKS);
 /******************************************************************************/
 
@@ -257,6 +281,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   std::vector< cv::Vec<float, 3> > radecS;
   std::vector< cv::Vec<float, 3> > radecP;
+  cv::Vec<float, 3> vZeros (0.0, 0.0, 0.0);
 
   if (0!=STREAKS.size() || 0!=POINTS.size())
   {
@@ -276,10 +301,10 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     else
     {
       for (size_t u = 0; u < STREAKS.size(); ++u) {
-        radecS.push_back({ 0,0,0 });
+        radecS.push_back(vZeros);
       }
       for (size_t u = 0; u < POINTS.size(); ++u) {
-        radecP.push_back({ 0,0,0 });
+        radecP.push_back(vZeros);
       }
     }
   }
@@ -310,6 +335,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 /* ----------------------------------------------------------------------- *
  * Plot result                                                             *
  * ----------------------------------------------------------------------- */
+
+  histStretchGPU.download(histStretch);
 
   plotResult(histStretch, POINTS, STREAKS, input);
     

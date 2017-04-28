@@ -1,19 +1,5 @@
 
 #include "externalClass.cuh"
-/*
-void externalClass::squareOnDevice(double *a_h, const int N) {
-	double *a_d = new double[N]; // initialize a_d as an array with N double pointer
-	size_t size = N * sizeof(double);
-	cudaMalloc((void **) &a_d, size);
-	cudaMemcpy(a_d, a_h, size, cudaMemcpyHostToDevice);
-
-	int block_size = 4;
-	int n_blocks = N/block_size + (N%block_size == 0 ? 0:1);
-	square_array <<<n_blocks, block_size>>> (a_d, N);
-	cudaMemcpy(a_h, a_d, size, cudaMemcpyDeviceToHost);
-	cudaFree(a_d);
-}
-*/
 
 void externalClass::medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK)
 {
@@ -68,6 +54,30 @@ void externalClass::fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuM
 
 	fillImgKernel<<<cblocks, cthreads>>>(mask.ptr(), dst.ptr(), mask.cols, dst.cols, tlX, tlY, brX, brY);
 
+}
+
+void externalClass::LUT(cv::gpu::GpuMat& lut, const double outByteDepth, const int minValue, const int maxValue)
+{
+	dim3 cthreads(32, 1);
+
+	dim3 cblocks(static_cast<int>(std::ceil(lut.size().width / 
+					static_cast<double>(cthreads.x)))
+			   , static_cast<int>(std::ceil(lut.size().height / 
+					static_cast<double>(cthreads.y))));
+
+  lutKernel<<<cblocks, cthreads>>>(lut.ptr<float>(), lut.cols, outByteDepth, minValue, maxValue);
+}
+
+void externalClass::stretching(const cv::gpu::GpuMat& src, const cv::gpu::GpuMat& lut, cv::gpu::GpuMat& dst)
+{
+	dim3 cthreads(16, 16);
+
+	dim3 cblocks(static_cast<int>(std::ceil(dst.size().width / 
+					static_cast<double>(cthreads.x)))
+			   , static_cast<int>(std::ceil(dst.size().height / 
+					static_cast<double>(cthreads.y))));
+
+  stretchingKernel<<<cblocks, cthreads>>>(src.ptr<ushort>(), lut.ptr<float>(), dst.ptr(), src.cols, src.rows);
 }
 
 

@@ -39,38 +39,25 @@ using namespace std;
 
 void main_sigmaClipBig_GPU
 (
-  const cv::Mat& histStretch
+  cv::gpu::GpuMat& histStretchGPU
   , const cv::Mat& Img_input
   , std::ostream& infoFile
   , std::vector< cv::Vec<float, 3> >& POINTS
   , std::vector< cv::Vec<float, 3> >& STREAKS
 )
 {
-
 /* ======================================================================= *
- * GPU initializations and informations                                    *
+ * Initializations                                                         *
  * ======================================================================= */
 
-  int deviceCount = gpu::getCudaEnabledDeviceCount();
-  
-  cv::gpu::setDevice(deviceCount-1);
-    
-  // --- CUDA warm up
-  cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
-      
-  //Move data on GPU
-  cv::gpu::GpuMat histStretchGPU = gpu::createContinuous(histStretch.rows
-    , histStretch.cols, histStretch.type());
-  
-  histStretchGPU.upload(histStretch);
-
   double bordersThick = 0.015;  
-  cv::Point I_input_size ( Img_input.cols, Img_input.rows );
+  cv::Point imgSz ( Img_input.cols, Img_input.rows );
+  int imgType = histStretchGPU.type();
   cv::Point_<double> borders ( bordersThick, 1 - bordersThick );
-  cv::Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * I_input_size.x))
-                          , static_cast<int>(ceil(borders.x * I_input_size.y))
-                          , static_cast<int>(floor(borders.y * I_input_size.x))
-                          , static_cast<int>(floor(borders.y * I_input_size.y)) };
+  cv::Vec<int, 4> imgBorders = { static_cast<int>(ceil(borders.x * imgSz.x))
+                          , static_cast<int>(ceil(borders.x * imgSz.y))
+                          , static_cast<int>(floor(borders.y * imgSz.x))
+                          , static_cast<int>(floor(borders.y * imgSz.y)) };
 
 
 /* ======================================================================= *
@@ -89,6 +76,7 @@ void main_sigmaClipBig_GPU
 
 	timeElapsed(infoFile, start, "Median filter");
   
+  histStretchGPU.release();
   
 /* ----------------------------------------------------------------------- *
  * Background estimation                                                   *
@@ -99,8 +87,8 @@ void main_sigmaClipBig_GPU
   size_t maxColdim = 512;
   size_t maxRowdim = 512;
 
-  int regionNumR = static_cast<int>(::round(static_cast<float>(histStretch.rows / maxRowdim)));
-  int regionNumC = static_cast<int>(::round(static_cast<float>(histStretch.cols / maxColdim)));
+  int regionNumR = static_cast<int>(::round(static_cast<float>(imgSz.y / maxRowdim)));
+  int regionNumC = static_cast<int>(::round(static_cast<float>(imgSz.x / maxColdim)));
 
   cv::Point backCnt (regionNumC, regionNumR);
   cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
@@ -239,7 +227,7 @@ void main_sigmaClipBig_GPU
 
   timeElapsed(infoFile, start, "Hough transform");
   
-
+#if 0
 /*************************************************/
   //Move data on GPU
   cv::gpu::GpuMat resizeGPU = gpu::createContinuous(resizeImg.rows
@@ -248,16 +236,16 @@ void main_sigmaClipBig_GPU
   resizeGPU.upload(resizeImg);
 
   std::vector<std::pair<float, int>> asd = hough(resizeGPU);
+  resizeGPU.release();
 /*************************************************/
-
+#endif
 /* ----------------------------------------------------------------------- *
  * Sum streaks binary image                                                *
  * ----------------------------------------------------------------------- */
 
   start = clock();
 
-  gpu::GpuMat sumStrRemImg = gpu::createContinuous(histStretch.rows
-    , histStretch.cols, histStretch.type());
+  gpu::GpuMat sumStrRemImg = gpu::createContinuous(imgSz.y, imgSz.x, imgType);
 
   for (int i = 0; i < angle.size(); ++i)
   {

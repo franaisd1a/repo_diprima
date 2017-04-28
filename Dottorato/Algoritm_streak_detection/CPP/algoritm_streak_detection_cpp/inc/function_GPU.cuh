@@ -59,6 +59,9 @@
 * FUNCTION DECLARATION
 * ========================================================================== */
 
+cv::gpu::GpuMat streching(const cv::Mat& imgIn, const cv::Mat& hist, const double outByteDepth
+  , const int minValue, const int maxValue);
+
 cv::gpu::GpuMat convolution(const cv::gpu::GpuMat& imgIn, int szK, int thresh, int maxval);
 
 cv::gpu::GpuMat medianFIlterK(const cv::gpu::GpuMat& imgIn, int kerlen);

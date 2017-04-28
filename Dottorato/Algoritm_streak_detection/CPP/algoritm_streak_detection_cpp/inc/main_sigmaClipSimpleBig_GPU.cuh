@@ -4,8 +4,8 @@
 * ========================================================================== */
 
 /* ==========================================================================
-*   INCLUDE FILE NAME: main_GPU_cuda.h
-* INCLUDE DESCRIPTION: Algo simple for streaks and points detection on GPU
+*   INCLUDE FILE NAME: main_sigmaClipSimpleBig_GPU.cuh
+* INCLUDE DESCRIPTION: Algo simple for streaks and points detection
 *       CREATION DATE: 20160727
 *             AUTHORS: Francesco Diprima
 *        DESIGN ISSUE: None.
@@ -17,13 +17,12 @@
 *
 * ========================================================================== */
 
-#ifndef MAIN__SIGMACLIPBIG_GPU_CUDA_H
-#define MAIN__SIGMACLIPBIG_GPU_CUDA_H
+#ifndef MAIN_SIGMA_CLIP_SIMPLE_BIG_GPU_CUH
+#define MAIN_SIGMA_CLIP_SIMPLE_BIG_GPU_CUH
 
 /* ==========================================================================
 * INCLUDE
 * ========================================================================== */
-#include "../inc/function_GPU.cuh"
 
 /* ==========================================================================
 * MACROS
@@ -36,19 +35,12 @@
 /* ==========================================================================
 * FUNCTION DECLARATION
 * ========================================================================== */
- 
+
 /**
-* main_GPU_cuda Algo for streaks and points detection on GPU with CUDA kernel
+* main_sigmaClipSimpleBig_GPU Algo simple for streaks and points detection
 * @param imgIn Input image
 * @return 
 */
-void main_sigmaClipBig_GPU(
-  cv::gpu::GpuMat& histStretch
-  , const cv::Mat& Img_input
-  , std::ostream& infoFile
-  , std::vector< cv::Vec<float, 3> >& POINTS
-  , std::vector< cv::Vec<float, 3> >& STREAKS
-);
+int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input);
 
-#endif /* MAIN__SIGMACLIPBIG_GPU_CUDA_H */
-
+#endif /* MAIN_SIGMA_CLIP_SIMPLE_BIG_GPU_CUH */

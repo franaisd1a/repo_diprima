@@ -55,6 +55,51 @@
 * ========================================================================== */
  
 /* ==========================================================================
+*        FUNCTION NAME: histogramStreching
+* FUNCTION DESCRIPTION: Histogram streching on GPU
+*        CREATION DATE: 20170422
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::gpu::GpuMat streching
+(
+  const cv::Mat& imgIn
+  , const cv::Mat& hist
+  , const double outByteDepth
+  , const int minValue
+  , const int maxValue)
+{
+//  double outputByteDepth = 255.0;
+  cv::gpu::GpuMat LUT = cv::gpu::createContinuous(1, hist.cols, hist.type());
+
+  externalClass kernelCUDA;
+  kernelCUDA.LUT(LUT, outByteDepth, minValue, maxValue);
+
+  cv::gpu::GpuMat imgInGPU = cv::gpu::createContinuous(imgIn.rows, imgIn.cols, imgIn.type());
+  
+  imgInGPU.upload(imgIn);
+
+  cv::gpu::GpuMat imgOut = cv::gpu::createContinuous(imgIn.rows, imgIn.cols, CV_8U);
+
+  kernelCUDA.stretching(imgInGPU, LUT, imgOut);
+
+  imgInGPU.release();
+  LUT.release();
+  
+#if SPD_FIGURE_1
+  cv::Mat imgOut_host;
+  imgOut.download(imgOut_host);
+  // Create a window for display.
+  namedWindow("Histogram streching GPU", cv::WINDOW_NORMAL);
+  imshow("Histogram streching GPU", imgOut_host);
+  cv::waitKey(0);
+#endif
+
+  return imgOut;
+}
+
+/* ==========================================================================
 *        FUNCTION NAME: medianFIlterK
 * FUNCTION DESCRIPTION: Median filter on GPU
 *        CREATION DATE: 20160727
@@ -69,7 +114,7 @@ cv::gpu::GpuMat medianFIlterK(const cv::gpu::GpuMat& imgIn, int kerlen)
 
   externalClass kernelCUDA;
   kernelCUDA.medianCUDAKernel(imgIn, imgOut, kerlen);
-    
+
 #if SPD_FIGURE_1
   cv::Mat imgOut_host;
   imgOut.download(imgOut_host);
