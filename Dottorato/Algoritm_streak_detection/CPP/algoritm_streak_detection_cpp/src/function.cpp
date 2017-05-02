@@ -349,31 +349,29 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   } else {
     printf("Error. Unsupported pixel type.\n");
   }
-  cv::Mat hist = cv::Mat::zeros(1, color, CV_32F);
+  cv::Mat hist = cv::Mat::zeros(1, color, CV_32S);
   cv::Mat LUT = cv::Mat::zeros(1, color, CV_32F);
 
+  int* pLineH = hist.ptr<int>(0);
   for (int row = 0; row < imgIn.rows; ++row)
   {
     const ushort* pLine = imgIn.ptr<ushort>(row);
     for (int col = 0; col < imgIn.cols; ++col) {
       ushort value = pLine[col];
-
-      float* pLineH = hist.ptr<float>(0);
+      
       pLineH[value] +=  1;
     }
   }
 
 #if SPD_DEBUG
   //Print matrix value
-  for (int row = 0; row < hist.rows; ++row)
-  {
-    const float* pLine = hist.ptr<float>(row);
-    for (int col = 0; col < hist.cols; ++col) {
-      float value = pLine[col];
-      printf("%f ", value);      
-    }
-    printf("\n\n");
+  const int* pLine = hist.ptr<int>(0);
+  for (int col = 0; col < hist.cols; ++col) {
+    int value = pLine[col];
+    printf("BIN=%d value=%d\n", col, value);
   }
+  printf("\n\n");
+
 #endif
 
   double maxHistValue = 0, minHistValue = 0;
@@ -395,7 +393,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
   for (i = 0; i < peakMaxLoc.x; ++i)
   {
     k = peakMaxLoc.x - i;
-    double val = static_cast<double>(hist.at<float>(0, k));
+    double val = static_cast<double>(hist.at<int>(0, k));
     if (val < lowThresh) {
       minValue = k;
       break;
@@ -404,7 +402,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 
   for (i = peakMaxLoc.x; i < hist.cols; ++i)
   {
-    double val = static_cast<double>(hist.at<float>(0, i));
+    double val = static_cast<double>(hist.at<int>(0, i));
     if (val < highThresh) {
       maxValue = i;
       break;
@@ -715,17 +713,15 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
         stdBg.at<double>(i,j) = *(stdBGs.val);
 
         double threshH = meanBg.at<double>(i,j)+2.5*stdBg.at<double>(i,j);//3
-        
-        double maxval = 1.0;
-        double asdf = cv::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_BINARY_INV);
 
-        imgPart = imgPart.mul(imgPartTh);
+        double maxval = 1.0;
+        double asdf = cv::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_TOZERO_INV);
 
         diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
         oldStd=stdBg.at<double>(i,j);        
       }
 
-      imgPart.copyTo(outImg(region_of_interest));
+      imgPartTh.copyTo(outImg(region_of_interest));
     }
   }
 
