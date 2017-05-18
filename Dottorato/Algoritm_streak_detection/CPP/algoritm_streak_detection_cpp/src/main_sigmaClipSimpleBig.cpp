@@ -236,11 +236,11 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
       }
       for (size_t p = 0; p < localSTREAKS.size(); ++p)
       {
-        localSTREAKS.at(p)[0] = localSTREAKS.at(p)[0] + ptTL.x;
-        localSTREAKS.at(p)[1] = localSTREAKS.at(p)[1] + ptTL.y;
+        localSTREAKS.at(p)[0] = ::round(localSTREAKS.at(p)[0] + ptTL.x);//::round(
+        localSTREAKS.at(p)[1] = ::round(localSTREAKS.at(p)[1] + ptTL.y);//::round(
       }
       
-      if (localSTREAKS.size()>0) {
+      if (localPOINTS.size()>0) {
         POINTS.insert(POINTS.end(), localPOINTS.begin(), localPOINTS.end());
       }
       if (localSTREAKS.size()>0) {
@@ -254,8 +254,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
  * Coordinate conversion                                                   *
  * ----------------------------------------------------------------------- */
 
-  std::vector< cv::Vec<float, 3> > radecS;
-  std::vector< cv::Vec<float, 3> > radecP;
+  std::vector< cv::Vec<double, 3> > radecS;
+  std::vector< cv::Vec<double, 3> > radecP;
 
   if (0!=STREAKS.size() || 0!=POINTS.size())
   {
@@ -275,10 +275,10 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     else
     {
       for (size_t u = 0; u < STREAKS.size(); ++u) {
-        radecS.push_back({ 0,0,0 });
+        radecS.push_back({ 0.0,0.0,0.0 });
       }
       for (size_t u = 0; u < POINTS.size(); ++u) {
-        radecP.push_back({ 0,0,0 });
+        radecP.push_back({ 0.0,0.0,0.0 });
       }
     }
   }

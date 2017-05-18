@@ -361,8 +361,8 @@ void writeResult
   std::ostream& stream
   , const std::vector< cv::Vec<float, 3> >& STREAKS
   , const std::vector< cv::Vec<float, 3> >& POINTS
-  , const std::vector< cv::Vec<float, 3> >& radecP
-  , const std::vector< cv::Vec<float, 3> >& radecS
+  , const std::vector< cv::Vec<double, 3> >& radecP
+  , const std::vector< cv::Vec<double, 3> >& radecS
 );
 
 void plotResult
@@ -374,11 +374,11 @@ void plotResult
 );
 
 struct wcsPar {
-  double CRVAL1 = 0, CRVAL2 = 0;
-  double CRPIX1 = 0, CRPIX2 = 0;
-  double CD1_1 = 0, CD1_2 = 0, CD2_1 = 0, CD2_2 = 0;
-  double A_0_2 = 0, A_1_1 = 0, A_2_0 = 0;
-  double B_0_2 = 0, B_1_1 = 0, B_2_0 = 0;
+  double CRVAL1 = 0.0, CRVAL2 = 0.0;
+  double CRPIX1 = 0.0, CRPIX2 = 0.0;
+  double  CD1_1 = 0.0,  CD1_2 = 0.0, CD2_1 = 0.0, CD2_2 = 0.0;
+  double  A_0_2 = 0.0,  A_1_1 = 0.0, A_2_0 = 0.0;
+  double  B_0_2 = 0.0,  B_1_1 = 0.0, B_2_0 = 0.0;
 };
 
 
@@ -388,7 +388,7 @@ void coordConv
 (
   const wcsPar& par
   , const std::vector< cv::Vec<float, 3> >& pixel
-  , std::vector< cv::Vec<float, 3> >& radec
+  , std::vector< cv::Vec<double, 3> >& radec
 );
 
 void sigmaClipProcessing
