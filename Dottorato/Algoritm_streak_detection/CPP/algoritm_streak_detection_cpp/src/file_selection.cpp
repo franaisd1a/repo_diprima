@@ -26,7 +26,7 @@
 * ========================================================================== */
 #include "file_selection.h"
 #include "function_os.h"
-#include "algo_selection.h"
+#include "algo.h"
 #include "macros.h"
 
 /* ==========================================================================

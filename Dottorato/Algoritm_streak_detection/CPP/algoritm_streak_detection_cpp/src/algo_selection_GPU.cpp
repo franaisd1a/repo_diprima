@@ -3,7 +3,7 @@
 * ========================================================================== */
 
 /* ==========================================================================
-* MODULE FILE NAME: algo_selection.cpp
+* MODULE FILE NAME: algo_selection_GPU.cpp
 *      MODULE TYPE:
 *
 *         FUNCTION: Detect streaks and points.
@@ -27,13 +27,14 @@
 #include <time.h>
 #include <iostream>
 
-#include "algo_selection.h"
+#include "algo_selection_GPU.h"
 #include "macros.h"
 
-#include "main_simple.h"
-#include "main_sigmaClip.h"
-#include "main_sigmaClipSimple.h"
-#include "main_sigmaClipSimpleBig.h"
+#include "main_sigmaClipSimpleBig_GPU.cuh"
+
+//#include "main_GPU_cuda.cuh"
+//#include "main_GPU.h"
+
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS
@@ -73,7 +74,7 @@ bool algo_selection(const std::vector<char *>& input)
     printf("Error in input parameters.");
   }
 
-  std::cout << "Start CPU processing: " << input.at(1) << "." << input.at(2) << std::endl;
+  std::cout << "Start GPU processing: " << input.at(1) << "." << input.at(2) << std::endl;
 
 #if SPD_DEBUG
   std::cout <<      "nameFile " << input.at(0) << std::endl;
@@ -90,61 +91,47 @@ bool algo_selection(const std::vector<char *>& input)
 
   for (int u = 0; u < repeatCycle; ++u)
   {
-/* ------------------------------- AlgoSimple ------------------------------- */
-#if 0
-    start = clock();
-
-    // Algo simple
-
-    int algoSimple = main_simple(input);
-
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
-#endif
-/* ---------------------------- AlgoSigmaClipping --------------------------- */
-#if 0
-    start = clock();
-
-    // Algo simple
-
-    int sigmaClip = main_sigmaClip(input);
-
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
-#endif
-/* ------------------------- AlgoSigmaClippingSimple ------------------------ */
-#if 0
-    start = clock();
-
-    // Algo simple
-
-    int sigmaClip = main_sigmaClipSimple(input);
-
-
-    stop = clock();
-    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
-
-    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
-#endif
-/* ----------------------- AlgoSigmaClippingSimpleBig ----------------------- */
+/* --------------------- AlgoSigmaClippingSimpleBig_GPU --------------------- */
 #if 1
     start = clock();
 
     // Algo simple
 
-    int sigmaClip = main_sigmaClipSimpleBig(input);
+    int sigmaClip = main_sigmaClipSimpleBig_GPU(input);
 
 
     stop = clock();
     totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
 
-    std::cout << "CPU time: " << totalTime << " sec" << std::endl;
+    std::cout << "GPU time: " << totalTime << " sec" << std::endl;
+#endif
+/* ----------------------------- AlgoCUDAkernel ----------------------------- */
+#if 0  
+    start = clock();
+
+    // AlgoCUDAkernel
+
+    int AlgoCUDAkernel = main_GPU_cuda(name_file);
+
+
+    stop = clock();
+    totalTimeCUDAkernel = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+    std::cout << "GPU time: " << totalTimeCUDAkernel << " sec" << std::endl;
+#endif
+/* -------------------------------- AlgoGPU --------------------------------- */
+#if 0
+    start = clock();
+
+    // Algo GPU
+
+    int algoGPU = main_GPU(name_file);
+
+
+    stop = clock();
+    totalTime = (stop - start) / static_cast<double>(CLOCKS_PER_SEC);
+
+    std::cout << "AlgoGPU time: " << totalTime << std::endl;
 #endif
   }
 
@@ -153,7 +140,7 @@ bool algo_selection(const std::vector<char *>& input)
   if (repeatCycle > 1)
   {
     //std::cout << "algoSimple: " << totalTime << " AlgoCUDAkernel: "<< totalTimeCUDAkernel << std::endl;
-    std::cout << "End CPU algo." << std::endl;
+    std::cout << "End GPU algo." << std::endl;
   }
 
   return outputRes;

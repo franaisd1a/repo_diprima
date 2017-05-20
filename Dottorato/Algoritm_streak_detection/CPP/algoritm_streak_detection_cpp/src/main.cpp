@@ -28,6 +28,7 @@
 #include <string.h>
 #include <iostream>
 #include "file_selection.h"
+#include "../builds/algo_streak_detection_config.h"
 
 /* ==========================================================================
 * MODULE PRIVATE MACROS

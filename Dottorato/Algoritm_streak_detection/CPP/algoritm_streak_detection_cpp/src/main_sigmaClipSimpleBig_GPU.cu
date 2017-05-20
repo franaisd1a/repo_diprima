@@ -277,7 +277,7 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
         localSTREAKS.at(p)[1] = localSTREAKS.at(p)[1] + ptTL.y;
       }
       
-      if (localSTREAKS.size()>0) {
+      if (localPOINTS.size()>0) {
         POINTS.insert(POINTS.end(), localPOINTS.begin(), localPOINTS.end());
       }
       if (localSTREAKS.size()>0) {
