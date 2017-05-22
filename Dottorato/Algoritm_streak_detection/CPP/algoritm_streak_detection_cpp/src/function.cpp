@@ -2216,26 +2216,36 @@ void writeResult
   std::ostream& stream
   , const std::vector< cv::Vec<float, 3> >& POINTS
   , const std::vector< cv::Vec<float, 3> >& STREAKS
-  , const std::vector< cv::Vec<float, 3> >& radecP
-  , const std::vector< cv::Vec<float, 3> >& radecS
+  , const std::vector< cv::Vec<double, 3> >& radecP
+  , const std::vector< cv::Vec<double, 3> >& radecS
 )
 {
   std::string s_nS = "Detected streaks: " + std::to_string(STREAKS.size());
   stamp(stream, s_nS.c_str());
   for (size_t i = 0; i < STREAKS.size(); ++i)
   {
-    std::string cS = "Centroid streaks: Row Col (" + std::to_string(STREAKS.at(i)[0]) + "," + std::to_string(STREAKS.at(i)[1]) + ")" 
-      + " Ra Dec (" + std::to_string(radecS.at(i)[0]) + "," + std::to_string(radecS.at(i)[1]) + ")";
-    stamp(stream, cS.c_str());
+    /*std::string cS = "Centroid streaks: Row Col (" + std::to_string(STREAKS.at(i)[0]) + "," + std::to_string(STREAKS.at(i)[1]) + ")" 
+      + " Ra Dec (" + std::to_string(radecS.at(i)[0]) + "," + std::to_string(radecS.at(i)[1]) + ")";*/
+
+    char buffer [512];
+    int n = sprintf(buffer, "Centroid streaks: Row Col (%f,%f) Ra Dec (%18.15f,%18.15f)"
+      , STREAKS.at(i)[0], STREAKS.at(i)[1], radecS.at(i)[0], radecS.at(i)[1]);
+
+    stamp(stream, buffer);
   }
 
   std::string s_nP = "Detected points: " + std::to_string(POINTS.size());
   stamp(stream, s_nP.c_str());
   for (size_t i = 0; i < POINTS.size(); ++i)
   {
-    std::string cP = "Centroid points: Row Col  (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")"
-      + " Ra Dec (" + std::to_string(radecP.at(i)[0]) + "," + std::to_string(radecP.at(i)[1]) + ")";;
-    stamp(stream, cP.c_str());
+    /*std::string cP = "Centroid points: Row Col  (" + std::to_string(POINTS.at(i)[0]) + "," + std::to_string(POINTS.at(i)[1]) + ")"
+      + " Ra Dec (" + std::to_string(radecP.at(i)[0]) + "," + std::to_string(radecP.at(i)[1]) + ")";*/
+
+    char buffer [512];
+    int n = sprintf(buffer, "Centroid points:  Row Col (%f,%f) Ra Dec (%18.15f,%18.15f)"
+      , POINTS.at(i)[0], POINTS.at(i)[1], radecP.at(i)[0], radecP.at(i)[1]);
+
+    stamp(stream, buffer);
   }
 }
 
@@ -2394,16 +2404,17 @@ void coordConv
 (
   const wcsPar& par
   , const std::vector< cv::Vec<float, 3> >& pixel
-  , std::vector< cv::Vec<float, 3> >& radec
+  , std::vector< cv::Vec<double, 3> >& radec
 )
 {
   for (size_t i = 0; i<pixel.size(); ++i)
   {
-    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1;
-    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2;
+#if 0
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 +1;
+    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 +1;
 
-    double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
-    double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+    double f = 0;// par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+    double g = 0;// par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
 
     cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
     GM.at<double>(0,0) = par.CD1_1;
@@ -2421,6 +2432,75 @@ void coordConv
 
     radec.push_back({ static_cast<float>(par.CRVAL1 + outV.at<double>(0, 0))
     , static_cast<float>(par.CRVAL2 + outV.at<double>(1, 0)), 0 });
+#else
+
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 +1;
+    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 +1;
+
+    double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+    double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+    u = u + f;
+    v = v + g;
+
+    cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+    GM.at<double>(0,0) = par.CD1_1;
+    GM.at<double>(0,1) = par.CD1_2;
+    GM.at<double>(1,0) = par.CD2_1;
+    GM.at<double>(1,1) = par.CD2_2;
+
+    cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+    inV.at<double>(0,0) = u;
+    inV.at<double>(1,0) = v;
+    
+    cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+    outV = GM * inV;
+
+    double xDeg = par.CD1_1 * u + par.CD1_2 * v;
+    double yDeg = par.CD2_1 * u + par.CD2_2 * v;
+
+    double x = -((CV_PI / 180) * xDeg);
+    double y = (CV_PI / 180) * yDeg;
+
+    double cosdec = cos((CV_PI / 180) * par.CRVAL2);
+    double rx = cosdec * cos((CV_PI / 180) * par.CRVAL1);
+    double ry = cosdec * sin((CV_PI / 180) * par.CRVAL1);
+    double rz = sin((CV_PI / 180) * par.CRVAL2);
+
+    double ix = ry;
+    double iy = -rx;
+    double norm = hypot(ix, iy);
+    ix = ix / norm;
+    iy = iy / norm;
+
+    double jx = iy * rz;
+    double jy = -ix * rz;
+    double jz = ix * ry - iy * rx;
+
+    double no_rm=sqrt(jx*jx+jy*jy+jz*jz);
+
+    double xyz[3] = {0,0,0};
+
+    xyz[0] = ix*x + jx*y + rx;
+    xyz[1] = iy*x + jy*y + ry;
+    xyz[2] =        jz*y + rz; // iz = 0
+
+    double no_rm2 = sqrt(xyz[0]*xyz[0]+xyz[1]*xyz[1]+xyz[2]*xyz[2]);
+
+    double raF = atan2(xyz[1], xyz[0]);
+    if (raF < 0)
+    {
+      raF = raF + 2.0 * CV_PI;
+    }
+    
+    double decF = asin(xyz[2]);
+
+    double ra = (180 / CV_PI) * (raF);///15
+    double dec = (180 / CV_PI) * decF;
+
+    radec.push_back({ ra, dec, 0.0 });
+
+#endif
   }
 }
 
