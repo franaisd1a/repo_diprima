@@ -14,14 +14,15 @@ set(SPD_CUDA_C ${CUDA_FOUND})
 
 #SPD_ACCELERATOR deve essere scelto dall'utente tramite GUI cmake
 #SPD_ACCELERATOR User selection of accelerator mode
-set(SPD_ACCELERATOR TRUE)
+set(SPD_ACCELERATOR TRUE CACHE BOOL [FORCE])
 
 #SPD_MODE Select GPU or CPU algorithm based on the computer Hardware
 set(SPD_MODE 0)
 
 if(SPD_ACCELERATOR)
-#  set(SPD_MODE ${CUDA_FOUND})
+if (SPD_CUDA_C)
   set(SPD_MODE 1)
+endif()
 endif()
 
 if(UNIX)
