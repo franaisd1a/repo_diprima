@@ -12,7 +12,6 @@ find_package(    CUDA    QUIET )
 message("Find CUDA: " ${CUDA_FOUND})
 set(SPD_CUDA_C ${CUDA_FOUND})
 
-#SPD_ACCELERATOR deve essere scelto dall'utente tramite GUI cmake
 #SPD_ACCELERATOR User selection of accelerator mode
 set(SPD_ACCELERATOR TRUE CACHE BOOL [FORCE])
 
