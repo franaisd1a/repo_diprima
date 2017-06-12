@@ -33,6 +33,7 @@
 #include <numeric>
 #include <time.h>
 #include <limits>
+#include <unordered_map>
 #if 0
 #include <future>
 #include <thread>

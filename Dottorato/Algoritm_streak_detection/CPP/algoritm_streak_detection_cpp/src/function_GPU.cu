@@ -85,7 +85,7 @@ cv::gpu::GpuMat histogramStreching
   externalClass kernelCUDA;
   int imgRows = imgIn.rows;
   int imgCols = imgIn.cols;
-
+  
   /*************************** Histogram computation **************************/
   
   cv::gpu::GpuMat imgInGPU = cv::gpu::createContinuous(imgRows, imgCols, imgIn.type());
@@ -98,15 +98,9 @@ cv::gpu::GpuMat histogramStreching
   size_t maxRowdim = 2048;
 
   size_t regionNumR = static_cast<size_t>(::round(static_cast<float>(imgRows / maxRowdim)));
+  if (0 == regionNumR) { regionNumR = 1; }
   size_t regionNumC = static_cast<size_t>(::round(static_cast<float>(imgCols / maxColdim)));
-
-  /* Odd dimensions * /
-  if (0 == regionNumR % 2) {
-    regionNumR = regionNumR + 1;
-  }
-  if (0 == regionNumC % 2) {
-    regionNumC = regionNumC + 1;
-  }*/
+  if (0 == regionNumC) { regionNumC = 1; }
 
   size_t regionDimR = static_cast<size_t>(::round(static_cast<float>(imgRows / regionNumR)));
   size_t regionDimC = static_cast<size_t>(::round(static_cast<float>(imgCols / regionNumC)));

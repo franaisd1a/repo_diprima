@@ -28,6 +28,7 @@ __global__ void square_array(double *a, int N)
 __global__ void medianKernel
 (const uchar* input, uchar* output, int Image_Width, int Image_Height, int szK)
 {
+  //Max window dimension of 9 ==> surround[82]
   int numValue = szK*szK;
   int radius = (int)(szK/2);
   int middleValue = (int)(numValue/2);

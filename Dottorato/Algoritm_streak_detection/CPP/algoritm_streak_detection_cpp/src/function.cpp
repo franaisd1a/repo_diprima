@@ -238,8 +238,8 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
 }
 
 /* ==========================================================================
-*        FUNCTION NAME: histogramStretching
-* FUNCTION DESCRIPTION: Histogram Stretching
+*        FUNCTION NAME: histogram
+* FUNCTION DESCRIPTION: Histogram
 *        CREATION DATE: 20160727
 *              AUTHORS: Francesco Diprima
 *           INTERFACES: None
@@ -443,6 +443,7 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
 #if SPD_FIGURE_1
     namedWindow("8bits image", cv::WINDOW_NORMAL);
     imshow("8bits image", imgOut);
+    cv::waitKey(0);
 #endif
 /* Differenza di 1 nel valore di alcuni pixel*/
 #if SPD_DEBUG
@@ -669,8 +670,17 @@ cv::Mat morphologyOpen(const cv::Mat& imgIn, int rad)
 cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv::Mat& meanBg, cv::Mat& stdBg)
 {
   cv::Mat imgIn = imgInOr.clone();
-  size_t backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt.y));
-  size_t backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt.x));
+  
+  size_t backSzR = imgIn.rows;
+  if (0 != backCnt.y)
+  {
+    backSzR = static_cast<size_t>(::round(imgIn.rows / backCnt.y));
+  }
+  size_t backSzC = imgIn.cols;
+  if (0 != backCnt.x)
+  {
+    backSzC = static_cast<size_t>(::round(imgIn.cols / backCnt.x));
+  }
   
   std::vector<int> vBackSrow;
   std::vector<int> vBackScol;
@@ -2014,13 +2024,17 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
   double rho = 1; //0.5;
   double theta = 2*CV_PI / 180; //CV_PI / (2*180); r:pi=g:180
   int threshold = 60;
+  int goodVal = 5;
   
   std::vector<cv::Vec2f> houghVal;
+  std::unordered_map<size_t, int> houghThresh;
   HoughLines(imgIn, houghVal, rho, theta, threshold);
+  houghThresh.insert({houghVal.size(), threshold});
   
   // Loop for find lines with high thresoldh
   size_t maxNumAngles = 10;
   bool exitL = true;
+  bool foundGoodThresh = false;
   size_t countC = 0;
 
   while (exitL)
@@ -2030,21 +2044,61 @@ std::vector<std::pair<float, int>> hough(const cv::Mat& imgIn)
     {
       threshold = threshold * 1.5;
       HoughLines(imgIn, houghVal, rho, theta, threshold);
+      if (0 == houghThresh.count(houghVal.size())) {
+          houghThresh.insert({houghVal.size(), threshold});
+      }
     }    
-    else if ((houghVal.size()>=5) && (houghVal.size() <= 10))
+    else if ((houghVal.size()>=goodVal) && (houghVal.size() <= 2*goodVal))
     {
       exitL = false;
+      foundGoodThresh = true;
     }
     else
     {
       threshold = threshold / 1.05;
       HoughLines(imgIn, houghVal, rho, theta, threshold);
+      if (0 == houghThresh.count(houghVal.size())) {
+          houghThresh.insert({houghVal.size(), threshold});
+      }
     }
     if (10 == countC) {
       exitL = false;
     }
   }
     
+  if (!foundGoodThresh)
+  {
+    if (houghThresh.size() > 1)
+    {
+      /* Sort mapped keys */
+      std::vector<size_t> keys;
+      keys.reserve(houghThresh.size());
+
+      for (auto& it : houghThresh) {
+        keys.push_back(it.first);
+      }
+      std::sort(keys.begin(), keys.end());
+
+      /* Found the value near to goodVal */
+      std::vector<int> keys2;
+      keys2.reserve(houghThresh.size());
+      for (size_t i = 0; i < keys.size(); ++i)
+      {
+        keys2.push_back(keys.at(i) - goodVal);
+      }
+      int currV = 0;
+      int nearV = keys2.at(0);
+      for (size_t i = 0; i < keys2.size(); ++i) 
+      {        
+        currV = keys2.at(i) * keys2.at(i);
+        if (currV <= (nearV * nearV)) {
+          nearV = keys2.at(i);
+        }
+      }
+      HoughLines(imgIn, houghVal, rho, theta, houghThresh[nearV+goodVal]);
+    }        
+  }
+
   // Select the inclination angles
   std::vector<float> angle;
   for (size_t i = 0; i < houghVal.size(); ++i)
@@ -2536,7 +2590,6 @@ void sigmaClipProcessing
   cv::Mat medianImg = medianFilter(histStretch, kerlenSz);
 
   timeElapsed(infoFile, start, "Median filter");
-  cv::waitKey(0);
 
 
 /* ----------------------------------------------------------------------- *
@@ -2549,7 +2602,9 @@ void sigmaClipProcessing
   size_t maxRowdim = 512;
 
   int regionNumR = static_cast<int>(::round(histStretch.rows / maxRowdim));
+  if (0 == regionNumR) { regionNumR = 1; }
   int regionNumC = static_cast<int>(::round(histStretch.cols / maxColdim));
+  if (0 == regionNumC) { regionNumC = 1; }
 
   cv::Point backCnt = {regionNumC, regionNumR};
   cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
@@ -2604,7 +2659,7 @@ void sigmaClipProcessing
   
   cv::Mat binaryImgPnt = binarizationZone(medianBgSubImg, backCnt, level);
   
-  timeElapsed(infoFile, start, "Binarization");
+  timeElapsed(infoFile, start, "Binarization for points detection");
   
 
 /* ----------------------------------------------------------------------- *
@@ -2631,6 +2686,7 @@ void sigmaClipProcessing
   cv::Mat distStk = distTransform(binaryImgStk);
   binaryImgStk.release();
 
+  timeElapsed(infoFile, start, "Distance transformation");
 
 /* ----------------------------------------------------------------------- *
  * Convolution kernel for points detection                                 *
@@ -2741,6 +2797,8 @@ void sigmaClipProcessing
  * Binary image without streaks                                            *
  * ----------------------------------------------------------------------- */
   
+  start = clock();
+
   cv::Mat onlyPoints = openImg - sumStrRemImg;
   sumStrRemImg.release();
   openImg.release();
@@ -2751,6 +2809,7 @@ void sigmaClipProcessing
   cv::waitKey(0);
 #endif
   
+  timeElapsed(infoFile, start, "Subtract image");
 
 /* ----------------------------------------------------------------------- *
  * Convolution kernel remove streaks                                       *

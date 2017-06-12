@@ -45,7 +45,7 @@
 //SPD_STAMP_CONSOLE Abilita la stampa su console
 #define SPD_STAMP_CONSOLE          1U
 //SPD_STAMP_CONSOLE Abilita la stampa dell'header FIT su console
-#define SPD_STAMP_FIT_HEADER       1U
+#define SPD_STAMP_FIT_HEADER       0U
         
         
 #define SPD_CLEAR                  0U

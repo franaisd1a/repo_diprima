@@ -87,6 +87,10 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 # endif
 
   {
+    stamp(infoFile, "Algorithm Streaks points detection CPU version");
+  }  
+
+  {
     std::string s_Ch = "File name: ";
     s_Ch += input.at(0);
     stamp(infoFile, s_Ch.c_str());
@@ -107,10 +111,14 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   clock_t start0 = start;
 
   wcsPar par;
-#if 1
+#if 0
+ #if 1
   bool compPar = astrometry( input, par);
-#else  
+ #else  
   std::future<bool> fut_astrometry = asyncAstrometry(input, par);
+ #endif
+#else
+  bool compPar = true;
 #endif
 
   timeElapsed(infoFile, start, "Astrometry");
@@ -168,7 +176,6 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   }
   
   timeElapsed(infoFile, start, "Histogram Stretching");
-  cv::waitKey(0);
 
 
 /***************************************************************************/
@@ -178,11 +185,11 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
 
-  size_t maxColdim = 4099;
-  size_t maxRowdim = 4099;
+  float maxColdim = 4099.0;
+  float maxRowdim = 4099.0;
 
-  size_t regionNumR = static_cast<size_t>(::round(histStretch.rows / maxRowdim));
-  size_t regionNumC = static_cast<size_t>(::round(histStretch.cols / maxColdim));
+  size_t regionNumR = static_cast<size_t>(::ceil(histStretch.rows / maxRowdim));
+  size_t regionNumC = static_cast<size_t>(::ceil(histStretch.cols / maxColdim));
 
   /* Odd dimensions */
   if (0 == regionNumR % 2) {
@@ -312,11 +319,11 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   plotResult(histStretch, POINTS, STREAKS, input);
     
+  timeElapsed(infoFile, start0, "Total CPU");
+
   destroyAllWindows();
   infoFile.close();
   resFile.close();
-  
-  timeElapsed(infoFile, start0, "Total");
 
   return 0;
 }

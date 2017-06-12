@@ -88,7 +88,9 @@ void main_sigmaClipBig_GPU
   size_t maxRowdim = 512;
 
   int regionNumR = static_cast<int>(::round(static_cast<float>(imgSz.y / maxRowdim)));
+  if (0 == regionNumR) { regionNumR = 1; }
   int regionNumC = static_cast<int>(::round(static_cast<float>(imgSz.x / maxColdim)));
+  if (0 == regionNumC) { regionNumC = 1; }
 
   cv::Point backCnt (regionNumC, regionNumR);
   cv::Mat meanBg = cv::Mat::zeros(backCnt.y, backCnt.x, CV_64F);
@@ -117,11 +119,12 @@ void main_sigmaClipBig_GPU
   start = clock();
 
   cv::gpu::GpuMat bgSubtracImg = subtractImage(medianImgGPU, backgroungImg);
-    
-  timeElapsed(infoFile, start, "Background subtraction");
   
   medianImgGPU.release();
   backgroungImg.release();
+
+  timeElapsed(infoFile, start, "Background subtraction");
+
 
 /* ----------------------------------------------------------------------- *
  * Median filter                                                           *
@@ -176,6 +179,8 @@ void main_sigmaClipBig_GPU
   cv::Mat distStk = distTransform(binaryImgStk_cpu);
   binaryImgStk.release();
   binaryImgStk_cpu.release();
+
+  timeElapsed(infoFile, start, "Distance transformation");
 
 
 /* ----------------------------------------------------------------------- *

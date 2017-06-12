@@ -1,9 +1,16 @@
 
 #include "externalClass.cuh"
 
+#define THREAD_X 16
+#define THREAD_Y 16
+#define THREAD_LUT 32
+
+//Thread_X 16
+//Thread_LUT 32
+
 void externalClass::medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK)
 {
-	dim3 cthreads(16, 16);
+	dim3 cthreads(THREAD_X, THREAD_Y);
 
 	dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
 					static_cast<double>(cthreads.x)))
@@ -16,7 +23,7 @@ void externalClass::medianCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat
 
 void externalClass::convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK)
 {
-	dim3 cthreads(16, 16);
+	dim3 cthreads(THREAD_X, THREAD_Y);
 
 	dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
 					static_cast<double>(cthreads.x)))
@@ -33,7 +40,7 @@ void externalClass::convolutionCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::G
 
 void externalClass::convolutionThreshCUDAKernel(const cv::gpu::GpuMat &src, cv::gpu::GpuMat &dst, int szK, int thresh, int maxval)
 {
-	dim3 cthreads(16, 16);
+	dim3 cthreads(THREAD_X, THREAD_Y);
 
 	dim3 cblocks(static_cast<int>(std::ceil(src.size().width / 
 					static_cast<double>(cthreads.x)))
@@ -45,7 +52,7 @@ void externalClass::convolutionThreshCUDAKernel(const cv::gpu::GpuMat &src, cv::
 
 void externalClass::fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuMat &dst, int tlX, int tlY, int brX, int brY)
 {
-	dim3 cthreads(16, 16);
+	dim3 cthreads(THREAD_X, THREAD_Y);
 
 	dim3 cblocks(static_cast<int>(std::ceil(dst.size().width / 
 					static_cast<double>(cthreads.x)))
@@ -58,7 +65,7 @@ void externalClass::fillImgCUDAKernel(const cv::gpu::GpuMat &mask, cv::gpu::GpuM
 
 void externalClass::LUT(cv::gpu::GpuMat& lut, const double outByteDepth, const int minValue, const int maxValue)
 {
-	dim3 cthreads(32, 1);
+	dim3 cthreads(THREAD_LUT, 1);
 
 	dim3 cblocks(static_cast<int>(std::ceil(lut.size().width / 
 					static_cast<double>(cthreads.x)))
@@ -70,7 +77,7 @@ void externalClass::LUT(cv::gpu::GpuMat& lut, const double outByteDepth, const i
 
 void externalClass::stretching(const cv::gpu::GpuMat& src, const cv::gpu::GpuMat& lut, cv::gpu::GpuMat& dst)
 {
-	dim3 cthreads(16, 16);
+	dim3 cthreads(THREAD_X, THREAD_Y);
 
 	dim3 cblocks(static_cast<int>(std::ceil(dst.size().width / 
 					static_cast<double>(cthreads.x)))

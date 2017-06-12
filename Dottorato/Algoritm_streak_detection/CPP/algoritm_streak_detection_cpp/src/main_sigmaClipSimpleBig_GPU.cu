@@ -66,22 +66,6 @@ using namespace std;
 * ========================================================================== */
 int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
 {
-/* ======================================================================= *
- * GPU initializations and informations                                    *
- * ======================================================================= */
-
-  int deviceCount = gpu::getCudaEnabledDeviceCount();
-  
-  cv::gpu::setDevice(deviceCount-1);
-
-  // --- CUDA warm up
-  cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
-
-#if 0  
-  tryAtomics();  
-#endif
-
-
 /* ----------------------------------------------------------------------- *
  * Initialization                                                          *
  * ----------------------------------------------------------------------- */
@@ -104,6 +88,9 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
 # endif
 
   {
+    stamp(infoFile, "Algorithm Streaks points detection GPU version");
+  }  
+  {
     std::string s_Ch = "File name: ";
     s_Ch += input.at(0);
     stamp(infoFile, s_Ch.c_str());
@@ -116,15 +103,27 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
   }
 
 
-/* ----------------------------------------------------------------------- *
- * Solve star field                                                        *
- * ----------------------------------------------------------------------- */
+/* ======================================================================= *
+ * GPU initializations and informations                                    *
+ * ======================================================================= */
 
   clock_t start = clock();
   clock_t start0 = start;
 
+  int deviceCount = gpu::getCudaEnabledDeviceCount();
+  
+  cv::gpu::setDevice(deviceCount-1);
+
+  // --- CUDA warm up
+  cv::gpu::GpuMat warmUp = gpu::createContinuous(2, 2, 0);
+
+
+/* ----------------------------------------------------------------------- *
+ * Solve star field                                                        *
+ * ----------------------------------------------------------------------- */
+  
   wcsPar par;
-#if 1
+#if 0
 #if 1
   bool compPar = astrometry( input, par);
 #else  
@@ -192,13 +191,9 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
     double outByteDepth=0;
     int minValue=0;
     int maxValue=0;
-    cv::Mat hist = histogram(Img_input, outByteDepth, minValue, maxValue);
-    
+    cv::Mat hist = histogram(Img_input, outByteDepth, minValue, maxValue);    
     cv::Mat histGPU = histogram(Img_input);
-    
-
     histStretchGPU = streching(Img_input, hist, outByteDepth, minValue, maxValue);
-
     hist.release();
 #endif
 
@@ -215,11 +210,11 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
 
-  size_t maxColdim = 4099;
-  size_t maxRowdim = 4099;
+  float maxColdim = 4099.0;
+  float maxRowdim = 4099.0;
 
-  size_t regionNumR = static_cast<size_t>(::round(static_cast<float>(imgRows / maxRowdim)));
-  size_t regionNumC = static_cast<size_t>(::round(static_cast<float>(imgCols / maxColdim)));
+  size_t regionNumR = static_cast<size_t>(::ceil(static_cast<float>(imgRows / maxRowdim)));
+  size_t regionNumC = static_cast<size_t>(::ceil(static_cast<float>(imgCols / maxColdim)));
 
   /* Odd dimensions */
   if (0 == regionNumR % 2) {
@@ -291,8 +286,8 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
  * Coordinate conversion                                                   *
  * ----------------------------------------------------------------------- */
 
-  std::vector< cv::Vec<float, 3> > radecS;
-  std::vector< cv::Vec<float, 3> > radecP;
+  std::vector< cv::Vec<double, 3> > radecS;
+  std::vector< cv::Vec<double, 3> > radecP;
   cv::Vec<float, 3> vZeros (0.0, 0.0, 0.0);
 
   if (0!=STREAKS.size() || 0!=POINTS.size())
@@ -351,12 +346,12 @@ int main_sigmaClipSimpleBig_GPU(const std::vector<char *>& input)
   histStretchGPU.download(histStretch);
 
   plotResult(histStretch, POINTS, STREAKS, input);
+
+  timeElapsed(infoFile, start0, "Total GPU");
     
   destroyAllWindows();
   infoFile.close();
   resFile.close();
-  
-  timeElapsed(infoFile, start0, "Total");
 
   return 0;
 }
