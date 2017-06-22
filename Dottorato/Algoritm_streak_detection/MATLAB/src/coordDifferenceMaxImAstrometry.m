@@ -259,19 +259,25 @@ figure(1)
 subplot(1,2,1);
 xbins1 = -0.2:0.1:0.15;
 hist(diffMA(:,1),xbins1);
-xlabel('RA difference [arcsec]','FontWeight','bold');
-ylabel('Counts','FontWeight','bold');
+xlabel('RA difference [arcsec]','FontSize',28,'FontWeight','bold');
+ylabel('Counts','FontSize',28,'FontWeight','bold');
 subplot(1,2,2);
 xbins2 = -2.5:0.5:2.5;
 hist(diffMA(:,2),xbins2);
-xlabel('DEC difference [arcsec]','FontWeight','bold');
+xlabel('DEC difference [arcsec]','FontSize',28,'FontWeight','bold');
 
 set(gcf,'NextPlot','add');
 axes;
-h = title('Difference respect MaxIm DL','FontWeight','bold');
-set(gca,'Visible','off');
+h = title('Difference respect MaxIm DL','FontWeight','bold','FontSize',32);
+set(gca,'Visible','off','FontSize',26);
 set(h,'Visible','on');
 %title('Difference respect MaxIm DL','FontWeight','bold');
 
 
+% set(gca,'FontSize',26);
+% % title('Execution time','FontWeight','bold','FontSize',32);
+% ylabel('Time [s]','FontSize',28,'FontWeight','bold');
+% xlabel('Image dimension [pixel]','FontSize',28,'FontWeight','bold');
+% legend('CPU','GPU','FontSize',30)
+% grid on;
 

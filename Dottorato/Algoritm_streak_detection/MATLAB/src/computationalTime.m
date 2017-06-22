@@ -67,7 +67,7 @@ plot(dimVal(:,1),dimVal(:,2),'-s',dimVal(:,1),dimVal(:,3),'-o','LineWidth',2);
 set(gca,'FontSize',26);
 % title('Execution time','FontWeight','bold','FontSize',32);
 ylabel('Time [s]','FontSize',28,'FontWeight','bold');
-xlabel('Image dimension [pixel]','FontSize',28,'FontWeight','bold');
+xlabel('Side of sqare image [pixel]','FontSize',28,'FontWeight','bold');
 legend('CPU','GPU','FontSize',30)
 grid on;
 
@@ -77,7 +77,7 @@ plot(dimVal(:,1),dimVal(:,4),'-s','LineWidth',2);
 set(gca,'FontSize',26);
 % title('Speed-up','FontWeight','bold','FontSize',32);
 ylabel('Speed-up','FontSize',28,'FontWeight','bold');
-xlabel('Image dimension [pixel]','FontSize',28,'FontWeight','bold');
+xlabel('Side of sqare image [pixel]','FontSize',28,'FontWeight','bold');
 grid on;
 
 
