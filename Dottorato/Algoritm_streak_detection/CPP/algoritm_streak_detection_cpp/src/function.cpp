@@ -219,6 +219,13 @@ void readFit(const char* nameFile, std::ostream& stream, cv::Mat& img)
   unsigned short* array = (unsigned short*)malloc(sizeof(unsigned short) * nelements);
   int readImg = fits_read_pix(fptr, datatype, fpixel, nelements, nulval, array, &anynul, &status);
 
+#if 0
+  FILE * outBinFile;
+  outBinFile = fopen ("img.bin", "wb");
+  size_t nCnt = fwrite ( array, sizeof(unsigned short), nelements, outBinFile );
+  fclose (outBinFile);
+#endif
+
   img = cv::Mat(naxes[1], naxes[0], CV_16U, array);
 
 #if SPD_FIGURE_1

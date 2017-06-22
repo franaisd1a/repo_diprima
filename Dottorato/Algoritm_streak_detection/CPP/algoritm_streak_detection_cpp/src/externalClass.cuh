@@ -8,12 +8,12 @@
 #include "opencv2/gpu/gpu.hpp"
 
 
-#if 1
-#include </usr/local/cuda-6.5/include/cuda.h>
-#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
-#else
+#if _WIN32
 #include <cuda.h>
 #include <cuda_runtime_api.h>
+#else
+#include </usr/local/cuda-6.5/include/cuda.h>
+#include </usr/local/cuda-6.5/include/cuda_runtime_api.h>
 #endif
 
 /*

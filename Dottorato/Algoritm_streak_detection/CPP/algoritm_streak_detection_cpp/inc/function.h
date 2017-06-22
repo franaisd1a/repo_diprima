@@ -44,7 +44,11 @@
 #include <opencv/highgui.h>
 
 #include <stdlib.h>
+#if _WIN32
+#include <C:\Program Files\CFITSIO\include\fitsio.h>
+#else
 #include <fitsio.h>
+#endif
 
 /* ==========================================================================
 * MACROS
