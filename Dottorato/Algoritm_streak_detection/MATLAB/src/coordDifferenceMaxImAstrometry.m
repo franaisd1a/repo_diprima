@@ -226,7 +226,10 @@ for i=1:cnt
     dataAstroSec(i,1)=dataAstroDMS(i,1)*3600+dataAstroDMS(i,2)*60+dataAstroDMS(i,3);
     dataAstroSec(i,2)=dataAstroDMS(i,4)*3600+dataAstroDMS(i,5)*60+dataAstroDMS(i,6);
     
-    dataMaxImSec(i,1)=dataMaxImDMS(i,1)*3600+dataMaxImDMS(i,2)*60+dataMaxImDMS(i,3);
+    dataMaxImRaHours=dataMaxImDMS(i,1)+dataMaxImDMS(i,2)/60+dataMaxImDMS(i,3)/3600;
+    dataMaxImRaDeg=dataMaxImRaHours*15;
+    dataMaxImSec(i,1)=dataMaxImRaDeg*60*60;
+%     dataMaxImSec(i,1)=dataMaxImDMS(i,1)*3600+dataMaxImDMS(i,2)*60+dataMaxImDMS(i,3);
     dataMaxImSec(i,2)=dataMaxImDMS(i,4)*3600+dataMaxImDMS(i,5)*60+dataMaxImDMS(i,6);
 
     diffMA(i,1)=dataMaxImSec(i,1)-dataAstroSec(i,1);
@@ -240,10 +243,10 @@ for i=1:cnt
 %     diffAE(i,1)=dataAstroSec(i,1)-dataEgeosSec(i,1);
 %     diffAE(i,2)=dataAstroSec(i,2)-dataEgeosSec(i,2);
 end
-diffMA
+% diffMA;
 
-meanMA=mean(diffMA);
-stdMA=std(diffMA);
+meanMA=mean(diffMA)
+stdMA=std(diffMA)
 indRm=find(egeosSecDMS(:,1)==0);
 diffME(indRm,:)=[];
 meanME=mean(diffME);
