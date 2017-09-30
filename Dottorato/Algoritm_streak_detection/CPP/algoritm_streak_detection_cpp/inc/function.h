@@ -431,4 +431,11 @@ void linePoints
   , std::ostream& stream
 );
 
+cv::Mat imageRotation(const cv::Mat imgIn, const std::vector<cv::Point >& contours);
+
+void dashedLine(const cv::Mat& img, std::vector<std::vector<cv::Point > >& cIn
+  , std::vector< cv::Vec<float, 3> >& inSTREAKS);
+void headTail(const std::vector<cv::Point >& pnt, cv::Point2f& head, cv::Point2f& tail
+  , float& m, float& q);
+
 #endif /* FUNCTION_H */

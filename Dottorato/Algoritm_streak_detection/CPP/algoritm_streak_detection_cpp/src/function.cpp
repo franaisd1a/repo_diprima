@@ -378,13 +378,14 @@ cv::Mat histogramStretching(const cv::Mat& imgIn)
     printf("BIN=%d value=%d\n", col, value);
   }
   printf("\n\n");
-
 #endif
 
+#if 0
   double maxHistValue = 0, minHistValue = 0;
   cv::Point minLocHistValue = {0, 0};
   cv::Point maxLocHistValue = {0, 0};
   cv::minMaxLoc(imgIn, &minHistValue, &maxHistValue, &minLocHistValue, &maxLocHistValue, cv::noArray());
+#endif
 
   double peakMax = 0, peakMin = 0;
   cv::Point peakMinLoc = {0, 0};
@@ -720,8 +721,9 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
       float oldStd=0;
       float diffPercStd = 1;
 
+#if 1 //NO
       meanBg.at<double>(i,j) = *(cv::mean(imgPart, cv::noArray()).val);
-      
+
       while (diffPercStd>0.2f)
       {
         cv::Scalar meanBGmod = 0;
@@ -734,10 +736,35 @@ cv::Mat backgroundEstimation(const cv::Mat& imgInOr, const cv::Point backCnt, cv
         double maxval = 1.0;
         double asdf = cv::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_TOZERO_INV);
 
+
+
         diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
         oldStd=stdBg.at<double>(i,j);        
       }
+#else
+      cv::Scalar meanBGmod1 = 0;
+      cv::Scalar stdBGs1 = 0;
+      meanStdDev(imgPart, meanBGmod1, stdBGs1, cv::noArray());
+      stdBg.at<double>(i, j) = *(stdBGs1.val);
+      meanBg.at<double>(i,j) = *(meanBGmod1.val);
 
+      while (diffPercStd>0.2f)
+      {
+        double threshH = meanBg.at<double>(i,j)+2.5*stdBg.at<double>(i,j);//3
+
+        double maxval = 1.0;
+        double asdf = cv::threshold(imgPart, imgPartTh, threshH, maxval, cv::THRESH_TOZERO_INV);
+
+        cv::Scalar meanBGmod = 0;
+        cv::Scalar stdBGs = 0;
+        meanStdDev(imgPartTh, meanBGmod, stdBGs, cv::noArray());
+        stdBg.at<double>(i,j) = *(stdBGs.val);
+
+
+        diffPercStd = ::abs((stdBg.at<double>(i,j)-oldStd)/stdBg.at<double>(i,j));
+        oldStd=stdBg.at<double>(i,j);        
+      }
+#endif
       imgPartTh.copyTo(outImg(region_of_interest));
     }
   }
@@ -989,7 +1016,7 @@ cv::Mat distTransform(const cv::Mat& imgIn)
   cv::Mat dist_8u;
   dist.convertTo(dist_8u, CV_8U, 255.0);
 
-#if SPD_FIGURE_1
+#if 0 //SPD_FIGURE_1
   namedWindow("dist_8u", cv::WINDOW_NORMAL);
   imshow("dist_8u", dist_8u);
   cv::waitKey(0);
@@ -1163,22 +1190,24 @@ void connectedComponents2
   preciseCentroid(imgInput, outContoursP, POINTS);
   preciseCentroid(imgInput, outContoursS, STREAKS);
 
-  
+  dashedLine(imgStreaks, outContoursS, STREAKS);
+
 #if SPD_FIGURE_1
-    /// Draw contours
-    cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);    
-    int cIdx = -1;
-    cv::Scalar color = cv::Scalar(0, 255, 0);
-    cv::Scalar colorS = cv::Scalar(0, 0, 255);
-    int lineType = 8;
-    cv::InputArray hierarchy = cv::noArray();
-    int maxLevel = 0;
-    drawContours(drawing, outContoursP, cIdx, color, 1, 8, hierarchy, 0, offset);
-    drawContours(drawing, outContoursS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
-    
-    // Show in a window
-    namedWindow("Contours", cv::WINDOW_NORMAL);
-    imshow("Contours", drawing);
+  /// Draw contours
+  cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
+  int cIdx = -1;
+  cv::Scalar color = cv::Scalar(0, 255, 0);
+  cv::Scalar colorS = cv::Scalar(0, 0, 255);
+  int lineType = 8;
+  cv::InputArray hierarchy = cv::noArray();
+  int maxLevel = 0;
+  drawContours(drawing, outContoursP, cIdx, color, 1, 8, hierarchy, 0, offset);
+  drawContours(drawing, outContoursS, cIdx, colorS, 1, 8, hierarchy, 0, offset);
+
+  // Show in a window
+  namedWindow("Contours", cv::WINDOW_NORMAL);
+  imshow("Contours", drawing);
+  cv::waitKey(0);
 #endif
 }
 
@@ -1893,6 +1922,461 @@ void preciseCentroid
 
     pixelIdList.clear();
   }
+}
+
+#if 0
+void dashedLine
+(
+  const cv::Mat& img
+  , const std::vector<std::vector<cv::Point > >& cIn
+  , std::vector<std::vector<cv::Point > >& cOut
+)
+{
+  float distAlongThresh = 55;
+  float alongThresh = 0;
+  int cntAlongThresh = 0;
+  float distCrossThresh = 5;
+
+  /* Mappa delle linee con uguale angolo di inclinazione */
+  std::unordered_map<int, std::vector<int>> inclAngle;
+
+  for (int i = 0; i < cIn.size(); ++i)
+  {
+    cv::RotatedRect rotRec = fitEllipse(cIn[i]);
+    float angle = rotRec.angle;
+    float minorAxis = rotRec.size.width;
+    alongThresh += minorAxis;
+    cntAlongThresh++;
+    //prendere solo 4 cifre decimali di angle tipo floor(angle*1000)
+    int key = static_cast<int>(floor(angle));
+    if (0 == inclAngle.count(key))
+    {
+      inclAngle.insert({ key, {i} });
+    }
+    else
+    {
+      inclAngle.at(key).push_back(i);
+    }
+  }
+  
+  alongThresh = alongThresh / cntAlongThresh;
+  distAlongThresh = 55;
+
+  /* Sort streak by x */
+  std::vector<std::vector<std::pair<float,size_t>>> orderLine;
+  size_t indx = 0;
+  for (auto& x : inclAngle)
+  {
+    if (x.second.size() > 1)
+    {
+      orderLine.push_back({});
+      indx++;
+      //  looping for each inclination
+      for (int i = 0; i < x.second.size(); ++i)
+      {
+        cv::Point2f head = {};
+        cv::Point2f tail = {};
+        float m = .0f;
+        float q = .0f;
+        headTail(cIn[x.second.at(i)], x.first, head, tail, m, q);
+        headTail(cIn[x.second.at(i)], head, tail, m, q);
+        orderLine.at(indx - 1).push_back({head.x,x.second.at(i)});
+      }
+    }
+  }
+
+  for (int i=0; i<orderLine.size();++i)
+  {
+    std::sort(orderLine.at(i).begin(), orderLine.at(i).end());
+  }
+
+
+  /* Studio delle linee con stessa inclinazione */
+  std::map<size_t, std::vector<size_t>> mAlignLine;
+  std::set<size_t> usedLine;
+
+  for (auto& x : orderLine) 
+  {
+    //  looping for each streak
+    for (int i = 0; i < x.size(); ++i)
+    {
+      cv::Point2f head = {};
+      cv::Point2f tail = {};
+      float m = .0f;
+      float q = .0f;
+      cv::RotatedRect rotRec = fitEllipse(cIn[x.at(i).second]);
+      float angle = rotRec.angle;
+      headTail(cIn[x.at(i).second], angle, head, tail, m, q);
+      headTail(cIn[x.at(i).second], head, tail, m, q);
+
+      /* Calcolo dei 2 punti per cui passa la retta parallela alla 
+       * striscia che identificano la regione di piano ammissibile 
+       */
+      float distX = ::sin(angle * CV_PI / 360)*distAlongThresh;
+      float distY = ::cos(angle * CV_PI / 360)*distAlongThresh;
+
+      cv::Point2f center = { 0.0f, 0.0f };
+      float radius = 0.0f;
+      minEnclosingCircle(cIn[x.at(i).second], center, radius);
+      
+      cv::Point2f pntA = {};
+      cv::Point2f pntB = {};
+      cv::Point2f pntC = {};
+      cv::Point2f pntD = {};
+
+      if (angle > 90) {
+        pntA = { std::min(center.x - distX, center.x + distX), std::min(center.y - distY, center.y + distY) };
+        pntB = { std::max(center.x - distX, center.x + distX), std::max(center.y - distY, center.y + distY) };
+        pntC = { center.x - abs(distX), center.y - abs(distY) };
+        pntD = { center.x + abs(distX), center.y + abs(distY) };
+      }
+      else {
+        pntA = { std::max(center.x - distX, center.x + distX), std::min(center.y - distY, center.y + distY) };
+        pntB = { std::min(center.x - distX, center.x + distX), std::max(center.y - distY, center.y + distY) };
+        pntC = { center.x + abs(distX), center.y - abs(distY) };
+        pntD = { center.x - abs(distX), center.y + abs(distY) };
+      }
+
+      float qA = pntA.y - m*pntA.x;
+      float qB = pntB.y - m*pntB.x;
+
+      //  looping from i + 1 to ignore same pair again
+      for (int j = i + 1; j < x.size(); j++)
+      {
+        cv::Point2f headNext = {};
+        cv::Point2f tailNext = {};
+        float m2 = .0f;
+        float q2 = .0f;
+        headTail(cIn[x.at(j).second], angle, headNext, tailNext, m2, q2);
+        headTail(cIn[x.at(j).second], headNext, tailNext, m2, q2);
+
+        if ((q2 > std::min(qA, qB)) && (q2 < std::max(qA, qB)))
+        {
+          if (0 == mAlignLine.count(x.at(i).second)) {
+            if ((0 == usedLine.count(x.at(i).second)) && (0 == usedLine.count(x.at(j).second))) {
+              mAlignLine.insert({ x.at(i).second, {x.at(j).second} });
+              usedLine.insert(x.at(i).second);
+              usedLine.insert(x.at(j).second);
+            }
+          }
+          else {
+            if (0 == usedLine.count(x.at(j).second)) {
+              mAlignLine.at(x.at(i).second).push_back(x.at(j).second);
+              usedLine.insert(x.at(j).second);
+            }
+          }
+
+        }
+
+      }
+    }
+  }
+
+
+#if 0
+  for (auto& x : inclAngle) 
+  {
+    if (x.second.size() > 1)
+    {
+      //  looping for each inclination
+      for (int i = 0; i < x.second.size(); ++i)
+      {
+        cv::Point2f head = {};
+        cv::Point2f tail = {};
+        float m = .0f;
+        float q = .0f;
+
+        headTail(cIn[x.second.at(i)], x.first, head, tail, m, q);
+
+        cv::Point2f center = { 0.0f, 0.0f };
+        float radius = 0.0f;
+        minEnclosingCircle(cIn[x.second.at(i)], center, radius);
+
+        float distX = ::sin(x.first * CV_PI / 360)*distCrossThresh;
+        float distY = ::cos(x.first * CV_PI / 360)*distCrossThresh;
+
+        /* Punti retta perpendicolare a retta distanti d*/
+        float xA = center.x - distX;
+        float yA = center.y + distY;
+
+        float xB = center.x + distX;
+        float yB = center.y - distY;
+
+        //  looping from i + 1 to ignore same pair again
+        for (int j = i + 1; j < x.second.size(); j++)
+        {
+          cv::Point2f headNext = {};
+          cv::Point2f tailNext = {};
+          float m2 = .0f;
+          float q2 = .0f;
+          headTail(cIn[x.second.at(j)], x.first, headNext, tailNext, m2, q2);
+
+          /*controllo se allineata */
+          float c1 = m*(headNext.x - xA) + yA;//>
+          float c2 = m*(headNext.x - xB) + yB;//<
+          float c3 = m*(tailNext.x - xA) + yA;//>
+          float c4 = m*(tailNext.x - xB) + yB;//<
+
+          if (!((c1 > 0) && (c3 > 0) && (c2 < 0) && (c4 < 0)))
+          {
+            continue;
+          }          
+          
+          /* Controllo se troppo distante */
+          if (sqrt(pow(tail.x-headNext.x,2)+pow(tail.y-headNext.y,2))>distAlongThresh)
+          {
+            continue;
+          }
+
+          printf("Arrivasti");
+        }
+      }
+    }    
+  }
+#endif
+
+}
+
+#else
+void dashedLine
+(
+  const cv::Mat& img
+  , std::vector<std::vector<cv::Point > >& cIn
+  , std::vector< cv::Vec<float, 3> >& inSTREAKS
+)
+{
+  float distCrossThresh = 55;
+  float crossThresh = 0;  
+  float distAlongThresh = 5;
+  float alongThresh = 0;
+    
+  /* Sort streak by x */
+  std::vector<std::pair<float,size_t>> orderLine;
+  
+  for (size_t x=0;x<cIn.size();++x)
+  {
+    cv::RotatedRect rotRec = fitEllipse(cIn[x]);
+    float angle = rotRec.angle;    
+    float majorAxis = rotRec.size.height;
+    float minorAxis = rotRec.size.width;
+    crossThresh += minorAxis;
+    alongThresh += majorAxis;
+#if 1
+    cv::Point2f center = { 0.0f, 0.0f };
+    float radius = 0.0f;
+    minEnclosingCircle(cIn.at(x), center, radius);
+    orderLine.push_back({ center.x,x });
+#else
+    cv::Point2f head = {};
+    cv::Point2f tail = {};
+    float m = .0f;
+    float q = .0f;
+    headTail(cIn.at(x), head, tail, m, q);
+    orderLine.push_back({ head.x,x });
+#endif    
+  }
+  distCrossThresh = (crossThresh/ cIn.size())*2;
+  distAlongThresh = (alongThresh/ cIn.size())*0.9;
+
+  std::sort(orderLine.begin(), orderLine.end());
+  
+
+  /* Studio delle linee con stessa inclinazione */
+  std::map<size_t, std::vector<size_t>> mAlignLine;
+  std::set<size_t> usedLine;
+
+  for (int i = 0; i < orderLine.size(); ++i)
+  {
+    cv::Point2f head = {};
+    cv::Point2f tail = {};
+    float m = .0f;
+    float q = .0f;
+    cv::RotatedRect rotRec = fitEllipse(cIn[orderLine.at(i).second]);
+    float angle = rotRec.angle;
+    headTail(cIn[orderLine.at(i).second], head, tail, m, q);
+
+    /* Calcolo dei 2 punti per cui passa la retta parallela alla
+     * striscia che identificano la regione di piano ammissibile
+     */
+    float distX = ::sin(angle * CV_PI / 360)*distCrossThresh;
+    float distY = ::cos(angle * CV_PI / 360)*distCrossThresh;
+
+    cv::Point2f center = { 0.0f, 0.0f };
+    float radius = 0.0f;
+    minEnclosingCircle(cIn[orderLine.at(i).second], center, radius);
+
+    cv::Point2f pntA = {};
+    cv::Point2f pntB = {};
+
+    if (angle > 90) {
+      pntA = { center.x - abs(distX), center.y - abs(distY) };
+      pntB = { center.x + abs(distX), center.y + abs(distY) };
+    }
+    else {
+      pntA = { center.x + abs(distX), center.y - abs(distY) };
+      pntB = { center.x - abs(distX), center.y + abs(distY) };
+    }
+
+    float qA = pntA.y - m*pntA.x;
+    float qB = pntB.y - m*pntB.x;
+
+    //  looping from i + 1 to ignore same pair again
+    for (int j = i + 1; j < orderLine.size(); j++)
+    {
+      cv::Point2f headNext = {};
+      cv::Point2f tailNext = {};
+      float m2 = .0f;
+      float q2 = .0f;
+      headTail(cIn[orderLine.at(j).second], headNext, tailNext, m2, q2);
+
+      if ((q2 > std::min(qA, qB)) && (q2 < std::max(qA, qB)))
+      {
+        if (0 == mAlignLine.count(orderLine.at(i).second)) {
+          if ((0 == usedLine.count(orderLine.at(i).second)) 
+            && (0 == usedLine.count(orderLine.at(j).second))) {
+            mAlignLine.insert({ orderLine.at(i).second, {orderLine.at(j).second} });
+            usedLine.insert(orderLine.at(i).second);
+            usedLine.insert(orderLine.at(j).second);
+          }
+        }
+        else {
+          if (0 == usedLine.count(orderLine.at(j).second)) {
+            mAlignLine.at(orderLine.at(i).second).push_back(orderLine.at(j).second);
+            usedLine.insert(orderLine.at(j).second);
+          }
+        }
+      }
+    }
+  }
+
+  /* Studio distanze tra strisciate */
+  std::vector<std::set<size_t>> finalLine;
+  size_t ind = 0;
+  for (auto& x : mAlignLine)
+  {
+    finalLine.push_back({});
+    
+    std::vector<size_t> indexS;
+    indexS.push_back(x.first);
+    for (size_t u = 0; u < x.second.size(); ++u)
+    {
+      indexS.push_back(x.second.at(u));
+    }
+       
+    for (size_t i = 0; i < indexS.size()-1; ++i)
+    {
+      cv::Point2f head = {};
+      cv::Point2f tail = {};
+      float m = .0f;
+      float q = .0f;
+      cv::RotatedRect rotRec = fitEllipse(cIn[orderLine.at(i).second]);
+      float angle = rotRec.angle;
+      headTail(cIn[indexS.at(i)], head, tail, m, q);
+
+      size_t streakB = x.second.at(i);
+      cv::Point2f headNext = {};
+      cv::Point2f tailNext = {};
+      float m2 = .0f;
+      float q2 = .0f;
+      headTail(cIn[indexS.at(i+1)], headNext, tailNext, m2, q2);
+
+      float dist = sqrt(pow(tail.x-headNext.x, 2) + pow(tail.y-headNext.y, 2));
+      if (dist < distAlongThresh)
+      {
+        finalLine.at(ind).insert(indexS.at(i));
+        finalLine.at(ind).insert(indexS.at(i+1));
+      }
+    }
+    ind++;
+  }
+
+  /* Calcolo nuovi centroidi */
+  std::vector< cv::Vec<float, 3> > streak;
+  std::vector<std::vector<cv::Point > > cOut;
+  
+  for (size_t i = 0; i < finalLine.size(); ++i)
+  {
+    float sumX = 0;
+    float sumY = 0;
+    size_t num = finalLine.at(i).size();
+    std::vector<cv::Point> sumP;
+    //for (size_t j = 0;j<num;++j)
+    for(auto& x : finalLine.at(i))
+    {
+      sumX += inSTREAKS.at(x)[0];
+      sumY += inSTREAKS.at(x)[1];
+
+      sumP.insert( sumP.end(), cIn.at(x).begin(), cIn.at(x).end() );
+    }
+    streak.push_back({sumX/num,sumY/num,0.0f});
+    cOut.push_back(sumP);
+  }
+
+  /* Copia strisciate corrette */
+  for (size_t i = 0; i < inSTREAKS.size(); ++i)
+  {
+    for (size_t j = 0; j < finalLine.size(); ++j)
+    {
+      if (0 == finalLine.at(j).count(i))
+      {
+        streak.push_back(inSTREAKS.at(i));
+        cOut.push_back(cIn.at(i));
+      }
+    }
+  }
+
+  inSTREAKS = streak;
+  cIn = cOut;
+}
+#endif
+
+void headTail
+(
+  const std::vector<cv::Point >& pnt
+  , cv::Point2f& head
+  , cv::Point2f& tail
+  , float& m, float& q
+)
+{
+  cv::RotatedRect rotRec = fitEllipse(pnt);
+  float angle = rotRec.angle;
+
+  //Point of the roted rectangle RoI
+  //Point of the roted rectangle big image
+  cv::Point2f pRotRec[4];
+  rotRec.points(pRotRec);
+  cv::Point2f pRotRecRoI[4];
+  pRotRecRoI[0] = pRotRec[0];
+  pRotRecRoI[1] = pRotRec[1];
+  pRotRecRoI[2] = pRotRec[2];
+  pRotRecRoI[3] = pRotRec[3];
+
+  //Central point of the roted rectangle RoI
+  cv::Point2f pMinV[4];
+  pMinV[0] = { std::min(pRotRecRoI[0].x , pRotRecRoI[1].x) , std::min(pRotRecRoI[0].y , pRotRecRoI[1].y) };
+  pMinV[1] = { std::min(pRotRecRoI[1].x , pRotRecRoI[2].x) , std::min(pRotRecRoI[1].y , pRotRecRoI[2].y) };
+  pMinV[2] = { std::min(pRotRecRoI[2].x , pRotRecRoI[3].x) , std::min(pRotRecRoI[2].y , pRotRecRoI[3].y) };
+  pMinV[3] = { std::min(pRotRecRoI[3].x , pRotRecRoI[0].x) , std::min(pRotRecRoI[3].y , pRotRecRoI[0].y) };
+
+  cv::Point2f pCenterP[4];
+  pCenterP[0] = { pMinV[0].x + std::abs(pRotRecRoI[0].x - pRotRecRoI[1].x) / 2 , pMinV[0].y + std::abs(pRotRecRoI[0].y - pRotRecRoI[1].y) / 2 };
+  pCenterP[1] = { pMinV[1].x + std::abs(pRotRecRoI[1].x - pRotRecRoI[2].x) / 2 , pMinV[1].y + std::abs(pRotRecRoI[1].y - pRotRecRoI[2].y) / 2 };
+  pCenterP[2] = { pMinV[2].x + std::abs(pRotRecRoI[2].x - pRotRecRoI[3].x) / 2 , pMinV[2].y + std::abs(pRotRecRoI[2].y - pRotRecRoI[3].y) / 2 };
+  pCenterP[3] = { pMinV[3].x + std::abs(pRotRecRoI[3].x - pRotRecRoI[0].x) / 2 , pMinV[3].y + std::abs(pRotRecRoI[3].y - pRotRecRoI[0].y) / 2 };
+
+
+  if (angle > 90) {
+    head = { std::max(pCenterP[1].x,pCenterP[3].x),std::min(pCenterP[1].y,pCenterP[3].y) };
+    tail = { std::min(pCenterP[1].x,pCenterP[3].x),std::max(pCenterP[1].y,pCenterP[3].y) };
+  }
+  else {
+    head = { std::min(pCenterP[1].x,pCenterP[3].x),std::min(pCenterP[1].y,pCenterP[3].y) };
+    tail = { std::max(pCenterP[1].x,pCenterP[3].x),std::max(pCenterP[1].y,pCenterP[3].y) };
+  }
+
+  /* Coefficienti retta */
+  m = (head.y - tail.y) / (head.x - tail.x);
+  q = -tail.x*m + tail.y;
 }
 
 /* ==========================================================================
@@ -2856,7 +3340,7 @@ void sigmaClipProcessing
  * Light curve study                                                       *
  * ----------------------------------------------------------------------- */
 
-  //lightCurve(Img_input, STREAKS, contoursS);
+  //lightCurve(Img_input, STREAKS, contoursS);//Img_input//histStretch
 
 }
 
@@ -2957,14 +3441,39 @@ void lightCurve
   for (size_t i = 0; i < contours.size(); ++i)
   {
     cv::RotatedRect rotRec = fitEllipse(contours[i]);
-    
+
     //Bounding box
     cv::Rect rotBoundRec = rotRec.boundingRect();
     cv::Point tlBBi = rotBoundRec.tl();
-    cv::Point2f tlBBf = { static_cast<float>(tlBBi.x), static_cast<float>(tlBBi.y)};
+    cv::Point2f tlBBf = { static_cast<float>(tlBBi.x), static_cast<float>(tlBBi.y) };
 
     //RoI extraction
     cv::Mat roi = img(rotBoundRec);
+
+    //Image rotation
+    cv::Mat rotRoi = imageRotation(img, contours[i]);//roi
+
+#if SPD_FIGURE_1
+    namedWindow("ROI light curve", cv::WINDOW_NORMAL);
+    imshow("ROI light curve", roi);
+    cv::waitKey(0);
+
+    namedWindow("ROI roted", cv::WINDOW_NORMAL);
+    imshow("ROI roted", rotRoi);
+    cv::waitKey(0);
+#endif
+
+#if SPD_SAVE_FIGURE
+    {
+      char s_imgName[256] = "ROI";
+      strcat(s_imgName, ".jpg");
+      imwrite(s_imgName, roi);
+    } {
+      char s_imgName[256] = "ROIrot";
+      strcat(s_imgName, ".jpg");
+      imwrite(s_imgName, rotRoi);
+    }
+#endif
 
     //Point of the roted rectangle big image
     cv::Point2f pRotRec[4];
@@ -3021,7 +3530,6 @@ void lightCurve
   }
 }
 
-
 void linePoints
 (
   const cv::Mat& img
@@ -3048,4 +3556,55 @@ void linePoints
     it++;
     stream << buf[x] << " " << points[x].x << " " << points[x].y << std::endl;    
   }
+}
+
+cv::Mat imageRotation(const cv::Mat img, const std::vector<cv::Point >& contours)
+{
+  cv::Mat imgOut;
+    
+  //Centroid and angle  
+  cv::RotatedRect rotRec = cv::fitEllipse(contours);
+
+  //Bounding box
+  cv::Rect rotBoundRec = rotRec.boundingRect();
+  cv::Point tlBBi = rotBoundRec.tl();
+  cv::Point2f tlBBf = { static_cast<float>(tlBBi.x), static_cast<float>(tlBBi.y) };
+
+  //RoI extraction
+  cv::Mat imgIn = img(rotBoundRec);
+  
+
+  cv::Point2f centroid = rotRec.center;
+  float angle = -1.0f * (90.0f - rotRec.angle);
+  
+  cv::Point2f pCenterP[4];
+  pCenterP[0] = {                     centroid.x - tlBBf.x ,                              0 - tlBBf.y};
+  pCenterP[1] = {                              0 - tlBBf.x ,                     centroid.y - tlBBf.y};
+  pCenterP[2] = {                     centroid.x - tlBBf.x , static_cast<float>(imgIn.rows) - tlBBf.y};
+  pCenterP[3] = { static_cast<float>(imgIn.cols) - tlBBf.x ,                     centroid.y - tlBBf.y};
+
+
+  // Get the rotation matrix
+  cv::Mat rot_mat( 2, 3, CV_32FC1 );
+    
+  rot_mat = getRotationMatrix2D( centroid, angle, 1 );
+
+  // Rotate the warped image
+  warpAffine( imgIn, imgOut, rot_mat, imgIn.size(), cv::INTER_LINEAR );
+
+  //Light curve
+
+  //Compute count along streak
+  char s_lCafileName[1024];
+  ::strcpy(s_lCafileName, "lightCurveRot_Along_");
+  ::strcat(s_lCafileName, std::to_string(1).c_str());
+  ::strcat(s_lCafileName, ".txt");
+  std::ofstream lcaFile(s_lCafileName);
+
+  std::vector< cv::Vec<ushort, 1> > bufL;
+  std::vector< cv::Point> pointsL;
+
+  linePoints(imgOut, pCenterP[3], pCenterP[1], tlBBi, bufL, pointsL, lcaFile);
+
+  return imgOut;
 }
