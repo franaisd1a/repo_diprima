@@ -55,14 +55,18 @@ try
     x = T(P(:,2));
     y = R(P(:,1));
     
-    if(FIGURE_1)
+    if(FIGURE_1)        
         figure('name','Hough transform');
-        imshow(H,[],'XData',T,'YData',R,'InitialMagnification','fit');
-        xlabel('\theta');
-        ylabel('\rho');
+        imshow(H,[],'XData',T,'YData',R);%,'InitialMagnification','fit');
+        set(gca,'FontSize',18);
+        xlabel('\theta [deg]','FontSize',26,'FontWeight','bold');
+        ylabel('\rho [pixel]','FontSize',26,'FontWeight','bold');
         colormap(hot), colorbar;
         axis on, axis normal, hold on;
-        plot(x,y,'s','color','green');
+        plot(x,y,'s','color','green','MarkerSize',12,'MarkerEdgeColor','g');
+        hold on;
+        plot(x,y,'x','color','green');
+
     end
     
     x(length(x)+1)=-90; %Obbligo di ricerca a 0° di inclinazione

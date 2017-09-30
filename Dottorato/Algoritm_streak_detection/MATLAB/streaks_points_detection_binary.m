@@ -26,12 +26,13 @@ wrkDir=pwd;
 fileDir=fullfile(wrkDir,'src');
 addpath(fileDir);
 if FIT
-    %inputDataDir='D:\Dottorato\Space debris image\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';
-    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161005';
-    %inputDataDir='D:\Dottorato\Space debris image\SPADE\20161003';
-    inputDataDir='D:\Dottorato\Space debris image\Loiano';
+    %inputDataDir='D:\Dottorato\SpaceDebrisImage\HAMR-14_15-05-2013\Foto\Foto 14-05-2013';    
+    %inputDataDir='D:\Dottorato\SpaceDebrisImage\SPADE\20161005';
+    %inputDataDir='D:\Dottorato\SpaceDebrisImage\SPADE\20161003';
+    inputDataDir='D:\Dottorato\SpaceDebrisImage\Loiano';
     %inputDataDir='D:\Dottorato\II anno\img detriti';
     extension='.fit';
+    %extension='.FIT';
 else
     %inputDataDir=wrkDir;
     %inputDataDir='D:\Dottorato\II anno\img detriti';
@@ -49,7 +50,7 @@ if FILE     %Lettura da cartella
     files=dir(directory);
 else        %Lettura singolo file
     files=1;
-    name_picture=strcat('deb_296',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
+    name_picture=strcat('deb_260',extension);%hamr_186 150 209 204 170 deb_260 41384.00007800.TRK
 end
 
 for file_number=1:length(files)
