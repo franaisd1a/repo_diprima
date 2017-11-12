@@ -111,7 +111,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
   clock_t start0 = start;
 
   wcsPar par;
-#if 0
+#if 1
  #if 1
   bool compPar = astrometry( input, par);
  #else  
@@ -184,6 +184,8 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   std::vector< cv::Vec<float, 3> > POINTS;
   std::vector< cv::Vec<float, 3> > STREAKS;
+  std::vector<std::vector<cv::Point > > contoursP;
+  std::vector<std::vector<cv::Point > > contoursS;
 
   float maxColdim = 4099.0;
   float maxRowdim = 4099.0;
@@ -230,10 +232,12 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
       std::vector< cv::Vec<float, 3> > localPOINTS;
       std::vector< cv::Vec<float, 3> > localSTREAKS;
+      std::vector<std::vector<cv::Point > > localContoursP;
+      std::vector<std::vector<cv::Point > > localContoursS;
 
 /******************************************************************************/
       sigmaClipProcessing(histStretchPart, Img_inputPart, infoFile
-        , localPOINTS, localSTREAKS);
+        , localPOINTS, localSTREAKS, localContoursP, localContoursS);
 /******************************************************************************/
 
       for (size_t p = 0; p < localPOINTS.size(); ++p)
@@ -243,19 +247,63 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
       }
       for (size_t p = 0; p < localSTREAKS.size(); ++p)
       {
-        localSTREAKS.at(p)[0] = ::round(localSTREAKS.at(p)[0] + ptTL.x);//::round(
-        localSTREAKS.at(p)[1] = ::round(localSTREAKS.at(p)[1] + ptTL.y);//::round(
+        localSTREAKS.at(p)[0] = ::round(localSTREAKS.at(p)[0] + ptTL.x);
+        localSTREAKS.at(p)[1] = ::round(localSTREAKS.at(p)[1] + ptTL.y);
       }
-      
+      for(auto vector : localContoursP)
+      {
+        for(cv::Point pnt : vector)
+        {
+          pnt.x = pnt.x + ptTL.x;
+          pnt.y = pnt.y + ptTL.y;
+        }
+      }
+      for(auto vector : localContoursS)
+      {
+        for(cv::Point pnt : vector)
+        {
+          pnt.x = pnt.x + ptTL.x;
+          pnt.y = pnt.y + ptTL.y;
+        }
+      }
+
       if (localPOINTS.size()>0) {
         POINTS.insert(POINTS.end(), localPOINTS.begin(), localPOINTS.end());
       }
       if (localSTREAKS.size()>0) {
         STREAKS.insert(STREAKS.end(), localSTREAKS.begin(), localSTREAKS.end());
       }
+      if (localContoursP.size()>0) {
+        contoursP.insert(contoursP.end(), localContoursP.begin(), localContoursP.end());
+      }
+      if (localContoursS.size()>0) {
+        contoursS.insert(contoursS.end(), localContoursS.begin(), localContoursS.end());
+      }
     }
   }
 
+  
+/* ----------------------------------------------------------------------- *
+ * Image for compression purpose                                           *
+ * ----------------------------------------------------------------------- */
+
+  Mat preComprImg = preCompression(histStretch, contoursS, contoursP);//Img_input
+
+#if SPD_FIGURE
+  namedWindow("Image for compression purpose", cv::WINDOW_NORMAL);
+  imshow("Image for compression purpose", preComprImg);
+#endif
+
+#if SPD_SAVE_FIGURE
+  char s_imgName[256];
+  ::strcpy(s_imgName, input.at(4));
+  ::strcat(s_imgName, input.at(1));
+  ::strcat(s_imgName, "_preCompr");
+  ::strcat(s_imgName, ".jpg");
+  cv::imwrite(s_imgName, preComprImg);
+#endif
+
+  Img_input.release();
 
 /* ----------------------------------------------------------------------- *
  * Coordinate conversion                                                   *
@@ -273,10 +321,10 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
     if (compPar) 
     {
       if (0 != STREAKS.size()) {
-        coordConv(par, STREAKS, radecS);
+        coordConv2(par, STREAKS, radecS);
       }
       if (0 != POINTS.size()) {
-        coordConv(par, POINTS, radecP);
+        coordConv2(par, POINTS, radecP);
       }
     }
     else
@@ -312,6 +360,43 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
 
   writeResult(resFile, POINTS, STREAKS, radecP, radecS);
 
+
+  /********Test coordinate*************/
+#if 0
+  std::vector< cv::Vec<double, 3> > radecSA;
+  std::vector< cv::Vec<double, 3> > radecPA;
+  coordConvA(par, STREAKS, radecSA);
+  coordConvA(par, POINTS, radecPA);
+  
+  /* Open result file */
+  char s_cordFileA[256];
+  ::strcpy (s_cordFileA, input.at(4));
+  ::strcat (s_cordFileA, input.at(1));
+  ::strcat (s_cordFileA, "cordA");
+  ::strcat (s_cordFileA, ".txt" );
+  std::ofstream resFileCordA(s_cordFileA);
+
+  writeResult(resFileCordA, POINTS, STREAKS, radecPA, radecSA);
+  resFileCordA.close();
+  /*2*/
+  std::vector< cv::Vec<double, 3> > radecSB;
+  std::vector< cv::Vec<double, 3> > radecPB;
+  coordConvB(par, STREAKS, radecSB);
+  coordConvB(par, POINTS, radecPB);
+  
+  /* Open result file */
+  char s_cordFileB[256];
+  ::strcpy (s_cordFileB, input.at(4));
+  ::strcat (s_cordFileB, input.at(1));
+  ::strcat (s_cordFileB, "cordB");
+  ::strcat (s_cordFileB, ".txt" );
+  std::ofstream resFileCordB(s_cordFileB);
+
+  writeResult(resFileCordB, POINTS, STREAKS, radecPB, radecSB);
+  
+  resFileCordB.close();
+
+#endif
   
 /* ----------------------------------------------------------------------- *
  * Plot result                                                             *

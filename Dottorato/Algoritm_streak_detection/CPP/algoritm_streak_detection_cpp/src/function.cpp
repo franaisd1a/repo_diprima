@@ -1190,8 +1190,10 @@ void connectedComponents2
   preciseCentroid(imgInput, outContoursP, POINTS);
   preciseCentroid(imgInput, outContoursS, STREAKS);
 
-  dashedLine(imgStreaks, outContoursS, STREAKS);
-
+  if (STREAKS.size() > 1)
+  {
+    dashedLine(imgStreaks, outContoursS, STREAKS);
+  }
 #if SPD_FIGURE_1
   /// Draw contours
   cv::Mat drawing = cv::Mat::zeros(imgPoints.size(), CV_8UC3);
@@ -2979,7 +2981,7 @@ void coordConv
     , static_cast<float>(par.CRVAL2 + outV.at<double>(1, 0)), 0 });
 #else
 
-    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 +1;
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 -1;
     double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 +1;
 
     double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
@@ -3050,6 +3052,248 @@ void coordConv
 }
 
 /* ==========================================================================
+*        FUNCTION NAME: coordConvA
+* FUNCTION DESCRIPTION: Coordinate Converter
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void coordConvA
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+)
+{
+  for (size_t i = 0; i<pixel.size(); ++i)
+  {
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 -1;
+    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 -1;
+
+    double f = 0;// par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+    double g = 0;// par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+    cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+    GM.at<double>(0,0) = par.CD1_1;
+    GM.at<double>(0,1) = par.CD1_2;
+    GM.at<double>(1,0) = par.CD2_1;
+    GM.at<double>(1,1) = par.CD2_2;
+    //std::cout << "M = "<< std::endl << " "  << GM << std::endl << std::endl;
+
+    cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+    inV.at<double>(0,0) = u + f;
+    inV.at<double>(1,0) = v + g;
+    
+    cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+    outV = GM * inV;
+
+    radec.push_back({ static_cast<float>(par.CRVAL1 + outV.at<double>(0, 0))
+    , static_cast<float>(par.CRVAL2 + outV.at<double>(1, 0)), 0 });
+
+  }
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: coordConvB
+* FUNCTION DESCRIPTION: Coordinate Converter
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void coordConvB
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+)
+{
+  for (size_t i = 0; i<pixel.size(); ++i)
+  {
+    double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 -1;
+    double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 -1;
+
+    double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+    double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+    u = u + f;
+    v = v + g;
+
+    cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+    GM.at<double>(0,0) = par.CD1_1;
+    GM.at<double>(0,1) = par.CD1_2;
+    GM.at<double>(1,0) = par.CD2_1;
+    GM.at<double>(1,1) = par.CD2_2;
+
+    cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+    inV.at<double>(0,0) = u;
+    inV.at<double>(1,0) = v;
+    
+    cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+    outV = GM * inV;
+
+    radec.push_back({ static_cast<float>(par.CRVAL1 + outV.at<double>(0, 0))
+    , static_cast<float>(par.CRVAL2 + outV.at<double>(1, 0)), 0 });
+  }
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: coordConv
+* FUNCTION DESCRIPTION: Coordinate Converter
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+void coordConv2
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+)
+{
+  for (size_t i = 0; i<pixel.size(); ++i)
+  {
+    /* RA */
+    double ra = .0;
+
+    {
+      double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 - 1;
+      double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 - 1;
+
+      double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+      double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+      u = u + f;
+      v = v + g;
+
+      cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+      GM.at<double>(0, 0) = par.CD1_1;
+      GM.at<double>(0, 1) = par.CD1_2;
+      GM.at<double>(1, 0) = par.CD2_1;
+      GM.at<double>(1, 1) = par.CD2_2;
+
+      cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+      inV.at<double>(0, 0) = u;
+      inV.at<double>(1, 0) = v;
+
+      cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+      outV = GM * inV;
+
+      double xDeg = par.CD1_1 * u + par.CD1_2 * v;
+      double yDeg = par.CD2_1 * u + par.CD2_2 * v;
+
+      double x = -((CV_PI / 180) * xDeg);
+      double y = (CV_PI / 180) * yDeg;
+
+      double cosdec = cos((CV_PI / 180) * par.CRVAL2);
+      double rx = cosdec * cos((CV_PI / 180) * par.CRVAL1);
+      double ry = cosdec * sin((CV_PI / 180) * par.CRVAL1);
+      double rz = sin((CV_PI / 180) * par.CRVAL2);
+
+      double ix = ry;
+      double iy = -rx;
+      double norm = hypot(ix, iy);
+      ix = ix / norm;
+      iy = iy / norm;
+
+      double jx = iy * rz;
+      double jy = -ix * rz;
+      double jz = ix * ry - iy * rx;
+
+      double no_rm = sqrt(jx*jx + jy*jy + jz*jz);
+
+      double xyz[3] = { 0,0,0 };
+
+      xyz[0] = ix*x + jx*y + rx;
+      xyz[1] = iy*x + jy*y + ry;
+      xyz[2] = jz*y + rz; // iz = 0
+
+      double no_rm2 = sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]);
+
+      double raF = atan2(xyz[1], xyz[0]);
+      if (raF < 0)
+      {
+        raF = raF + 2.0 * CV_PI;
+      }
+
+      double decF = asin(xyz[2]);
+
+      ra = (180 / CV_PI) * (raF);
+    }
+
+    /* Dec */
+    double dec = .0;
+    {
+      double u = static_cast<double>(pixel.at(i)[0]) - par.CRPIX1 + 1;
+      double v = static_cast<double>(pixel.at(i)[1]) - par.CRPIX2 + 1;
+
+      double f = par.A_0_2 * v*v + par.A_1_1 * u*v + par.A_2_0 * u*u;
+      double g = par.B_0_2 * v*v + par.B_1_1 * u*v + par.B_2_0 * u*u;
+
+      u = u + f;
+      v = v + g;
+
+      cv::Mat GM = cv::Mat::zeros(2, 2, CV_64F);
+      GM.at<double>(0, 0) = par.CD1_1;
+      GM.at<double>(0, 1) = par.CD1_2;
+      GM.at<double>(1, 0) = par.CD2_1;
+      GM.at<double>(1, 1) = par.CD2_2;
+
+      cv::Mat  inV = cv::Mat::zeros(2, 1, CV_64F);
+      inV.at<double>(0, 0) = u;
+      inV.at<double>(1, 0) = v;
+
+      cv::Mat outV = cv::Mat::zeros(2, 1, CV_64F);
+      outV = GM * inV;
+
+      double xDeg = par.CD1_1 * u + par.CD1_2 * v;
+      double yDeg = par.CD2_1 * u + par.CD2_2 * v;
+
+      double x = -((CV_PI / 180) * xDeg);
+      double y = (CV_PI / 180) * yDeg;
+
+      double cosdec = cos((CV_PI / 180) * par.CRVAL2);
+      double rx = cosdec * cos((CV_PI / 180) * par.CRVAL1);
+      double ry = cosdec * sin((CV_PI / 180) * par.CRVAL1);
+      double rz = sin((CV_PI / 180) * par.CRVAL2);
+
+      double ix = ry;
+      double iy = -rx;
+      double norm = hypot(ix, iy);
+      ix = ix / norm;
+      iy = iy / norm;
+
+      double jx = iy * rz;
+      double jy = -ix * rz;
+      double jz = ix * ry - iy * rx;
+
+      double no_rm = sqrt(jx*jx + jy*jy + jz*jz);
+
+      double xyz[3] = { 0,0,0 };
+
+      xyz[0] = ix*x + jx*y + rx;
+      xyz[1] = iy*x + jy*y + ry;
+      xyz[2] = jz*y + rz; // iz = 0
+
+      double no_rm2 = sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]);
+
+      double raF = atan2(xyz[1], xyz[0]);
+      if (raF < 0)
+      {
+        raF = raF + 2.0 * CV_PI;
+      }
+
+      double decF = asin(xyz[2]);
+
+      dec = (180 / CV_PI) * decF;      
+    }
+    radec.push_back({ ra, dec, 0.0 });
+  }
+}
+
+/* ==========================================================================
 *        FUNCTION NAME: sigmaClipProcessing
 * FUNCTION DESCRIPTION: 
 *        CREATION DATE: 20160911
@@ -3064,6 +3308,8 @@ void sigmaClipProcessing
   , std::ostream& infoFile
   , std::vector< cv::Vec<float, 3> >& POINTS
   , std::vector< cv::Vec<float, 3> >& STREAKS
+  , std::vector<std::vector<cv::Point > >& contoursP
+  , std::vector<std::vector<cv::Point > >& contoursS
 )
 {
   
@@ -3323,9 +3569,6 @@ void sigmaClipProcessing
  * ----------------------------------------------------------------------- */
 
   start = clock();
-
-  std::vector<std::vector<cv::Point > > contoursP;
-  std::vector<std::vector<cv::Point > > contoursS;
 
   connectedComponents2(convImgRms, distStk, Img_input
     , POINTS, STREAKS, contoursP, contoursS);
@@ -3605,6 +3848,42 @@ cv::Mat imageRotation(const cv::Mat img, const std::vector<cv::Point >& contours
   std::vector< cv::Point> pointsL;
 
   linePoints(imgOut, pCenterP[3], pCenterP[1], tlBBi, bufL, pointsL, lcaFile);
+
+  return imgOut;
+}
+
+/* ==========================================================================
+*        FUNCTION NAME: preCompression
+* FUNCTION DESCRIPTION: Original image with only streaks and points
+*        CREATION DATE: 20160911
+*              AUTHORS: Francesco Diprima
+*           INTERFACES: None
+*         SUBORDINATES: None
+* ========================================================================== */
+cv::Mat preCompression(
+  const cv::Mat imgIn
+  , std::vector<std::vector<cv::Point > >& contoursS
+  , std::vector<std::vector<cv::Point > >& contoursP
+)
+{
+  cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
+
+  /* Select RoIs with Streaks */
+  for (size_t i=0; i<contoursS.size(); ++i)
+  {
+    cv::Rect bbox = boundingRect(contoursS.at(i));
+    cv::Mat imgPart = imgIn(bbox);
+    imgPart.copyTo(imgOut(bbox));
+  }
+
+
+  /* Select RoIs with Points */
+  for (size_t i=0; i<contoursP.size(); ++i)
+  {
+    cv::Rect bbox = boundingRect(contoursP.at(i));
+    cv::Mat imgPart = imgIn(bbox);
+    imgPart.copyTo(imgOut(bbox));
+  }
 
   return imgOut;
 }

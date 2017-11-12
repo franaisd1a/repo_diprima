@@ -395,14 +395,33 @@ void coordConv
   , const std::vector< cv::Vec<float, 3> >& pixel
   , std::vector< cv::Vec<double, 3> >& radec
 );
-
+void coordConv2
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+);
+void coordConvA
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+);
+void coordConvB
+(
+  const wcsPar& par
+  , const std::vector< cv::Vec<float, 3> >& pixel
+  , std::vector< cv::Vec<double, 3> >& radec
+);
 void sigmaClipProcessing
 (
   const cv::Mat& histStretch
   , const cv::Mat& Img_input
   , std::ostream& infoFile
   , std::vector< cv::Vec<float, 3> >& POINTS
-  , std::vector< cv::Vec<float, 3> >& STREAKS
+  , std::vector< cv::Vec<float, 3> >& STREAKS  
+  , std::vector<std::vector<cv::Point > >& contoursP
+  , std::vector<std::vector<cv::Point > >& contoursS
 );
 
 #if 0
@@ -437,5 +456,10 @@ void dashedLine(const cv::Mat& img, std::vector<std::vector<cv::Point > >& cIn
   , std::vector< cv::Vec<float, 3> >& inSTREAKS);
 void headTail(const std::vector<cv::Point >& pnt, cv::Point2f& head, cv::Point2f& tail
   , float& m, float& q);
+
+cv::Mat preCompression(
+  const cv::Mat imgIn
+  , std::vector<std::vector<cv::Point > >& contoursS
+  , std::vector<std::vector<cv::Point > >& contoursP);
 
 #endif /* FUNCTION_H */

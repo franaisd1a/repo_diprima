@@ -86,7 +86,7 @@ bool algo_selection(const std::vector<char *>& input)
   clock_t start, stop;
   double totalTime, totalTimeCUDAkernel;
 
-  int repeatCycle = 10;
+  int repeatCycle = 1;
 
   for (int u = 0; u < repeatCycle; ++u)
   {
