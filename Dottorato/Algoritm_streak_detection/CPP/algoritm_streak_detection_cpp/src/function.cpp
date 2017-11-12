@@ -3860,10 +3860,11 @@ cv::Mat imageRotation(const cv::Mat img, const std::vector<cv::Point >& contours
 *           INTERFACES: None
 *         SUBORDINATES: None
 * ========================================================================== */
-cv::Mat preCompression(
+void preCompression(
   const cv::Mat imgIn
   , std::vector<std::vector<cv::Point > >& contoursS
   , std::vector<std::vector<cv::Point > >& contoursP
+  , const std::vector<char *>& input
 )
 {
   cv::Mat imgOut = cv::Mat::zeros(imgIn.rows, imgIn.cols, imgIn.type());
@@ -3885,5 +3886,18 @@ cv::Mat preCompression(
     imgPart.copyTo(imgOut(bbox));
   }
 
-  return imgOut;
+  #if SPD_FIGURE
+  namedWindow("Image for compression purpose", cv::WINDOW_NORMAL);
+  imshow("Image for compression purpose", imgOut);
+#endif
+
+#if SPD_SAVE_FIGURE
+  char s_imgName[256];
+  ::strcpy(s_imgName, input.at(4));
+  ::strcat(s_imgName, input.at(1));
+  ::strcat(s_imgName, "_preCompr");
+  ::strcat(s_imgName, ".jpg");
+  cv::imwrite(s_imgName, imgOut);
+#endif
+
 }

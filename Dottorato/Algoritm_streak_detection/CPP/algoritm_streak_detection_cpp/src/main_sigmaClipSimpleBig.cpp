@@ -287,21 +287,7 @@ int main_sigmaClipSimpleBig(const std::vector<char *>& input)
  * Image for compression purpose                                           *
  * ----------------------------------------------------------------------- */
 
-  Mat preComprImg = preCompression(histStretch, contoursS, contoursP);//Img_input
-
-#if SPD_FIGURE
-  namedWindow("Image for compression purpose", cv::WINDOW_NORMAL);
-  imshow("Image for compression purpose", preComprImg);
-#endif
-
-#if SPD_SAVE_FIGURE
-  char s_imgName[256];
-  ::strcpy(s_imgName, input.at(4));
-  ::strcat(s_imgName, input.at(1));
-  ::strcat(s_imgName, "_preCompr");
-  ::strcat(s_imgName, ".jpg");
-  cv::imwrite(s_imgName, preComprImg);
-#endif
+  preCompression(histStretch, contoursS, contoursP, input);//Img_input
 
   Img_input.release();
 
